@@ -26,12 +26,16 @@ const useStyles = makeStyles({
   }
 });
 
-const SearchBar = () => {
+interface SearchBarProps {
+  onSearch: (query: string) => void
+}
+
+const SearchBar = (props: SearchBarProps) => {
   const [searchText, setSearchText] = useState('');
 
   const handleSearch = () => {
     if (searchText.length) {
-      // TODO - Call search prop.
+      props.onSearch(searchText);
     }
   }
 

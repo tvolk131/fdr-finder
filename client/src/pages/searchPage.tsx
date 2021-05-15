@@ -14,7 +14,7 @@ const SearchPage = () => {
 
   return (
     <div className={classes.searchBar}>
-      <SearchBar/>
+      <SearchBar onSearch={(query) => console.log(query)}/>
     </div>
   );
 };
