@@ -7,10 +7,8 @@ import {MouseEvent, useState} from 'react';
 const useStyles = makeStyles({
   root: {
     padding: '2px 4px',
-    margin: 'auto',
     display: 'flex',
     alignItems: 'center',
-    maxWidth: 800,
   },
   input: {
     marginLeft: 8,
@@ -28,6 +26,7 @@ const useStyles = makeStyles({
 
 interface SearchBarProps {
   onSearch: (query: string) => void
+  className?: string
 }
 
 const SearchBar = (props: SearchBarProps) => {
@@ -46,7 +45,7 @@ const SearchBar = (props: SearchBarProps) => {
   const classes = useStyles();
 
   return (
-    <Paper className={classes.root}>
+    <Paper className={classes.root + (props.className ? ` ${props.className}` : '')}>
       <InputBase
         className={classes.input}
         placeholder="Search Freedomain Videos"
