@@ -1,4 +1,5 @@
+# TODO - If client build fails, don't start server.
 cd ./client
-npm run build
+npm run build-dev
 cd ../server
-cargo run --release
+cargo run
