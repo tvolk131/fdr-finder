@@ -7,6 +7,7 @@ import {
   Theme
 } from '@material-ui/core/styles';
 import * as React from 'react';
+import SearchPage from './pages/searchPage';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -26,7 +27,7 @@ const SubApp = () => {
       {/* This meta tag makes the mobile experience
       much better by preventing text from being tiny. */}
       <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
-      <div>Hello world!</div>
+      <SearchPage/>
     </div>
   );
 };
