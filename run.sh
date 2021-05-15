@@ -1,4 +1,4 @@
 cd ./client
 npm run build
 cd ../server
-cargo run
+cargo run --release
