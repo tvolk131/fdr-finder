@@ -79,8 +79,8 @@ const SearchBar = (props: SearchBarProps) => {
           </IconButton>
         </div>
       </AccordionSummary>
+      <Divider/>
       <AccordionDetails>
-        <Divider/>
         <AdvancedSearchMenu/>
       </AccordionDetails>
     </Accordion>
