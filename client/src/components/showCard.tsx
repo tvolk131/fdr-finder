@@ -3,8 +3,12 @@ import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
 
 const useStyles = makeStyles({
-  root: {},
-  title: {}
+  title: {
+    display: 'flex'
+  },
+  podcastNumber: {
+    paddingRight: '8px'
+  }
 });
 
 export enum ShowFormat {
@@ -34,9 +38,19 @@ const ShowCard = (props: ShowCardProps) => {
   const classes = useStyles();
 
   return (
-    <Card className={classes.root}>
+    <Card>
       <CardHeader
-        title={`${props.show.podcastNumber} ${props.show.title}`}
+        title={
+          <span className={classes.title}>
+            <Typography
+              className={classes.podcastNumber}
+              variant='h5'
+              color='textSecondary'
+            >
+              {props.show.podcastNumber}
+            </Typography>
+            {props.show.title}
+          </span>}
         subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()}`}
       />
       <CardContent>
