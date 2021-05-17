@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "check-typescript-types": "tsc --noEmit --skipLibCheck",
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development"
   },
