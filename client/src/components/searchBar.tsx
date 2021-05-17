@@ -1,8 +1,10 @@
-import {IconButton, Paper, InputBase} from '@material-ui/core';
+import {IconButton, InputBase, AccordionSummary, Accordion, AccordionDetails, Divider} from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
 import {Search as SearchIcon} from '@material-ui/icons';
 import * as React from 'react';
 import {MouseEvent, useState} from 'react';
+import AdvancedSearchMenu from '../components/advancedSearchMenu';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 const useStyles = makeStyles({
   root: {
@@ -26,7 +28,6 @@ const useStyles = makeStyles({
 
 interface SearchBarProps {
   onSearch: (query: string) => void
-  className?: string
 }
 
 const SearchBar = (props: SearchBarProps) => {
@@ -45,29 +46,44 @@ const SearchBar = (props: SearchBarProps) => {
   const classes = useStyles();
 
   return (
-    <Paper className={classes.root + (props.className ? ` ${props.className}` : '')}>
-      <InputBase
-        className={classes.input}
-        placeholder="Search Freedomain Videos"
-        value={searchText}
-        onChange={(event) => {
-          setSearchText(event.target.value);
-        }}
-        onKeyPress={(event) => {
-          if (event.key === 'Enter') {
-            handleSearch();
-          }
-        }}
-        onSubmit={handleSearch}
-      />
-      <IconButton
-        className={classes.iconButton}
-        onMouseDown={handleMouseDownSearch}
-        onClick={handleSearch}
-      >
-        <SearchIcon/>
-      </IconButton>
-    </Paper>
+    <Accordion>
+      <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+        <div
+          onClick={(event) => event.stopPropagation()}
+          onFocus={(event) => event.stopPropagation()}
+          style={{
+            width: '100%',
+            display: 'flex'
+          }}
+        >
+          <InputBase
+            className={classes.input}
+            placeholder="Search Freedomain Videos"
+            value={searchText}
+            onChange={(event) => {
+              setSearchText(event.target.value);
+            }}
+            onKeyPress={(event) => {
+              if (event.key === 'Enter') {
+                handleSearch();
+              }
+            }}
+            onSubmit={handleSearch}
+          />
+          <IconButton
+            className={classes.iconButton}
+            onMouseDown={handleMouseDownSearch}
+            onClick={handleSearch}
+          >
+            <SearchIcon/>
+          </IconButton>
+        </div>
+      </AccordionSummary>
+      <Divider/>
+      <AccordionDetails>
+        <AdvancedSearchMenu/>
+      </AccordionDetails>
+    </Accordion>
   );
 };
 
