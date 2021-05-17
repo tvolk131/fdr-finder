@@ -23,5 +23,6 @@ jobs:
           npm ci
           npm run check-typescript-types
           npm test
+          npm run build
           cd ../server
           cargo test
