@@ -8,6 +8,9 @@ const useStyles = makeStyles({
   },
   podcastNumber: {
     paddingRight: '8px'
+  },
+  audioPlayer: {
+    width: '100%'
   }
 });
 
@@ -54,6 +57,9 @@ const ShowCard = (props: ShowCardProps) => {
         subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()}`}
       />
       <CardContent>
+        <audio className={classes.audioPlayer} controls>
+          <source src={props.show.audioLink} type='audio/mpeg'/>
+        </audio>
       </CardContent>
     </Card>
   );
