@@ -16,7 +16,7 @@ impl HandlerState {
 
 #[tokio::main]
 async fn main() {
-    let port = 3000;
+    let port = 80;
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
 
     let handler_state = Arc::from(HandlerState::new());
