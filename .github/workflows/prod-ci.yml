@@ -49,10 +49,10 @@ jobs:
         run: doctl compute certificate list
 
       - name: Push image to DigitalOcean Container Registry
-        run: docker push registry.digitalocean.com/cards/frontend:$(echo $GITHUB_SHA | head -c7)
+        run: docker push registry.digitalocean.com/cards/fdr-finder:$(echo $GITHUB_SHA | head -c7)
 
       - name: Update deployment file
-        run: TAG=$(echo $GITHUB_SHA | head -c7) && sed -i 's|<IMAGE>|registry.digitalocean.com/cards/frontend:'${TAG}'|' $GITHUB_WORKSPACE/deployment.yml
+        run: TAG=$(echo $GITHUB_SHA | head -c7) && sed -i 's|<IMAGE>|registry.digitalocean.com/cards/fdr-finder:'${TAG}'|' $GITHUB_WORKSPACE/deployment.yml
 
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 cards
@@ -61,4 +61,4 @@ jobs:
         run: kubectl apply -f $GITHUB_WORKSPACE/deployment.yml
 
       - name: Verify deployment
-        run: kubectl rollout status deployment/frontend
+        run: kubectl rollout status deployment/fdr-finder
