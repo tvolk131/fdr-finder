@@ -1,9 +1,11 @@
 mod environment;
+mod fdr_cache;
 mod fdr_database;
 mod podcast;
 
 use environment::EnvironmentVariables;
 use fdr_database::FdrDatabase;
+use fdr_cache::FdrCache;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{http::Error, Body, Request, Response, Server};
 use mongodb::{Client, Database};
@@ -15,13 +17,13 @@ const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
 
 struct HandlerState {
-    database: FdrDatabase,
+    database: FdrCache,
 }
 
 impl HandlerState {
     async fn new(env_vars: &EnvironmentVariables) -> Self {
         HandlerState {
-            database: FdrDatabase::new(get_mongo_database_or_panic(env_vars).await),
+            database: FdrCache::new(FdrDatabase::new(get_mongo_database_or_panic(env_vars).await)).await.unwrap(),
         }
     }
 }
@@ -84,7 +86,7 @@ async fn handle_api_request(
     handler_state: Arc<HandlerState>,
 ) -> Result<Response<Body>, Error> {
     if req.uri().path() == "/api/podcasts/all" {
-        let podcasts = handler_state.database.get_all_podcasts().await.unwrap();
+        let podcasts = handler_state.database.get_all_podcasts();
         let json = Value::Array(
             podcasts
                 .into_iter()
@@ -99,9 +101,7 @@ async fn handle_api_request(
         let bar = foo.get(1).unwrap();
         let podcast = handler_state
             .database
-            .get_podcast_by_num_i32(bar.parse::<i32>().unwrap())
-            .await
-            .unwrap();
+            .get_podcast(bar.parse::<i32>().unwrap());
         return Response::builder()
             .header("content-type", "application/json")
             .body(Body::from(podcast.unwrap().to_json().to_string()));

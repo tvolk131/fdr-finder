@@ -61,10 +61,10 @@ impl FdrDatabase {
             })
             .collect();
         podcasts.sort_by(|a, b| {
-            if a.get_num().as_f64() > b.get_num().as_f64() {
+            if a.get_num() > b.get_num() {
                 return Ordering::Greater;
             }
-            if a.get_num().as_f64() < b.get_num().as_f64() {
+            if a.get_num() < b.get_num() {
                 return Ordering::Less;
             }
             Ordering::Equal

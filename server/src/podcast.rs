@@ -1,11 +1,13 @@
 use bson::{Bson, Document};
-use serde_json::{json, Number, Value};
+use serde_json::{json, Value};
 
-fn get_json_number_from_bson_doc(doc: &Document, key: &str) -> Option<Number> {
+fn get_int_from_bson_doc(doc: &Document, key: &str) -> Option<i32> {
     match doc.get(key)? {
-        Bson::Int32(num) => Some(Number::from(*num)),
-        Bson::Int64(num) => Some(Number::from(*num)),
-        Bson::Double(num) => Number::from_f64(*num),
+        Bson::Int32(num) => Some(*num),
+        Bson::Int64(num) => Some(*num as i32),
+        // TODO - Handle this case. Right now we're ignoring fractional numbered episodes
+        // since there's only a handful of them, and it would make this much more challenging.
+        // Bson::Double(num) => Some(IntOrDouble::F64(*num)),
         _ => None,
     }
 }
@@ -13,8 +15,8 @@ fn get_json_number_from_bson_doc(doc: &Document, key: &str) -> Option<Number> {
 pub struct Podcast {
     title: String,
     description: String,
-    length: Number,
-    num: Number,
+    length: i32,
+    num: i32,
 }
 
 impl Podcast {
@@ -22,8 +24,8 @@ impl Podcast {
         Self {
             title: doc.get_str("title").unwrap().to_string(),
             description: doc.get_str("description").unwrap().to_string(),
-            length: get_json_number_from_bson_doc(&doc, "length").unwrap_or(Number::from(-1)),
-            num: get_json_number_from_bson_doc(&doc, "num").unwrap_or(Number::from(-1)),
+            length: get_int_from_bson_doc(&doc, "length").unwrap_or(-1),
+            num: get_int_from_bson_doc(&doc, "num").unwrap_or(-1),
         }
     }
 
@@ -35,7 +37,7 @@ impl Podcast {
             "num": self.num
         })
     }
-    pub fn get_num(&self) -> &Number {
-        &self.num
+    pub fn get_num(&self) -> i32 {
+        self.num
     }
 }
