@@ -1,3 +1,5 @@
+mod environment;
+
 use std::net::SocketAddr;
 use hyper::{http::Error, Body, Request, Response, Server};
 use std::sync::Arc;
@@ -16,7 +18,7 @@ impl HandlerState {
 
 #[tokio::main]
 async fn main() {
-    let port = 80;
+    let port = 3000;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
     let handler_state = Arc::from(HandlerState::new());
@@ -37,7 +39,15 @@ async fn main() {
     if let Err(e) = server.await {
         eprintln!("Server error: {}", e);
     }
+}
 
+async fn get_mongo_database_or_panic(env_vars: &EnvironmentVariables) -> Database {
+    let mongo_client = match Client::with_uri_str(env_vars.get_mongo_uri()).await {
+        Ok(client) => client,
+        _ => panic!("Failed to connect to MongoDB."),
+    };
+
+    mongo_client.database(&env_vars.get_mongo_database())
 }
 
 async fn handle_request(req: Request<Body>, handler_state: Arc<HandlerState>) -> Result<Response<Body>, Error> {
