@@ -1,15 +1,13 @@
 mod environment;
-mod fdrDatabase;
+mod fdr_database;
 mod podcast;
 
-use bson::Document;
 use environment::EnvironmentVariables;
-use fdrDatabase::FdrDatabase;
+use fdr_database::FdrDatabase;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{http::Error, Body, Request, Response, Server};
-use mongodb::{options::FindOptions, Client, Database};
-use podcast::Podcast;
-use serde_json::{Number, Value};
+use mongodb::{Client, Database};
+use serde_json::Value;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
