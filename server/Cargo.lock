@@ -459,8 +459,11 @@ dependencies = [
 name = "fdr-show-indexer-server"
 version = "0.1.0"
 dependencies = [
+ "bson",
+ "futures-lite",
  "hyper",
  "mongodb",
+ "serde_json",
  "tokio 1.6.0",
 ]
 
