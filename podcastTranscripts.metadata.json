@@ -1,1 +1,0 @@
-{"options":{"flags":1},"indexes":[{"v":2,"key":{"_id":1},"name":"_id_","ns":"fdr.podcastTranscripts"},{"v":2,"key":{"_fts":"text","_ftsx":1},"name":"transcript_text","default_language":"english","language_override":"language","ns":"fdr.podcastTranscripts","weights":{"transcript":1},"textIndexVersion":1}],"uuid":"265b5d679003474a85f9374280d20914"}
