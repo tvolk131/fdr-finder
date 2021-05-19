@@ -2,28 +2,28 @@ mod environment;
 mod fdrDatabase;
 mod podcast;
 
-use std::net::SocketAddr;
-use fdrDatabase::FdrDatabase;
-use hyper::{http::Error, Body, Request, Response, Server};
-use podcast::Podcast;
-use std::sync::Arc;
-use hyper::service::{make_service_fn, service_fn};
-use environment::EnvironmentVariables;
-use mongodb::{Database, Client, options::FindOptions};
 use bson::Document;
+use environment::EnvironmentVariables;
+use fdrDatabase::FdrDatabase;
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{http::Error, Body, Request, Response, Server};
+use mongodb::{options::FindOptions, Client, Database};
+use podcast::Podcast;
 use serde_json::{Number, Value};
+use std::net::SocketAddr;
+use std::sync::Arc;
 
 const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
 
 struct HandlerState {
-    database: FdrDatabase
+    database: FdrDatabase,
 }
 
 impl HandlerState {
     async fn new(env_vars: &EnvironmentVariables) -> Self {
         HandlerState {
-            database: FdrDatabase::new(get_mongo_database_or_panic(env_vars).await)
+            database: FdrDatabase::new(get_mongo_database_or_panic(env_vars).await),
         }
     }
 }
@@ -63,28 +63,54 @@ async fn get_mongo_database_or_panic(env_vars: &EnvironmentVariables) -> Databas
     mongo_client.database(&env_vars.get_mongo_database())
 }
 
-async fn handle_request(req: Request<Body>, handler_state: Arc<HandlerState>) -> Result<Response<Body>, Error> {
+async fn handle_request(
+    req: Request<Body>,
+    handler_state: Arc<HandlerState>,
+) -> Result<Response<Body>, Error> {
     if req.uri().path().starts_with("/api/") {
         return handle_api_request(req, handler_state).await;
     }
 
     if req.uri().path().split("/").last().unwrap() == "bundle.js" {
-        return Response::builder().header("content-type", "application/javascript; charset=utf-8").body(Body::from(JS_BUNDLE_BYTES.to_vec()))
+        return Response::builder()
+            .header("content-type", "application/javascript; charset=utf-8")
+            .body(Body::from(JS_BUNDLE_BYTES.to_vec()));
     }
-    Response::builder().header("content-type", "text/html; charset=utf-8").body(Body::from(HTML_BYTES.to_vec()))
+    Response::builder()
+        .header("content-type", "text/html; charset=utf-8")
+        .body(Body::from(HTML_BYTES.to_vec()))
 }
 
-async fn handle_api_request(req: Request<Body>, handler_state: Arc<HandlerState>) -> Result<Response<Body>, Error> {
+async fn handle_api_request(
+    req: Request<Body>,
+    handler_state: Arc<HandlerState>,
+) -> Result<Response<Body>, Error> {
     if req.uri().path() == "/api/podcasts/all" {
         let podcasts = handler_state.database.get_all_podcasts().await.unwrap();
-        let json = Value::Array(podcasts.into_iter().map(|podcast| podcast.to_json()).collect());
-        return Response::builder().header("content-type", "application/json").body(Body::from(json.to_string()));
+        let json = Value::Array(
+            podcasts
+                .into_iter()
+                .map(|podcast| podcast.to_json())
+                .collect(),
+        );
+        return Response::builder()
+            .header("content-type", "application/json")
+            .body(Body::from(json.to_string()));
     } else if req.uri().path().starts_with("/api/podcasts/") {
         let foo: Vec<&str> = req.uri().path().split("/api/podcasts/").collect();
         let bar = foo.get(1).unwrap();
-        let podcast = handler_state.database.get_podcast_by_num_i32(bar.parse::<i32>().unwrap()).await.unwrap();
-        return Response::builder().header("content-type", "application/json").body(Body::from(podcast.unwrap().to_json().to_string()));
+        let podcast = handler_state
+            .database
+            .get_podcast_by_num_i32(bar.parse::<i32>().unwrap())
+            .await
+            .unwrap();
+        return Response::builder()
+            .header("content-type", "application/json")
+            .body(Body::from(podcast.unwrap().to_json().to_string()));
     }
 
-    Response::builder().status(404).header("content-type", "text/plain").body(Body::from("API endpoint not found"))
+    Response::builder()
+        .status(404)
+        .header("content-type", "text/plain")
+        .body(Body::from("API endpoint not found"))
 }
