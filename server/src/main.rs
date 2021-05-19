@@ -29,7 +29,7 @@ impl HandlerState {
 #[tokio::main]
 async fn main() {
     let env_vars = EnvironmentVariables::new();
-    let port = 3000;
+    let port = 80;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
     let handler_state = Arc::from(HandlerState::new(&env_vars).await);
