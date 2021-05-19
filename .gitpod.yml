@@ -6,5 +6,5 @@ tasks:
       sudo apt-get update &&
       sudo apt-get install -y mongodb-org &&
       sudo mkdir -p /data/db &&
-      sudo mongod
+      sudo mongod --fork
     command: mongorestore --dir=mongo_dump -d fdr
