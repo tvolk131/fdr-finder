@@ -35,4 +35,7 @@ impl Podcast {
             "num": self.num
         })
     }
+    pub fn get_num(&self) -> &Number {
+        &self.num
+    }
 }

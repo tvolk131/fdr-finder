@@ -1,7 +1,9 @@
 mod environment;
+mod fdrDatabase;
 mod podcast;
 
 use std::net::SocketAddr;
+use fdrDatabase::FdrDatabase;
 use hyper::{http::Error, Body, Request, Response, Server};
 use podcast::Podcast;
 use std::sync::Arc;
@@ -9,20 +11,19 @@ use hyper::service::{make_service_fn, service_fn};
 use environment::EnvironmentVariables;
 use mongodb::{Database, Client, options::FindOptions};
 use bson::Document;
-use futures_lite::StreamExt;
 use serde_json::{Number, Value};
 
 const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
 
 struct HandlerState {
-    database: Database
+    database: FdrDatabase
 }
 
 impl HandlerState {
     async fn new(env_vars: &EnvironmentVariables) -> Self {
         HandlerState {
-            database: get_mongo_database_or_panic(env_vars).await
+            database: FdrDatabase::new(get_mongo_database_or_panic(env_vars).await)
         }
     }
 }
@@ -74,26 +75,13 @@ async fn handle_request(req: Request<Body>, handler_state: Arc<HandlerState>) ->
 }
 
 async fn handle_api_request(req: Request<Body>, handler_state: Arc<HandlerState>) -> Result<Response<Body>, Error> {
-    if req.uri().path() == "/api/test" {
-        let find_options = FindOptions::builder()
-            // .limit(100)
-            .build();
-        let cursor = handler_state.database.collection("podcasts").find(None, find_options).await.unwrap();
-        let docs_or = cursor
-            .collect::<Vec<Result<Document, mongodb::error::Error>>>()
-            .await;
-        let docs: Vec<Document> = docs_or.into_iter().filter_map(|doc_or| {
-            match doc_or {
-                Ok(doc) => Some(doc),
-                Err(_) => None
-            }
-        }).collect();
-        Value::Number(Number::from(1));
-        let json_array: Vec<Value> = docs.into_iter().map(|doc: Document| {
-            Podcast::from_doc(&doc).to_json()
-        }).collect();
-        let f = Value::Array(json_array);
-        return Response::builder().header("content-type", "application/json").body(Body::from(f.to_string()))
+    if req.uri().path() == "/api/podcasts/all" {
+        let podcasts = handler_state.database.get_all_podcasts().await.unwrap();
+        let json = Value::Array(podcasts.into_iter().map(|podcast| podcast.to_json()).collect());
+        return Response::builder().header("content-type", "application/json").body(Body::from(json.to_string()))
+    } else if req.uri().path() == "/api/podcasts" {
+        let query = req.uri().query();
+        println!("{:?}", query);
     }
 
     Response::builder().status(404).header("content-type", "text/plain").body(Body::from("API endpoint not found"))
