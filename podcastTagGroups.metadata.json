@@ -1,0 +1,1 @@
+{"options":{"flags":1},"indexes":[{"v":2,"key":{"_id":1},"name":"_id_","ns":"fdr.podcastTagGroups"},{"v":2,"key":{"_fts":"text","_ftsx":1},"name":"tagGroupname_text","default_language":"english","language_override":"language","ns":"fdr.podcastTagGroups","weights":{"tagGroupname":1},"textIndexVersion":1}],"uuid":"355bc4d3df354fbe96eeb148c2d7ddfb"}
