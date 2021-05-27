@@ -37,7 +37,8 @@ export enum ShowFormat {
   CallIn,
   Roundtable,
   SoloPodcast,
-  Livestream
+  Livestream,
+  Unspecified // TODO - Remove this variant.
 }
 
 export interface ShowInfo {
