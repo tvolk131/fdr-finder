@@ -99,7 +99,7 @@ impl Podcast {
     }
 }
 
-pub fn generate_rss_feed(podcasts: &[&Arc<Podcast>]) -> String {
+pub fn generate_rss_feed(podcasts: &[&Arc<Podcast>], feed_title: &str, feed_description: &str) -> String {
     let podcasts_xml: Vec<String> = podcasts
         .iter()
         .map(|podcast| format!("<item>{}</item>", podcast.to_rss_xml()))
@@ -111,15 +111,17 @@ pub fn generate_rss_feed(podcasts: &[&Arc<Podcast>]) -> String {
             xmlns:googleplay=\"http://www.google.com/schemas/play-podcasts/1.0\"
             xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\">
         <channel>
-            <title>Test RSS Feed Title</title>
+            <title>{}</title>
             <googleplay:author>Stefan Molyneux</googleplay:author>
-            <description>A test RSS feed.</description>
+            <description>{}</description>
             <language>en-us</language>
             <link>https://freedomain.com/</link>
             {}
         </channel>
         </rss>
     ",
+        feed_title,
+        feed_description,
         podcasts_xml.join("")
     )
     .trim()

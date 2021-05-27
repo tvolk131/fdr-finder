@@ -151,9 +151,9 @@ async fn handle_api_request(
             Some(skip) => skip.parse::<usize>().unwrap(),
             None => 0,
         };
-        let query = PodcastQuery::new(filter, limit, skip);
+        let query = PodcastQuery::new(filter.clone(), limit, skip);
         let podcasts = handler_state.database.query_podcasts(query);
-        let rss = generate_rss_feed(&podcasts);
+        let rss = generate_rss_feed(&podcasts, &format!("Freedomain Custom Feed: {}", filter), &format!("A generated feed containing all Freedomain podcasts about: {}", filter));
         return Response::builder()
             .header("content-type", "application/xml")
             .body(Body::from(rss));
