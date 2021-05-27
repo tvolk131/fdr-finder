@@ -20,7 +20,7 @@ const AdvancedSearchMenu = () => {
   return (
     <Paper className={classes.root} elevation={10}>
       <FormGroup>
-        <FormLabel>Show Format</FormLabel>
+        <FormLabel>Show Format (Doesn't actually do anything yet)</FormLabel>
         <FormControlLabel
           control={<Checkbox checked={interviewsChecked} onChange={(event) => setInterviewsChecked(event.target.checked)}/>}
           label={'Interviews'}
