@@ -37,6 +37,11 @@ impl Podcast {
             "num": self.num
         })
     }
+
+    pub fn get_title(&self) -> &str {
+        &self.title
+    }
+
     pub fn get_num(&self) -> i32 {
         self.num
     }

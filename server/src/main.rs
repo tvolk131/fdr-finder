@@ -4,14 +4,14 @@ mod fdr_database;
 mod podcast;
 
 use environment::EnvironmentVariables;
+use fdr_cache::{FdrCache, PodcastQuery};
 use fdr_database::FdrDatabase;
-use fdr_cache::FdrCache;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{http::Error, Body, Request, Response, Server};
 use mongodb::{Client, Database};
 use serde_json::Value;
-use std::net::SocketAddr;
-use std::sync::Arc;
+use std::{collections::HashMap, net::SocketAddr};
+use std::{str::FromStr, sync::Arc};
 
 const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
@@ -23,7 +23,11 @@ struct HandlerState {
 impl HandlerState {
     async fn new(env_vars: &EnvironmentVariables) -> Self {
         HandlerState {
-            database: FdrCache::new(FdrDatabase::new(get_mongo_database_or_panic(env_vars).await)).await.unwrap(),
+            database: FdrCache::new(FdrDatabase::new(
+                get_mongo_database_or_panic(env_vars).await,
+            ))
+            .await
+            .unwrap(),
         }
     }
 }
@@ -87,6 +91,36 @@ async fn handle_api_request(
 ) -> Result<Response<Body>, Error> {
     if req.uri().path() == "/api/podcasts/all" {
         let podcasts = handler_state.database.get_all_podcasts();
+        let json = Value::Array(
+            podcasts
+                .into_iter()
+                .map(|podcast| podcast.to_json())
+                .collect(),
+        );
+        return Response::builder()
+            .header("content-type", "application/json")
+            .body(Body::from(json.to_string()));
+    } else if req.uri().path() == "/api/podcasts" {
+        let url = url::Url::from_str(&format!("http://example.com{}", req.uri())).unwrap();
+        let query_pairs = url.query_pairs();
+        let mut query_params: HashMap<String, String> = HashMap::new();
+        for pair in query_pairs {
+            query_params.insert(pair.0.to_string(), pair.1.to_string());
+        }
+        let filter = match query_params.get("filter") {
+            Some(filter) => filter.clone(),
+            None => String::from(""),
+        };
+        let limit = match query_params.get("limit") {
+            Some(limit) => limit.parse::<usize>().unwrap(),
+            None => 0,
+        };
+        let skip = match query_params.get("skip") {
+            Some(skip) => skip.parse::<usize>().unwrap(),
+            None => 0,
+        };
+        let query = PodcastQuery::new(filter, limit, skip);
+        let podcasts = handler_state.database.query_podcasts(query);
         let json = Value::Array(
             podcasts
                 .into_iter()
