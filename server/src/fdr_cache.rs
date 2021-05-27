@@ -30,10 +30,10 @@ impl FdrCache {
     pub async fn new(fdr_database: FdrDatabase) -> mongodb::error::Result<Self> {
         let mut all_podcasts = fdr_database.get_all_podcasts().await?;
         all_podcasts.sort_by(|a, b| {
-            if a.get_num() > b.get_num() {
+            if a.get_podcast_number() > b.get_podcast_number() {
                 return Ordering::Greater;
             }
-            if a.get_num() < b.get_num() {
+            if a.get_podcast_number() < b.get_podcast_number() {
                 return Ordering::Less;
             }
             Ordering::Equal
@@ -44,7 +44,7 @@ impl FdrCache {
             .collect();
         let mut podcasts_by_num = HashMap::new();
         for podcast in &all_podcasts_rc {
-            podcasts_by_num.insert(podcast.get_num().clone(), podcast.clone());
+            podcasts_by_num.insert(podcast.get_podcast_number().clone(), podcast.clone());
         }
         Ok(FdrCache {
             fdr_database,

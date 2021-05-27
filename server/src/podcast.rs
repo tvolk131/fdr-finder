@@ -15,8 +15,8 @@ fn get_int_from_bson_doc(doc: &Document, key: &str) -> Option<i32> {
 pub struct Podcast {
     title: String,
     description: String,
-    length: i32,
-    num: i32,
+    length_in_seconds: i32,
+    podcast_number: i32,
 }
 
 impl Podcast {
@@ -24,8 +24,8 @@ impl Podcast {
         Self {
             title: doc.get_str("title").unwrap().to_string(),
             description: doc.get_str("description").unwrap().to_string(),
-            length: get_int_from_bson_doc(&doc, "length").unwrap_or(-1),
-            num: get_int_from_bson_doc(&doc, "num").unwrap_or(-1),
+            length_in_seconds: get_int_from_bson_doc(&doc, "length").unwrap_or(-1),
+            podcast_number: get_int_from_bson_doc(&doc, "num").unwrap_or(-1),
         }
     }
 
@@ -33,8 +33,8 @@ impl Podcast {
         json!({
             "title": self.title,
             "description": self.description,
-            "length": self.length,
-            "num": self.num
+            "lengthInSeconds": self.length_in_seconds,
+            "podcastNumber": self.podcast_number
         })
     }
 
@@ -42,7 +42,7 @@ impl Podcast {
         &self.title
     }
 
-    pub fn get_num(&self) -> i32 {
-        self.num
+    pub fn get_podcast_number(&self) -> i32 {
+        self.podcast_number
     }
 }
