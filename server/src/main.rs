@@ -13,6 +13,8 @@ use serde_json::Value;
 use std::{collections::HashMap, net::SocketAddr};
 use std::{str::FromStr, sync::Arc};
 
+use crate::podcast::generate_rss_feed;
+
 const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
 
@@ -130,6 +132,31 @@ async fn handle_api_request(
         return Response::builder()
             .header("content-type", "application/json")
             .body(Body::from(json.to_string()));
+    } else if req.uri().path() == "/api/podcasts/rss" {
+        let url = url::Url::from_str(&format!("http://example.com{}", req.uri())).unwrap();
+        let query_pairs = url.query_pairs();
+        let mut query_params: HashMap<String, String> = HashMap::new();
+        for pair in query_pairs {
+            query_params.insert(pair.0.to_string(), pair.1.to_string());
+        }
+        let filter = match query_params.get("filter") {
+            Some(filter) => filter.clone(),
+            None => String::from(""),
+        };
+        let limit = match query_params.get("limit") {
+            Some(limit) => limit.parse::<usize>().unwrap(),
+            None => 0,
+        };
+        let skip = match query_params.get("skip") {
+            Some(skip) => skip.parse::<usize>().unwrap(),
+            None => 0,
+        };
+        let query = PodcastQuery::new(filter, limit, skip);
+        let podcasts = handler_state.database.query_podcasts(query);
+        let rss = generate_rss_feed(&podcasts);
+        return Response::builder()
+            .header("content-type", "application/xml")
+            .body(Body::from(rss));
     } else if req.uri().path().starts_with("/api/podcasts/") {
         let foo: Vec<&str> = req.uri().path().split("/api/podcasts/").collect();
         let bar = foo.get(1).unwrap();
