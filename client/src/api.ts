@@ -8,3 +8,11 @@ export const getPodcasts = async (filter: string = '', limit: number = 0, skip: 
     showFormat: ShowFormat.Unspecified
   }));
 };
+
+export const getPodcastRssUrl = (filter: string) => {
+  let url = 'https://fdr-finder.tommyvolk.com/api/podcasts';
+  if (filter.length) {
+    url += `?filter=${filter}`;
+  }
+  return encodeURI(url);
+}
