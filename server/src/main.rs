@@ -1,6 +1,7 @@
 mod environment;
 mod fdr_cache;
 mod fdr_database;
+mod http;
 mod podcast;
 
 use environment::EnvironmentVariables;
@@ -13,7 +14,7 @@ use serde_json::Value;
 use std::{collections::HashMap, net::SocketAddr};
 use std::{str::FromStr, sync::Arc};
 
-use crate::podcast::generate_rss_feed;
+use crate::{http::get_all_podcasts, podcast::generate_rss_feed};
 
 const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
@@ -39,6 +40,9 @@ async fn main() {
     let env_vars = EnvironmentVariables::new();
     let port = 80;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
+
+    let podcasts = get_all_podcasts().await;
+    println!("{:?}", podcasts.first().unwrap());
 
     let handler_state = Arc::from(HandlerState::new(&env_vars).await);
 
@@ -162,7 +166,7 @@ async fn handle_api_request(
         let bar = foo.get(1).unwrap();
         let podcast = handler_state
             .database
-            .get_podcast(bar.parse::<i32>().unwrap());
+            .get_podcast(&bar.parse::<serde_json::Number>().unwrap());
         return Response::builder()
             .header("content-type", "application/json")
             .body(Body::from(podcast.unwrap().to_json().to_string()));

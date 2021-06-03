@@ -10,6 +10,8 @@ chrono       = "0.4.19"
 futures-lite = "1.11.3"
 hyper        = { version = "0.14.7", features = ["full"] }
 mongodb      = { version = "1.2.1", default-features = false, features = ["async-std-runtime"] } # TODO - Remove default-features and features, which will revert from async-std runtime to tokio. We need this right now because the current version of this dependency (at least at time of writing) is running on tokio 0.2.
+reqwest      = { version = "0.11.3", features = ["json"] }
+serde        = "1.0.126"
 serde_json   = "1.0.64"
 tokio        = { version = "1.6.0", features = ["rt-multi-thread", "macros"] }
 url          = "2.2.2"

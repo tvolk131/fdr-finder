@@ -12,23 +12,47 @@ fn get_int_from_bson_doc(doc: &Document, key: &str) -> Option<i32> {
     match doc.get(key)? {
         Bson::Int32(num) => Some(*num),
         Bson::Int64(num) => Some(*num as i32),
-        // TODO - Handle this case. Right now we're ignoring fractional numbered episodes
-        // since there's only a handful of them, and it would make this much more challenging.
-        // Bson::Double(num) => Some(IntOrDouble::F64(*num)),
         _ => None,
     }
 }
 
+fn get_podcast_number_from_bson_doc(doc: &Document, key: &str) -> Option<serde_json::Number> {
+    match doc.get(key)? {
+        Bson::Int32(num) => Some(serde_json::Number::from(*num)),
+        Bson::Int64(num) => Some(serde_json::Number::from(*num)),
+        Bson::Double(num) => Some(serde_json::Number::from_f64(*num).unwrap()),
+        _ => None,
+    }
+}
+
+#[derive(Debug)]
 pub struct Podcast {
     title: String,
     description: String,
     audio_link: String,
     length_in_seconds: i32,
-    podcast_number: i32,
+    podcast_number: serde_json::Number,
     create_time: i32,
 }
 
 impl Podcast {
+    pub fn new(
+        title: String,
+        description: String,
+        audio_link: String,
+        length_in_seconds: i32,
+        podcast_number: serde_json::Number,
+        create_time: i32) -> Self {
+        Self {
+            title,
+            description,
+            audio_link,
+            length_in_seconds,
+            podcast_number,
+            create_time
+        }
+    }
+
     pub fn from_doc(doc: &Document) -> Self {
         let foo: HashMap<String, String> = doc
             .get_array("urls")
@@ -55,7 +79,7 @@ impl Podcast {
             description: doc.get_str("description").unwrap().to_string(),
             audio_link,
             length_in_seconds: get_int_from_bson_doc(&doc, "length").unwrap_or(-1),
-            podcast_number: get_int_from_bson_doc(&doc, "num").unwrap_or(-1),
+            podcast_number: get_podcast_number_from_bson_doc(&doc, "num").unwrap_or(serde_json::Number::from(-1)),
             create_time: get_int_from_bson_doc(&doc, "date").unwrap_or(-1),
         }
     }
@@ -94,7 +118,7 @@ impl Podcast {
         &self.title
     }
 
-    pub fn get_podcast_number(&self) -> i32 {
+    pub fn get_podcast_number(&self) -> serde_json::Number {
         self.podcast_number
     }
 }

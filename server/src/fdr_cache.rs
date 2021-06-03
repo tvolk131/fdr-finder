@@ -23,17 +23,17 @@ impl PodcastQuery {
 pub struct FdrCache {
     fdr_database: FdrDatabase,
     num_sorted_podcast_list: Vec<Arc<Podcast>>,
-    podcasts_by_num: HashMap<i32, Arc<Podcast>>,
+    podcasts_by_num: HashMap<serde_json::Number, Arc<Podcast>>,
 }
 
 impl FdrCache {
     pub async fn new(fdr_database: FdrDatabase) -> mongodb::error::Result<Self> {
         let mut all_podcasts = fdr_database.get_all_podcasts().await?;
         all_podcasts.sort_by(|a, b| {
-            if a.get_podcast_number() > b.get_podcast_number() {
+            if a.get_podcast_number().as_f64() > b.get_podcast_number().as_f64() {
                 return Ordering::Greater;
             }
-            if a.get_podcast_number() < b.get_podcast_number() {
+            if a.get_podcast_number().as_f64() < b.get_podcast_number().as_f64() {
                 return Ordering::Less;
             }
             Ordering::Equal
@@ -71,7 +71,7 @@ impl FdrCache {
             .collect()
     }
 
-    pub fn get_podcast(&self, num: i32) -> Option<&Arc<Podcast>> {
-        self.podcasts_by_num.get(&num)
+    pub fn get_podcast(&self, num: &serde_json::Number) -> Option<&Arc<Podcast>> {
+        self.podcasts_by_num.get(num)
     }
 }
