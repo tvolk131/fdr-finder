@@ -6,6 +6,7 @@ import ShowCard, {ShowInfo} from '../components/showCard';
 import {getPodcastRssUrl, getPodcasts} from '../api';
 import {Button, CircularProgress, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
+import {RssFeed as RssFeedIcon} from '@material-ui/icons';
 
 const useStyles = makeStyles({
   root: {
@@ -55,7 +56,7 @@ const SearchPage = () => {
               text={getPodcastRssUrl(searchTerm)}
               onCopy={() => setShowSnackbar(true)}
             >
-              <Button variant={'contained'}>
+              <Button variant={'contained'} startIcon={<RssFeedIcon/>}>
                 Copy Search-Filtered RSS Feed
               </Button>
             </CopyToClipboard>
