@@ -1,1 +1,0 @@
-{"options":{},"indexes":[{"v":2,"key":{"_id":1},"name":"_id_","ns":"fdr.authors"},{"v":2,"key":{"name":1},"name":"name_1","ns":"fdr.authors"}],"uuid":"2fc4ec6c33ae414ea538c303af0ec282"}
