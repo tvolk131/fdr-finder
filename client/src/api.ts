@@ -10,7 +10,7 @@ export const getPodcasts = async (filter: string = '', limit: number = 0, skip: 
 };
 
 export const getPodcastRssUrl = (filter: string) => {
-  let url = 'https://fdr-finder.tommyvolk.com/api/podcasts';
+  let url = 'https://fdr-finder.tommyvolk.com/api/podcasts/rss';
   if (filter.length) {
     url += `?filter=${filter}`;
   }

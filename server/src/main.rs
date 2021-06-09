@@ -131,15 +131,12 @@ async fn handle_api_request(
             Some(filter) => filter.clone(),
             None => String::from(""),
         };
-        let limit = match query_params.get("limit") {
-            Some(limit) => limit.parse::<usize>().unwrap(),
-            None => 0,
-        };
         let skip = match query_params.get("skip") {
             Some(skip) => skip.parse::<usize>().unwrap(),
             None => 0,
         };
-        let query = PodcastQuery::new(filter.clone(), limit, skip);
+        // TODO - Find a better way to do this than just putting 999999 for the limit.
+        let query = PodcastQuery::new(filter.clone(), 999999, skip);
         let podcasts = handler_state.database.query_podcasts(query);
         let rss = generate_rss_feed(
             &podcasts,
