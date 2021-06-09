@@ -39,6 +39,7 @@ impl FdrCache {
             }
             Ordering::Equal
         });
+        all_podcasts.reverse();
         let all_podcasts_rc: Vec<Arc<Podcast>> = all_podcasts
             .into_iter()
             .map(|podcast| Arc::from(podcast))
