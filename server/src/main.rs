@@ -9,10 +9,7 @@ use serde_json::Value;
 use std::{collections::HashMap, net::SocketAddr};
 use std::{str::FromStr, sync::Arc};
 
-use crate::{
-    http::get_all_podcasts,
-    podcast::{generate_rss_feed, PodcastNumber},
-};
+use crate::podcast::{generate_rss_feed, PodcastNumber};
 
 const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
@@ -33,12 +30,7 @@ impl HandlerState {
 async fn main() {
     let port = 80;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-
-    let podcasts = get_all_podcasts().await;
-    println!("{:?}", podcasts.first().unwrap());
-
     let handler_state = Arc::from(HandlerState::new().await);
-
     let make_svc = make_service_fn(move |_| {
         let handler_state = handler_state.clone();
 
@@ -48,10 +40,8 @@ async fn main() {
             }))
         }
     });
-
     let server = Server::bind(&addr).serve(make_svc);
     println!("Server started on port {}.", port);
-
     if let Err(e) = server.await {
         eprintln!("Server error: {}", e);
     }
