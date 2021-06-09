@@ -16,7 +16,7 @@ struct JsonResult {
 struct JsonUrl {
     #[serde(rename = "urlType")]
     url_type: String,
-    value: String,
+    value: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -26,21 +26,21 @@ struct JsonPodcast {
     title: String,
     urls: Vec<JsonUrl>,
     length: i32,
-    num: serde_json::Number,
+    num: Option<serde_json::Number>,
 }
 
 fn json_podcast_to_podcast(json_podcast: JsonPodcast) -> Podcast {
     let mut audio_links: HashMap<String, String> = json_podcast
         .urls
         .into_iter()
-        .map(|url| (url.url_type, url.value))
+        .map(|url| (url.url_type, url.value.unwrap_or_default()))
         .collect();
     Podcast::new(
         json_podcast.title,
         json_podcast.description,
         audio_links.remove("audio").unwrap(),
         json_podcast.length,
-        PodcastNumber::new(json_podcast.num),
+        PodcastNumber::new(json_podcast.num.unwrap_or(serde_json::Number::from(0))),
         json_podcast.date,
     )
 }
