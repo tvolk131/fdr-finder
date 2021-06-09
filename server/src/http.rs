@@ -40,7 +40,7 @@ fn json_podcast_to_podcast(json_podcast: JsonPodcast) -> Podcast {
         json_podcast.description,
         audio_links.remove("audio").unwrap(),
         json_podcast.length,
-        PodcastNumber::new(json_podcast.num.unwrap_or(serde_json::Number::from(0))),
+        PodcastNumber::new(json_podcast.num.unwrap_or_else(|| serde_json::Number::from(0))),
         json_podcast.date,
     )
 }
@@ -57,6 +57,6 @@ pub async fn get_all_podcasts() -> Vec<Podcast> {
     data.result
         .podcasts
         .into_iter()
-        .map(|json_podcast| json_podcast_to_podcast(json_podcast))
+        .map(json_podcast_to_podcast)
         .collect()
 }

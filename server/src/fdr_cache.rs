@@ -1,7 +1,4 @@
-use crate::{
-    http::get_all_podcasts,
-    podcast::{Podcast, PodcastNumber},
-};
+use crate::podcast::{Podcast, PodcastNumber};
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -29,7 +26,7 @@ pub struct FdrCache {
 
 impl FdrCache {
     pub async fn new() -> Self {
-        let mut all_podcasts = get_all_podcasts().await;
+        let mut all_podcasts = crate::http::get_all_podcasts().await;
         all_podcasts.sort_by(|a, b| {
             if a.get_podcast_number() > b.get_podcast_number() {
                 return Ordering::Greater;
@@ -42,7 +39,7 @@ impl FdrCache {
         all_podcasts.reverse();
         let all_podcasts_rc: Vec<Arc<Podcast>> = all_podcasts
             .into_iter()
-            .map(|podcast| Arc::from(podcast))
+            .map(Arc::from)
             .collect();
         let mut podcasts_by_num = BTreeMap::new();
         for podcast in &all_podcasts_rc {

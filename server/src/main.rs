@@ -11,8 +11,8 @@ use std::{str::FromStr, sync::Arc};
 
 use crate::podcast::{generate_rss_feed, PodcastNumber};
 
-const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
-const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
+const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
+const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
 
 struct HandlerState {
     database: FdrCache,
@@ -55,7 +55,7 @@ async fn handle_request(
         return handle_api_request(req, handler_state).await;
     }
 
-    if req.uri().path().split("/").last().unwrap() == "bundle.js" {
+    if req.uri().path().split('/').last().unwrap() == "bundle.js" {
         return Response::builder()
             .header("content-type", "application/javascript; charset=utf-8")
             .body(Body::from(JS_BUNDLE_BYTES.to_vec()));
@@ -73,7 +73,7 @@ async fn handle_api_request(
         let podcasts = handler_state.database.get_all_podcasts();
         let json = Value::Array(
             podcasts
-                .into_iter()
+                .iter()
                 .map(|podcast| podcast.to_json())
                 .collect(),
         );
@@ -140,10 +140,10 @@ async fn handle_api_request(
             .header("content-type", "application/xml")
             .body(Body::from(rss));
     } else if req.uri().path().starts_with("/api/podcasts/") {
-        let foo: Vec<&str> = req.uri().path().split("/api/podcasts/").collect();
-        let bar = foo.get(1).unwrap();
+        let split_path: Vec<&str> = req.uri().path().split("/api/podcasts/").collect();
+        let path_end = split_path.get(1).unwrap();
         let podcast = handler_state.database.get_podcast(&PodcastNumber::new(
-            bar.parse::<serde_json::Number>().unwrap(),
+            path_end.parse::<serde_json::Number>().unwrap(),
         ));
         return Response::builder()
             .header("content-type", "application/json")
