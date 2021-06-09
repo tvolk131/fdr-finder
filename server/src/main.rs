@@ -9,7 +9,10 @@ use serde_json::Value;
 use std::{collections::HashMap, net::SocketAddr};
 use std::{str::FromStr, sync::Arc};
 
-use crate::{http::get_all_podcasts, podcast::generate_rss_feed};
+use crate::{
+    http::get_all_podcasts,
+    podcast::{generate_rss_feed, PodcastNumber},
+};
 
 const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
@@ -21,9 +24,7 @@ struct HandlerState {
 impl HandlerState {
     async fn new() -> Self {
         HandlerState {
-            database: FdrCache::new()
-            .await
-            .unwrap(),
+            database: FdrCache::new().await,
         }
     }
 }
@@ -140,16 +141,23 @@ async fn handle_api_request(
         };
         let query = PodcastQuery::new(filter.clone(), limit, skip);
         let podcasts = handler_state.database.query_podcasts(query);
-        let rss = generate_rss_feed(&podcasts, &format!("Freedomain Custom Feed: {}", filter), &format!("A generated feed containing all Freedomain podcasts about: {}", filter));
+        let rss = generate_rss_feed(
+            &podcasts,
+            &format!("Freedomain Custom Feed: {}", filter),
+            &format!(
+                "A generated feed containing all Freedomain podcasts about: {}",
+                filter
+            ),
+        );
         return Response::builder()
             .header("content-type", "application/xml")
             .body(Body::from(rss));
     } else if req.uri().path().starts_with("/api/podcasts/") {
         let foo: Vec<&str> = req.uri().path().split("/api/podcasts/").collect();
         let bar = foo.get(1).unwrap();
-        let podcast = handler_state
-            .database
-            .get_podcast(&bar.parse::<serde_json::Number>().unwrap());
+        let podcast = handler_state.database.get_podcast(&PodcastNumber::new(
+            bar.parse::<serde_json::Number>().unwrap(),
+        ));
         return Response::builder()
             .header("content-type", "application/json")
             .body(Body::from(podcast.unwrap().to_json().to_string()));

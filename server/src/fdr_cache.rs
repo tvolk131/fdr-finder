@@ -1,7 +1,10 @@
+use crate::{
+    http::get_all_podcasts,
+    podcast::{Podcast, PodcastNumber},
+};
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 use std::sync::Arc;
-use crate::{podcast::Podcast, http::get_all_podcasts};
-use std::collections::HashMap;
 
 pub struct PodcastQuery {
     filter: String,
@@ -21,17 +24,17 @@ impl PodcastQuery {
 
 pub struct FdrCache {
     num_sorted_podcast_list: Vec<Arc<Podcast>>,
-    podcasts_by_num: HashMap<serde_json::Number, Arc<Podcast>>,
+    podcasts_by_num: BTreeMap<PodcastNumber, Arc<Podcast>>,
 }
 
 impl FdrCache {
     pub async fn new() -> Self {
         let mut all_podcasts = get_all_podcasts().await;
         all_podcasts.sort_by(|a, b| {
-            if a.get_podcast_number().as_f64() > b.get_podcast_number().as_f64() {
+            if a.get_podcast_number() > b.get_podcast_number() {
                 return Ordering::Greater;
             }
-            if a.get_podcast_number().as_f64() < b.get_podcast_number().as_f64() {
+            if a.get_podcast_number() < b.get_podcast_number() {
                 return Ordering::Less;
             }
             Ordering::Equal
@@ -40,7 +43,7 @@ impl FdrCache {
             .into_iter()
             .map(|podcast| Arc::from(podcast))
             .collect();
-        let mut podcasts_by_num = HashMap::new();
+        let mut podcasts_by_num = BTreeMap::new();
         for podcast in &all_podcasts_rc {
             podcasts_by_num.insert(podcast.get_podcast_number().clone(), podcast.clone());
         }
@@ -68,7 +71,7 @@ impl FdrCache {
             .collect()
     }
 
-    pub fn get_podcast(&self, num: &serde_json::Number) -> Option<&Arc<Podcast>> {
+    pub fn get_podcast(&self, num: &PodcastNumber) -> Option<&Arc<Podcast>> {
         self.podcasts_by_num.get(num)
     }
 }
