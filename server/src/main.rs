@@ -1,19 +1,18 @@
-mod environment;
 mod fdr_cache;
-mod fdr_database;
+mod http;
 mod podcast;
 
-use environment::EnvironmentVariables;
 use fdr_cache::{FdrCache, PodcastQuery};
-use fdr_database::FdrDatabase;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{http::Error, Body, Request, Response, Server};
-use mongodb::{Client, Database};
 use serde_json::Value;
 use std::{collections::HashMap, net::SocketAddr};
 use std::{str::FromStr, sync::Arc};
 
-use crate::podcast::generate_rss_feed;
+use crate::{
+    http::get_all_podcasts,
+    podcast::{generate_rss_feed, PodcastNumber},
+};
 
 const HTML_BYTES: &'static [u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &'static [u8] = include_bytes!("../../client/out/bundle.js");
@@ -23,24 +22,22 @@ struct HandlerState {
 }
 
 impl HandlerState {
-    async fn new(env_vars: &EnvironmentVariables) -> Self {
+    async fn new() -> Self {
         HandlerState {
-            database: FdrCache::new(FdrDatabase::new(
-                get_mongo_database_or_panic(env_vars).await,
-            ))
-            .await
-            .unwrap(),
+            database: FdrCache::new().await,
         }
     }
 }
 
 #[tokio::main]
 async fn main() {
-    let env_vars = EnvironmentVariables::new();
     let port = 80;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
-    let handler_state = Arc::from(HandlerState::new(&env_vars).await);
+    let podcasts = get_all_podcasts().await;
+    println!("{:?}", podcasts.first().unwrap());
+
+    let handler_state = Arc::from(HandlerState::new().await);
 
     let make_svc = make_service_fn(move |_| {
         let handler_state = handler_state.clone();
@@ -58,15 +55,6 @@ async fn main() {
     if let Err(e) = server.await {
         eprintln!("Server error: {}", e);
     }
-}
-
-async fn get_mongo_database_or_panic(env_vars: &EnvironmentVariables) -> Database {
-    let mongo_client = match Client::with_uri_str(env_vars.get_mongo_uri()).await {
-        Ok(client) => client,
-        _ => panic!("Failed to connect to MongoDB."),
-    };
-
-    mongo_client.database(&env_vars.get_mongo_database())
 }
 
 async fn handle_request(
@@ -153,16 +141,23 @@ async fn handle_api_request(
         };
         let query = PodcastQuery::new(filter.clone(), limit, skip);
         let podcasts = handler_state.database.query_podcasts(query);
-        let rss = generate_rss_feed(&podcasts, &format!("Freedomain Custom Feed: {}", filter), &format!("A generated feed containing all Freedomain podcasts about: {}", filter));
+        let rss = generate_rss_feed(
+            &podcasts,
+            &format!("Freedomain Custom Feed: {}", filter),
+            &format!(
+                "A generated feed containing all Freedomain podcasts about: {}",
+                filter
+            ),
+        );
         return Response::builder()
             .header("content-type", "application/xml")
             .body(Body::from(rss));
     } else if req.uri().path().starts_with("/api/podcasts/") {
         let foo: Vec<&str> = req.uri().path().split("/api/podcasts/").collect();
         let bar = foo.get(1).unwrap();
-        let podcast = handler_state
-            .database
-            .get_podcast(bar.parse::<i32>().unwrap());
+        let podcast = handler_state.database.get_podcast(&PodcastNumber::new(
+            bar.parse::<serde_json::Number>().unwrap(),
+        ));
         return Response::builder()
             .header("content-type", "application/json")
             .body(Body::from(podcast.unwrap().to_json().to_string()));

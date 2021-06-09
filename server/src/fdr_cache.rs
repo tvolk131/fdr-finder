@@ -1,8 +1,10 @@
+use crate::{
+    http::get_all_podcasts,
+    podcast::{Podcast, PodcastNumber},
+};
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 use std::sync::Arc;
-
-use crate::{fdr_database::FdrDatabase, podcast::Podcast};
-use std::collections::HashMap;
 
 pub struct PodcastQuery {
     filter: String,
@@ -21,14 +23,13 @@ impl PodcastQuery {
 }
 
 pub struct FdrCache {
-    fdr_database: FdrDatabase,
     num_sorted_podcast_list: Vec<Arc<Podcast>>,
-    podcasts_by_num: HashMap<i32, Arc<Podcast>>,
+    podcasts_by_num: BTreeMap<PodcastNumber, Arc<Podcast>>,
 }
 
 impl FdrCache {
-    pub async fn new(fdr_database: FdrDatabase) -> mongodb::error::Result<Self> {
-        let mut all_podcasts = fdr_database.get_all_podcasts().await?;
+    pub async fn new() -> Self {
+        let mut all_podcasts = get_all_podcasts().await;
         all_podcasts.sort_by(|a, b| {
             if a.get_podcast_number() > b.get_podcast_number() {
                 return Ordering::Greater;
@@ -38,19 +39,19 @@ impl FdrCache {
             }
             Ordering::Equal
         });
+        all_podcasts.reverse();
         let all_podcasts_rc: Vec<Arc<Podcast>> = all_podcasts
             .into_iter()
             .map(|podcast| Arc::from(podcast))
             .collect();
-        let mut podcasts_by_num = HashMap::new();
+        let mut podcasts_by_num = BTreeMap::new();
         for podcast in &all_podcasts_rc {
             podcasts_by_num.insert(podcast.get_podcast_number().clone(), podcast.clone());
         }
-        Ok(FdrCache {
-            fdr_database,
+        FdrCache {
             num_sorted_podcast_list: all_podcasts_rc,
             podcasts_by_num,
-        })
+        }
     }
 
     pub fn get_all_podcasts(&self) -> &[Arc<Podcast>] {
@@ -71,7 +72,7 @@ impl FdrCache {
             .collect()
     }
 
-    pub fn get_podcast(&self, num: i32) -> Option<&Arc<Podcast>> {
-        self.podcasts_by_num.get(&num)
+    pub fn get_podcast(&self, num: &PodcastNumber) -> Option<&Arc<Podcast>> {
+        self.podcasts_by_num.get(num)
     }
 }

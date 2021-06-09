@@ -1,62 +1,67 @@
+use std::cmp::Ordering;
 use std::sync::Arc;
 use std::{
-    collections::HashMap,
     ops::Add,
     time::{Duration, SystemTime},
 };
 
-use bson::{Bson, Document};
-use serde_json::{json, Value};
+use serde_json::{json, Number, Value};
 
-fn get_int_from_bson_doc(doc: &Document, key: &str) -> Option<i32> {
-    match doc.get(key)? {
-        Bson::Int32(num) => Some(*num),
-        Bson::Int64(num) => Some(*num as i32),
-        // TODO - Handle this case. Right now we're ignoring fractional numbered episodes
-        // since there's only a handful of them, and it would make this much more challenging.
-        // Bson::Double(num) => Some(IntOrDouble::F64(*num)),
-        _ => None,
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct PodcastNumber {
+    num: Number,
+}
+
+impl PartialOrd for PodcastNumber {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
+impl Ord for PodcastNumber {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.num.as_f64() > other.num.as_f64() {
+            return Ordering::Greater;
+        }
+        if self.num.as_f64() < other.num.as_f64() {
+            return Ordering::Less;
+        }
+        Ordering::Equal
+    }
+}
+
+impl PodcastNumber {
+    pub fn new(num: Number) -> Self {
+        Self { num }
+    }
+}
+
+#[derive(Debug)]
 pub struct Podcast {
     title: String,
     description: String,
     audio_link: String,
     length_in_seconds: i32,
-    podcast_number: i32,
+    podcast_number: PodcastNumber,
     create_time: i32,
 }
 
 impl Podcast {
-    pub fn from_doc(doc: &Document) -> Self {
-        let foo: HashMap<String, String> = doc
-            .get_array("urls")
-            .unwrap()
-            .into_iter()
-            .filter_map(|bson| {
-                let doc = bson.as_document()?;
-                let url_type = match doc.get_str("urlType") {
-                    Ok(s) => s,
-                    Err(_) => return None,
-                }
-                .to_string();
-                let value = match doc.get_str("value") {
-                    Ok(s) => s,
-                    Err(_) => return None,
-                }
-                .to_string();
-                Some((url_type, value))
-            })
-            .collect();
-        let audio_link = foo.get("audio").unwrap().clone();
+    pub fn new(
+        title: String,
+        description: String,
+        audio_link: String,
+        length_in_seconds: i32,
+        podcast_number: PodcastNumber,
+        create_time: i32,
+    ) -> Self {
         Self {
-            title: doc.get_str("title").unwrap().to_string(),
-            description: doc.get_str("description").unwrap().to_string(),
+            title,
+            description,
             audio_link,
-            length_in_seconds: get_int_from_bson_doc(&doc, "length").unwrap_or(-1),
-            podcast_number: get_int_from_bson_doc(&doc, "num").unwrap_or(-1),
-            create_time: get_int_from_bson_doc(&doc, "date").unwrap_or(-1),
+            length_in_seconds,
+            podcast_number,
+            create_time,
         }
     }
 
@@ -66,7 +71,7 @@ impl Podcast {
             "description": self.description,
             "audioLink": self.audio_link,
             "lengthInSeconds": self.length_in_seconds,
-            "podcastNumber": self.podcast_number,
+            "podcastNumber": self.podcast_number.num,
             "createTime": self.create_time
         })
     }
@@ -94,12 +99,16 @@ impl Podcast {
         &self.title
     }
 
-    pub fn get_podcast_number(&self) -> i32 {
-        self.podcast_number
+    pub fn get_podcast_number(&self) -> &PodcastNumber {
+        &self.podcast_number
     }
 }
 
-pub fn generate_rss_feed(podcasts: &[&Arc<Podcast>], feed_title: &str, feed_description: &str) -> String {
+pub fn generate_rss_feed(
+    podcasts: &[&Arc<Podcast>],
+    feed_title: &str,
+    feed_description: &str,
+) -> String {
     let podcasts_xml: Vec<String> = podcasts
         .iter()
         .map(|podcast| format!("<item>{}</item>", podcast.to_rss_xml()))
