@@ -3,6 +3,7 @@ import {ExpandMore as ExpandMoreIcon} from '@material-ui/icons';
 import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
 import {useState} from 'react';
+import {useHistory} from 'react-router';
 
 const useStyles = makeStyles((theme) => ({
   title: {
@@ -57,12 +58,14 @@ interface ShowCardProps {
 
 const ShowCard = (props: ShowCardProps) => {
   const classes = useStyles();
+  const history = useHistory();
   
   const [expanded, setExpanded] = useState(false);
 
   return (
     <Card>
       <CardHeader
+        onClick={() => {history.push(`/podcasts/${props.show.podcastNumber}`)}}
         title={
           <span className={classes.title}>
             <Typography

@@ -29,7 +29,7 @@ const useStyles = makeStyles({
   }
 });
 
-const SearchPage = () => {
+export const SearchPage = () => {
   const classes = useStyles();
 
   const [isSearching, setIsSearching] = useState(false);
@@ -83,5 +83,3 @@ const SearchPage = () => {
     </div>
   );
 };
-
-export default SearchPage;
