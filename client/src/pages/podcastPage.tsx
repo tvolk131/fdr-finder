@@ -20,17 +20,28 @@ export const PodcastPage = () => {
   const classes = useStyles();
   const params = useParams<{podcastNum: string}>();
 
-  const [podcast, setPodcast] = useState<ShowInfo | undefined>();
+  const [podcast, setPodcast] = useState<ShowInfo | null | undefined>(undefined);
 
   useEffect(() => {
-    // TODO - Handle error thrown here.
-    getPodcast(parseInt(params.podcastNum)).then(setPodcast);
+    getPodcast(parseInt(params.podcastNum))
+      .then(setPodcast)
+      .catch(() => setPodcast(null));
   }, []);
 
   if (podcast === undefined) {
     return (
       <div className={classes.root}>
         <CircularProgress className={classes.loadingSpinner} size={100}/>
+      </div>
+    );
+  }
+
+  if (podcast === null) {
+    return (
+      <div className={classes.root}>
+        <Typography variant='h2'>
+          404 - Podcast does not exist
+        </Typography>
       </div>
     );
   }

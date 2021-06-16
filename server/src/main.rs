@@ -142,12 +142,23 @@ async fn handle_api_request(
     } else if req.uri().path().starts_with("/api/podcasts/") {
         let foo: Vec<&str> = req.uri().path().split("/api/podcasts/").collect();
         let bar = foo.get(1).unwrap();
-        let podcast = handler_state.database.get_podcast(&PodcastNumber::new(
+        let podcast_or = handler_state.database.get_podcast(&PodcastNumber::new(
             bar.parse::<serde_json::Number>().unwrap(),
         ));
-        return Response::builder()
-            .header("content-type", "application/json")
-            .body(Body::from(podcast.unwrap().to_json().to_string()));
+
+        return match podcast_or {
+            Some(podcast) => {
+                Response::builder()
+                    .header("content-type", "application/json")
+                    .body(Body::from(podcast.to_json().to_string()))
+            },
+            None => {
+                Response::builder()
+                    .header("content-type", "text/html")
+                    .status(404)
+                    .body(Body::from("Podcast does not exist"))
+            }
+        };
     }
 
     Response::builder()

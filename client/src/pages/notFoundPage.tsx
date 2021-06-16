@@ -14,7 +14,7 @@ export const NotFoundPage = () => {
 
   return (
     <Typography className={classes.root} variant='h2'>
-      404 - This page does not exist
+      404 - Page does not exist
     </Typography>
   );
 };
