@@ -1,6 +1,6 @@
 import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
 import {getPodcastRssUrl, getPodcasts} from '../api';
@@ -57,9 +57,12 @@ export const SearchPage = () => {
     }
   };
 
-  if (searchTerm.length) {
-    search();
-  }
+  // If a search term was loaded from query parameter, immediately pull the results.
+  useEffect(() => {
+    if (searchTerm.length) {
+      search();
+    }
+  }, []);
 
   return (
     <div className={classes.root}>
