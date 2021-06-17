@@ -28,8 +28,8 @@ pub struct FdrCache {
 }
 
 impl FdrCache {
-    pub async fn new() -> Self {
-        let mut all_podcasts = get_all_podcasts().await;
+    pub async fn new() -> Result<Self, String> {
+        let mut all_podcasts = get_all_podcasts().await?;
         all_podcasts.sort_by(|a, b| {
             if a.get_podcast_number() > b.get_podcast_number() {
                 return Ordering::Greater;
@@ -48,10 +48,10 @@ impl FdrCache {
         for podcast in &all_podcasts_rc {
             podcasts_by_num.insert(podcast.get_podcast_number().clone(), podcast.clone());
         }
-        FdrCache {
+        Ok(FdrCache {
             num_sorted_podcast_list: all_podcasts_rc,
             podcasts_by_num,
-        }
+        })
     }
 
     pub fn get_all_podcasts(&self) -> &[Arc<Podcast>] {

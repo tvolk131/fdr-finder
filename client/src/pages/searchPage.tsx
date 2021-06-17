@@ -7,6 +7,10 @@ import {getPodcastRssUrl, getPodcasts} from '../api';
 import {Button, CircularProgress, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {RssFeed as RssFeedIcon} from '@material-ui/icons';
+import {useHistory} from 'react-router';
+import * as qs from 'qs';
+
+const queryFieldName = 'query';
 
 const useStyles = makeStyles({
   root: {
@@ -31,23 +35,34 @@ const useStyles = makeStyles({
 
 export const SearchPage = () => {
   const classes = useStyles();
+  const history = useHistory();
+
+  const params = qs.parse(history.location.search.replace('?', ''));
+  let query = params[queryFieldName];
+  if (typeof query !== 'string') {
+    query = '';
+  }
 
   const [isSearching, setIsSearching] = useState(false);
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(query);
   const [showSnackbar, setShowSnackbar] = useState(false);
 
   return (
     <div className={classes.root}>
       <div className={classes.nested}>
-        <SearchBar onSearch={async (query) => {
-          if (!isSearching) {
-            setIsSearching(true);
-            setPodcasts(await getPodcasts(query, 50, 0));
-            setSearchTerm(query);
-            setIsSearching(false);
-          }
-        }}/>
+        <SearchBar
+          onSearch={async (query) => {
+            if (!isSearching) {
+              setIsSearching(true);
+              history.push(`/?${queryFieldName}=${query}`);
+              setPodcasts(await getPodcasts(query, 50, 0));
+              setIsSearching(false);
+            }
+          }}
+          searchText={searchTerm}
+          setSearchText={setSearchTerm}
+        />
       </div>
       {isSearching ? <CircularProgress className={classes.loadingSpinner} size={100}/> :
         <div>

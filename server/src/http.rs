@@ -4,11 +4,6 @@ use std::collections::HashMap;
 
 #[derive(Deserialize)]
 struct JsonResponse {
-    result: JsonResult,
-}
-
-#[derive(Deserialize)]
-struct JsonResult {
     podcasts: Vec<JsonPodcast>,
 }
 
@@ -21,7 +16,7 @@ struct JsonUrl {
 
 #[derive(Deserialize)]
 struct JsonPodcast {
-    date: i32,
+    date: String,
     description: String,
     title: String,
     urls: Vec<JsonUrl>,
@@ -41,22 +36,36 @@ fn json_podcast_to_podcast(json_podcast: JsonPodcast) -> Podcast {
         audio_links.remove("audio").unwrap(),
         json_podcast.length,
         PodcastNumber::new(json_podcast.num.unwrap_or(serde_json::Number::from(0))),
-        json_podcast.date,
+        chrono::DateTime::parse_from_rfc2822(&json_podcast.date).unwrap().timestamp(),
     )
 }
 
-pub async fn get_all_podcasts() -> Vec<Podcast> {
-    let data: JsonResponse = reqwest::get(
-        "http://fdrpodcasts.com/api/?method=ListPodcastFeedItems&feedID=55bd7d968ead0e08688b90d5",
-    )
-    .await
-    .unwrap()
-    .json()
-    .await
-    .unwrap();
-    data.result
+pub async fn get_all_podcasts() -> Result<Vec<Podcast>, String> {
+    println!("Getting all podcasts!");
+    let response_or = reqwest::get(
+        "https://fdrpodcasts.com/api/v2/podcasts/",
+    ).await;
+    println!("1");
+
+    let data_or = match response_or {
+        Ok(response) => {
+            response.json().await
+        },
+        Err(err) => {
+            return Err("Uh oh...".to_string())
+        }
+    };
+    println!("2");
+
+    let data: JsonResponse = match data_or {
+        Ok(data) => data,
+        Err(err) => return Err(err.to_string())
+    };
+
+    println!("Got all podcasts!");
+    Ok(data
         .podcasts
         .into_iter()
         .map(|json_podcast| json_podcast_to_podcast(json_podcast))
-        .collect()
+        .collect())
 }

@@ -28,14 +28,14 @@ const useStyles = makeStyles({
 
 interface SearchBarProps {
   onSearch: (query: string) => void
+  searchText: string
+  setSearchText: (query: string) => void
 }
 
 const SearchBar = (props: SearchBarProps) => {
-  const [searchText, setSearchText] = useState('');
-
   const handleSearch = () => {
-    if (searchText.length) {
-      props.onSearch(searchText);
+    if (props.searchText.length) {
+      props.onSearch(props.searchText);
     }
   }
 
@@ -59,9 +59,9 @@ const SearchBar = (props: SearchBarProps) => {
           <InputBase
             className={classes.input}
             placeholder="Search Freedomain Videos"
-            value={searchText}
+            value={props.searchText}
             onChange={(event) => {
-              setSearchText(event.target.value);
+              props.setSearchText(event.target.value);
             }}
             onKeyPress={(event) => {
               if (event.key === 'Enter') {

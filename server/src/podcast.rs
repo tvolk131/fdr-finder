@@ -43,7 +43,7 @@ pub struct Podcast {
     audio_link: String,
     length_in_seconds: i32,
     podcast_number: PodcastNumber,
-    create_time: i32,
+    create_time: i64,
 }
 
 impl Podcast {
@@ -53,7 +53,7 @@ impl Podcast {
         audio_link: String,
         length_in_seconds: i32,
         podcast_number: PodcastNumber,
-        create_time: i32,
+        create_time: i64,
     ) -> Self {
         Self {
             title,
