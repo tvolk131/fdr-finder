@@ -28,29 +28,29 @@ export const PodcastPage = () => {
       .catch(() => setPodcast(null));
   }, []);
 
-  if (podcast === undefined) {
-    return (
-      <div className={classes.root}>
-        <CircularProgress className={classes.loadingSpinner} size={100}/>
-      </div>
-    );
-  }
+  let innerContent;
 
-  if (podcast === null) {
-    return (
-      <div className={classes.root}>
-        <Typography variant='h2'>
-          404 - Podcast does not exist
-        </Typography>
-      </div>
+  if (podcast === undefined) {
+    innerContent = (
+      <CircularProgress className={classes.loadingSpinner} size={100}/>
+    );
+  } else if (podcast === null) {
+    innerContent = (
+      <Typography variant='h2'>
+        404 - Podcast does not exist
+      </Typography>
+    );
+  } else {
+    innerContent = (
+      <Typography>
+        {podcast.title}
+      </Typography>
     );
   }
 
   return (
     <div className={classes.root}>
-      <Typography>
-        {podcast.title}
-      </Typography>
+      {innerContent}
     </div>
   );
 };
