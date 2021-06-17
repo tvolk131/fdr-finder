@@ -8,44 +8,30 @@ struct JsonResponse {
 }
 
 #[derive(Deserialize)]
-struct JsonUrl {
-    #[serde(rename = "urlType")]
-    url_type: String,
-    value: Option<String>,
-}
-
-#[derive(Deserialize)]
 struct JsonPodcast {
     date: String,
     description: String,
     title: String,
-    urls: Vec<JsonUrl>,
+    urls: HashMap<String, String>,
     length: i32,
     num: Option<serde_json::Number>,
 }
 
-fn json_podcast_to_podcast(json_podcast: JsonPodcast) -> Podcast {
-    let mut audio_links: HashMap<String, String> = json_podcast
-        .urls
-        .into_iter()
-        .map(|url| (url.url_type, url.value.unwrap_or_default()))
-        .collect();
+fn json_podcast_to_podcast(mut json_podcast: JsonPodcast) -> Podcast {
     Podcast::new(
         json_podcast.title,
         json_podcast.description,
-        audio_links.remove("audio").unwrap(),
+        json_podcast.urls.remove("audio").unwrap(),
         json_podcast.length,
         PodcastNumber::new(json_podcast.num.unwrap_or(serde_json::Number::from(0))),
-        chrono::DateTime::parse_from_rfc2822(&json_podcast.date).unwrap().timestamp(),
+        chrono::DateTime::parse_from_rfc3339(&json_podcast.date).unwrap().timestamp(),
     )
 }
 
-pub async fn get_all_podcasts() -> Result<Vec<Podcast>, String> {
-    println!("Getting all podcasts!");
+async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, String> {
     let response_or = reqwest::get(
-        "https://fdrpodcasts.com/api/v2/podcasts/",
+        format!("https://fdrpodcasts.com/api/v2/podcasts/?pageNumber={}", page_number),
     ).await;
-    println!("1");
 
     let data_or = match response_or {
         Ok(response) => {
@@ -55,17 +41,30 @@ pub async fn get_all_podcasts() -> Result<Vec<Podcast>, String> {
             return Err("Uh oh...".to_string())
         }
     };
-    println!("2");
 
     let data: JsonResponse = match data_or {
         Ok(data) => data,
         Err(err) => return Err(err.to_string())
     };
 
-    println!("Got all podcasts!");
     Ok(data
         .podcasts
         .into_iter()
         .map(|json_podcast| json_podcast_to_podcast(json_podcast))
         .collect())
+}
+
+
+pub async fn get_all_podcasts() -> Result<Vec<Podcast>, String> {
+    let mut current_page_number = 0;
+    let mut results: Vec<Podcast> = Vec::new();
+    loop {
+        let mut page_results = get_podcasts_page(current_page_number).await?;
+        if page_results.is_empty() {
+            break;
+        }
+        results.append(&mut page_results);
+        current_page_number += 1;
+    }
+    Ok(results)
 }
