@@ -48,18 +48,24 @@ export const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState(query);
   const [showSnackbar, setShowSnackbar] = useState(false);
 
+  const search = async () => {
+    if (!isSearching) {
+      setIsSearching(true);
+      history.push(`/?${queryFieldName}=${searchTerm}`);
+      setPodcasts(await getPodcasts(searchTerm, 50, 0));
+      setIsSearching(false);
+    }
+  };
+
+  if (searchTerm.length) {
+    search();
+  }
+
   return (
     <div className={classes.root}>
       <div className={classes.nested}>
         <SearchBar
-          onSearch={async (query) => {
-            if (!isSearching) {
-              setIsSearching(true);
-              history.push(`/?${queryFieldName}=${query}`);
-              setPodcasts(await getPodcasts(query, 50, 0));
-              setIsSearching(false);
-            }
-          }}
+          onSearch={search}
           searchText={searchTerm}
           setSearchText={setSearchTerm}
         />

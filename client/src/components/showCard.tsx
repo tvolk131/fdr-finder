@@ -7,7 +7,8 @@ import {useHistory} from 'react-router';
 
 const useStyles = makeStyles((theme) => ({
   title: {
-    display: 'flex'
+    display: 'flex',
+    cursor: 'pointer'
   },
   podcastNumber: {
     paddingRight: '8px'

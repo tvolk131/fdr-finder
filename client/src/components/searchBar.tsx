@@ -27,7 +27,7 @@ const useStyles = makeStyles({
 });
 
 interface SearchBarProps {
-  onSearch: (query: string) => void
+  onSearch: () => void
   searchText: string
   setSearchText: (query: string) => void
 }
@@ -35,7 +35,7 @@ interface SearchBarProps {
 const SearchBar = (props: SearchBarProps) => {
   const handleSearch = () => {
     if (props.searchText.length) {
-      props.onSearch(props.searchText);
+      props.onSearch();
     }
   }
 
