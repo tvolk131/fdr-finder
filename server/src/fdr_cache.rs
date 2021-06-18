@@ -49,10 +49,6 @@ impl FdrCache {
         })
     }
 
-    pub fn get_all_podcasts(&self) -> &[Arc<Podcast>] {
-        &self.num_sorted_podcast_list
-    }
-
     pub fn query_podcasts(&self, query: PodcastQuery) -> Vec<&Arc<Podcast>> {
         self.num_sorted_podcast_list
             .iter()
