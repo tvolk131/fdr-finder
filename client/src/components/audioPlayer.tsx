@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useState, useRef} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import {Theme, createStyles, makeStyles, useTheme} from '@material-ui/core/styles';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import PauseIcon from '@material-ui/icons/Pause';
@@ -49,6 +49,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface AudioPlayerProps {
   showInfo?: ShowInfo
+  autoPlay: boolean
 }
 
 export const AudioPlayer = (props: AudioPlayerProps) => {
@@ -59,13 +60,67 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const audioRef = useRef(new Audio(props.showInfo?.audioLink));
-  const intervalRef = useRef();
-  const isReady = useRef(false);
+  const intervalRef = useRef(setInterval(() => {}, 10000));
+
+	const startTimer = () => {
+	  clearInterval(intervalRef.current);
+
+	  intervalRef.current = setInterval(() => {
+	    if (audioRef.current.ended) {
+	      setIsPlaying(false);
+	    } else {
+	      setTrackProgress(audioRef.current.currentTime);
+	    }
+	  }, 500);
+	}
+
+  useEffect(() => {
+    if (isPlaying) {
+      audioRef.current.play();
+      startTimer();
+    } else {
+      audioRef.current.pause();
+      clearInterval(intervalRef.current);
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    audioRef.current.src = props.showInfo?.audioLink || '';
+    if (props.autoPlay) {
+      setIsPlaying(true);
+      audioRef.current.play();
+    } else {
+      setIsPlaying(false);
+      audioRef.current.pause();
+    }
+  }, [props.showInfo?.audioLink]);
+
+  const seekRelative = (seconds: number) => {
+    audioRef.current.currentTime += seconds;
+  };
 
   return (
     <Paper className={classes.root}>
       <div className={classes.sliderWrapper}>
-        <Slider className={classes.slider}/>
+        <Slider
+          className={classes.slider}
+          min={0}
+          max={audioRef.current.duration}
+          value={trackProgress}
+          onChange={(event, newValue) => {
+            if (typeof(newValue) === 'number') {
+              setTrackProgress(newValue);
+              clearInterval(intervalRef.current);
+            }
+          }}
+          onChangeCommitted={(event, newValue) => {
+            if (typeof(newValue) === 'number') {
+              setTrackProgress(newValue);
+              startTimer();
+              audioRef.current.currentTime = newValue;
+            }
+          }}
+        />
       </div>
       <div className={classes.details}>
         <div className={classes.content}>
@@ -77,13 +132,13 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           </Typography>
         </div>
         <div className={classes.controls}>
-          <IconButton aria-label='previous' disabled={props.showInfo === undefined}>
+          <IconButton aria-label='previous' onClick={() => seekRelative(-10)} disabled={props.showInfo === undefined}>
             {theme.direction === 'rtl' ? <Forward30Icon/> : <Replay10Icon/>}
           </IconButton>
           <IconButton aria-label='play/pause' onClick={() => setIsPlaying(!isPlaying)} disabled={props.showInfo === undefined}>
             {isPlaying ? <PauseIcon className={classes.playPauseIcon}/> : <PlayArrowIcon className={classes.playPauseIcon}/>}
           </IconButton>
-          <IconButton aria-label='next' disabled={props.showInfo === undefined}>
+          <IconButton aria-label='next' onClick={() => seekRelative(30)} disabled={props.showInfo === undefined}>
             {theme.direction === 'rtl' ? <Replay10Icon/> : <Forward30Icon/>}
           </IconButton>
         </div>

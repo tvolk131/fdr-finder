@@ -42,14 +42,14 @@ const SubApp = () => {
             <SearchPage setPlayingShow={setPlayingShow}/>
           </Route>
           <Route exact path='/podcasts/:podcastNum'>
-            <PodcastPage/>
+            <PodcastPage setPlayingShow={setPlayingShow}/>
           </Route>
           <Route path='*'>
             <NotFoundPage/>
           </Route>
         </Switch>
       </BrowserRouter>
-      <AudioPlayer showInfo={playingShow}/>
+      <AudioPlayer showInfo={playingShow} autoPlay={true}/>
     </div>
   );
 };

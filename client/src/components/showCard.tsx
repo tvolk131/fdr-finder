@@ -10,6 +10,9 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     cursor: 'pointer'
   },
+  actions: {
+    display: 'inherit'
+  },
   podcastNumber: {
     paddingRight: '8px'
   },
@@ -79,7 +82,7 @@ const ShowCard = (props: ShowCardProps) => {
           </span>}
         subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()}`}
       />
-      <CardActions style={{display: 'inherit'}}>
+      <CardActions className={classes.actions}>
         <IconButton onClick={props.onPlay}>
           <PlayArrowIcon/>
         </IconButton>

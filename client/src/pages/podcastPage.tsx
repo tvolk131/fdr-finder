@@ -4,19 +4,28 @@ import * as React from 'react';
 import {useEffect, useState} from 'react';
 import {useParams} from 'react-router';
 import {getPodcast} from '../api';
-import {ShowInfo} from '../components/showCard';
+import ShowCard, {ShowInfo} from '../components/showCard';
 
 const useStyles = makeStyles({
   root: {
     margin: '10px',
     textAlign: 'center'
   },
+  cardWrapper: {
+    maxWidth: '800px',
+    margin: 'auto',
+    textAlign: 'initial'
+  },
   loadingSpinner: {
     padding: '50px'
   }
 });
 
-export const PodcastPage = () => {
+interface PodcastPageProps {
+  setPlayingShow(showInfo: ShowInfo): void
+}
+
+export const PodcastPage = (props: PodcastPageProps) => {
   const classes = useStyles();
   const params = useParams<{podcastNum: string}>();
 
@@ -41,10 +50,11 @@ export const PodcastPage = () => {
       </Typography>
     );
   } else {
+    // TODO - Display show info without using ShowCard. I only did this because it was quick and easy, but we should display show info in a custom way here.
     innerContent = (
-      <Typography>
-        {podcast.title}
-      </Typography>
+      <div className={classes.cardWrapper}>
+        <ShowCard show={podcast} onPlay={() => props.setPlayingShow(podcast)}/>
+      </div>
     );
   }
 
