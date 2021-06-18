@@ -7,12 +7,14 @@ import {
   Theme
 } from '@material-ui/core/styles';
 import * as React from 'react';
+import {useState} from 'react';
 import {Route, Switch} from 'react-router';
 import {BrowserRouter} from 'react-router-dom';
 import {SearchPage} from './pages/searchPage';
 import {NotFoundPage} from './pages/notFoundPage';
 import {PodcastPage} from './pages/podcastPage';
 import {AudioPlayer} from './components/audioPlayer';
+import {ShowInfo} from './components/showCard';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -27,6 +29,8 @@ const useStyles = makeStyles((theme: Theme) =>
 const SubApp = () => {
   const classes = useStyles();
 
+  const [playingShow, setPlayingShow] = useState<ShowInfo>();
+
   return (
     <div className={classes.root}>
       {/* This meta tag makes the mobile experience
@@ -35,7 +39,7 @@ const SubApp = () => {
       <BrowserRouter>
         <Switch>
           <Route exact path='/'>
-            <SearchPage/>
+            <SearchPage setPlayingShow={setPlayingShow}/>
           </Route>
           <Route exact path='/podcasts/:podcastNum'>
             <PodcastPage/>
@@ -45,7 +49,7 @@ const SubApp = () => {
           </Route>
         </Switch>
       </BrowserRouter>
-      <AudioPlayer/>
+      <AudioPlayer showInfo={playingShow}/>
     </div>
   );
 };
