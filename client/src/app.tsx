@@ -12,6 +12,7 @@ import {BrowserRouter} from 'react-router-dom';
 import {SearchPage} from './pages/searchPage';
 import {NotFoundPage} from './pages/notFoundPage';
 import {PodcastPage} from './pages/podcastPage';
+import {AudioPlayer} from './components/audioPlayer';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -44,6 +45,7 @@ const SubApp = () => {
           </Route>
         </Switch>
       </BrowserRouter>
+      <AudioPlayer/>
     </div>
   );
 };
