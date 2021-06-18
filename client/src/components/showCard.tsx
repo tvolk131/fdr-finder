@@ -62,7 +62,7 @@ interface ShowCardProps {
 const ShowCard = (props: ShowCardProps) => {
   const classes = useStyles();
   const history = useHistory();
-  
+
   const [expanded, setExpanded] = useState(false);
 
   return (

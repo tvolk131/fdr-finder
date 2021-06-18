@@ -6,7 +6,8 @@
     "test": "jest",
     "check-typescript-types": "tsc --noEmit --skipLibCheck",
     "build-prod": "webpack --mode production",
-    "build-dev": "webpack --mode development"
+    "build-dev": "webpack --mode development",
+    "lint": "tslint 'src/**/*.ts' 'src/**/*.tsx'"
   },
   "author": "Tommy Volk",
   "license": "ISC",
@@ -33,6 +34,7 @@
     "jest": "27.0.4",
     "ts-loader": "9.2.3",
     "ts-node": "9.1.1",
+    "tslint": "6.1.3",
     "typescript": "4.3.4",
     "webpack": "5.39.1",
     "webpack-cli": "4.7.2"

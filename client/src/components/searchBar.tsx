@@ -10,19 +10,19 @@ const useStyles = makeStyles({
   root: {
     padding: '2px 4px',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   input: {
     marginLeft: 8,
-    flex: 1,
+    flex: 1
   },
   iconButton: {
-    padding: 10,
+    padding: 10
   },
   divider: {
     width: 1,
     height: 28,
-    margin: 4,
+    margin: 4
   }
 });
 
@@ -58,7 +58,7 @@ const SearchBar = (props: SearchBarProps) => {
         >
           <InputBase
             className={classes.input}
-            placeholder="Search Freedomain Videos"
+            placeholder='Search Freedomain Videos'
             value={props.searchText}
             onChange={(event) => {
               props.setSearchText(event.target.value);
