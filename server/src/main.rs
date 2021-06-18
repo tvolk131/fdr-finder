@@ -92,7 +92,7 @@ async fn handle_api_request(
         let podcasts = handler_state.database.query_podcasts(query);
         let json = Value::Array(
             podcasts
-                .into_iter()
+                .iter()
                 .map(|podcast| podcast.to_json())
                 .collect(),
         );
