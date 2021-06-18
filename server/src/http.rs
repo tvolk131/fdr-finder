@@ -1,6 +1,6 @@
 use crate::podcast::{Podcast, PodcastNumber};
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 
 #[derive(Deserialize)]
 struct JsonResponse {
@@ -28,7 +28,7 @@ fn json_podcast_to_podcast(mut json_podcast: JsonPodcast) -> Podcast {
     )
 }
 
-async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, String> {
+async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, Box<dyn Error>> {
     let response_or = reqwest::get(
         format!("https://fdrpodcasts.com/api/v2/podcasts/?pageNumber={}", page_number),
     ).await;
@@ -37,14 +37,12 @@ async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, String> {
         Ok(response) => {
             response.json().await
         },
-        Err(err) => {
-            return Err("Uh oh...".to_string())
-        }
+        Err(err) => return Err(Box::from(err))
     };
 
     let data: JsonResponse = match data_or {
         Ok(data) => data,
-        Err(err) => return Err(err.to_string())
+        Err(err) => return Err(Box::from(err))
     };
 
     Ok(data
@@ -55,7 +53,7 @@ async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, String> {
 }
 
 
-pub async fn get_all_podcasts() -> Result<Vec<Podcast>, String> {
+pub async fn get_all_podcasts() -> Result<Vec<Podcast>, Box<dyn Error>> {
     let mut current_page_number = 0;
     let mut results: Vec<Podcast> = Vec::new();
     loop {

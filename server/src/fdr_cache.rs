@@ -2,7 +2,7 @@ use crate::{
     http::get_all_podcasts,
     podcast::{Podcast, PodcastNumber},
 };
-use std::cmp::Ordering;
+use std::{cmp::Ordering, error::Error};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
@@ -28,7 +28,7 @@ pub struct FdrCache {
 }
 
 impl FdrCache {
-    pub async fn new() -> Result<Self, String> {
+    pub async fn new() -> Result<Self, Box<dyn Error>> {
         let mut all_podcasts = get_all_podcasts().await?;
         all_podcasts.sort_by(|a, b| {
             if a.get_podcast_number() > b.get_podcast_number() {
