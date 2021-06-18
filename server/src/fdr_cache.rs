@@ -40,10 +40,7 @@ impl FdrCache {
             Ordering::Equal
         });
         all_podcasts.reverse();
-        let all_podcasts_rc: Vec<Arc<Podcast>> = all_podcasts
-            .into_iter()
-            .map(|podcast| Arc::from(podcast))
-            .collect();
+        let all_podcasts_rc: Vec<Arc<Podcast>> = all_podcasts.into_iter().map(Arc::from).collect();
         let mut podcasts_by_num = BTreeMap::new();
         for podcast in &all_podcasts_rc {
             podcasts_by_num.insert(podcast.get_podcast_number().clone(), podcast.clone());
@@ -52,10 +49,6 @@ impl FdrCache {
             num_sorted_podcast_list: all_podcasts_rc,
             podcasts_by_num,
         })
-    }
-
-    pub fn get_all_podcasts(&self) -> &[Arc<Podcast>] {
-        &self.num_sorted_podcast_list
     }
 
     pub fn query_podcasts(&self, query: PodcastQuery) -> Vec<&Arc<Podcast>> {

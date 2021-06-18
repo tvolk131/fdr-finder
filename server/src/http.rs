@@ -23,7 +23,11 @@ fn json_podcast_to_podcast(mut json_podcast: JsonPodcast) -> Podcast {
         json_podcast.description,
         json_podcast.urls.remove("audio").unwrap(),
         json_podcast.length,
-        PodcastNumber::new(json_podcast.num.unwrap_or(serde_json::Number::from(0))),
+        PodcastNumber::new(
+            json_podcast
+                .num
+                .unwrap_or_else(|| serde_json::Number::from(0)),
+        ),
         chrono::DateTime::parse_from_rfc3339(&json_podcast.date)
             .unwrap()
             .timestamp(),
@@ -50,7 +54,7 @@ async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, Box<dyn Err
     Ok(data
         .podcasts
         .into_iter()
-        .map(|json_podcast| json_podcast_to_podcast(json_podcast))
+        .map(json_podcast_to_podcast)
         .collect())
 }
 
