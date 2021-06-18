@@ -23,7 +23,7 @@ export const PodcastPage = () => {
   const [podcast, setPodcast] = useState<ShowInfo | null | undefined>(undefined);
 
   useEffect(() => {
-    getPodcast(parseInt(params.podcastNum))
+    getPodcast(parseInt(params.podcastNum, 10))
       .then(setPodcast)
       .catch(() => setPodcast(null));
   }, []);
