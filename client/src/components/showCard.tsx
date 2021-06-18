@@ -1,20 +1,23 @@
 import {Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton} from '@material-ui/core';
-import {ExpandMore as ExpandMoreIcon} from '@material-ui/icons';
+import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@material-ui/icons';
 import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
 import {useState} from 'react';
+import {useHistory} from 'react-router';
 
 const useStyles = makeStyles((theme) => ({
   title: {
-    display: 'flex'
+    display: 'flex',
+    cursor: 'pointer'
+  },
+  actions: {
+    display: 'inherit'
   },
   podcastNumber: {
     paddingRight: '8px'
   },
-  audioPlayer: {
-    width: '100%'
-  },
   expand: {
+    float: 'right',
     marginLeft: 'auto',
     transition: theme.transitions.create('transform', {
       duration: theme.transitions.duration.shortest
@@ -52,17 +55,20 @@ export interface ShowInfo {
 }
 
 interface ShowCardProps {
+  onPlay(): void
   show: ShowInfo
 }
 
 const ShowCard = (props: ShowCardProps) => {
   const classes = useStyles();
-  
+  const history = useHistory();
+
   const [expanded, setExpanded] = useState(false);
 
   return (
     <Card>
       <CardHeader
+        onClick={() => {history.push(`/podcasts/${props.show.podcastNumber}`)}}
         title={
           <span className={classes.title}>
             <Typography
@@ -76,12 +82,10 @@ const ShowCard = (props: ShowCardProps) => {
           </span>}
         subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()}`}
       />
-      <CardContent>
-        <audio className={classes.audioPlayer} controls>
-          <source src={props.show.audioLink} type='audio/mpeg'/>
-        </audio>
-      </CardContent>
-      <CardActions>
+      <CardActions className={classes.actions}>
+        <IconButton onClick={props.onPlay}>
+          <PlayArrowIcon/>
+        </IconButton>
         <IconButton
           className={`${classes.expand} ${expanded ? classes.expandOpen : classes.expandClosed}`}
           onClick={() => setExpanded(!expanded)}

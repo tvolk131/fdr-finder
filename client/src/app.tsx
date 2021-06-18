@@ -7,7 +7,14 @@ import {
   Theme
 } from '@material-ui/core/styles';
 import * as React from 'react';
-import SearchPage from './pages/searchPage';
+import {useState} from 'react';
+import {Route, Switch} from 'react-router';
+import {BrowserRouter} from 'react-router-dom';
+import {SearchPage} from './pages/searchPage';
+import {NotFoundPage} from './pages/notFoundPage';
+import {PodcastPage} from './pages/podcastPage';
+import {AudioPlayer} from './components/audioPlayer';
+import {ShowInfo} from './components/showCard';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -22,12 +29,27 @@ const useStyles = makeStyles((theme: Theme) =>
 const SubApp = () => {
   const classes = useStyles();
 
+  const [playingShow, setPlayingShow] = useState<ShowInfo>();
+
   return (
     <div className={classes.root}>
       {/* This meta tag makes the mobile experience
       much better by preventing text from being tiny. */}
       <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
-      <SearchPage/>
+      <BrowserRouter>
+        <Switch>
+          <Route exact path='/'>
+            <SearchPage setPlayingShow={setPlayingShow}/>
+          </Route>
+          <Route exact path='/podcasts/:podcastNum'>
+            <PodcastPage setPlayingShow={setPlayingShow}/>
+          </Route>
+          <Route path='*'>
+            <NotFoundPage/>
+          </Route>
+        </Switch>
+      </BrowserRouter>
+      <AudioPlayer showInfo={playingShow} autoPlay={true}/>
     </div>
   );
 };
