@@ -7,6 +7,7 @@ import {getPodcastRssUrl, getPodcasts} from '../api';
 import {Button, CircularProgress, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {RssFeed as RssFeedIcon} from '@material-ui/icons';
+import {D3Example} from '../components/d3Example';
 
 const useStyles = makeStyles({
   root: {
@@ -80,6 +81,7 @@ const SearchPage = () => {
         }}
         message={'Link copied!'}
       />
+      <D3Example/>
     </div>
   );
 };
