@@ -33,7 +33,11 @@ const useStyles = makeStyles({
   }
 });
 
-export const SearchPage = () => {
+interface SearchPageProps {
+  setPlayingShow(showInfo: ShowInfo): void
+}
+
+export const SearchPage = (props: SearchPageProps) => {
   const classes = useStyles();
   const history = useHistory();
 
@@ -86,7 +90,13 @@ export const SearchPage = () => {
             </CopyToClipboard>
           </div>
           <div className={classes.nested}>
-            {podcasts.map((show) => <div className={classes.showCardWrapper}><ShowCard show={show}/></div>)}
+            {
+              podcasts.map((show) => (
+                <div className={classes.showCardWrapper}>
+                  <ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/>
+                </div>
+              ))
+            }
           </div>
         </div>
       }
