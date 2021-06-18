@@ -2,9 +2,9 @@ use crate::{
     http::get_all_podcasts,
     podcast::{Podcast, PodcastNumber},
 };
-use std::{cmp::Ordering, error::Error};
 use std::collections::BTreeMap;
 use std::sync::Arc;
+use std::{cmp::Ordering, error::Error};
 
 pub struct PodcastQuery {
     filter: String,

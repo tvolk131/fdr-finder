@@ -136,17 +136,13 @@ async fn handle_api_request(
         ));
 
         return match podcast_or {
-            Some(podcast) => {
-                Response::builder()
-                    .header("content-type", "application/json")
-                    .body(Body::from(podcast.to_json().to_string()))
-            },
-            None => {
-                Response::builder()
-                    .header("content-type", "text/html")
-                    .status(404)
-                    .body(Body::from("Podcast does not exist"))
-            }
+            Some(podcast) => Response::builder()
+                .header("content-type", "application/json")
+                .body(Body::from(podcast.to_json().to_string())),
+            None => Response::builder()
+                .header("content-type", "text/html")
+                .status(404)
+                .body(Body::from("Podcast does not exist")),
         };
     }
 

@@ -24,25 +24,27 @@ fn json_podcast_to_podcast(mut json_podcast: JsonPodcast) -> Podcast {
         json_podcast.urls.remove("audio").unwrap(),
         json_podcast.length,
         PodcastNumber::new(json_podcast.num.unwrap_or(serde_json::Number::from(0))),
-        chrono::DateTime::parse_from_rfc3339(&json_podcast.date).unwrap().timestamp(),
+        chrono::DateTime::parse_from_rfc3339(&json_podcast.date)
+            .unwrap()
+            .timestamp(),
     )
 }
 
 async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, Box<dyn Error>> {
-    let response_or = reqwest::get(
-        format!("https://fdrpodcasts.com/api/v2/podcasts/?pageNumber={}", page_number),
-    ).await;
+    let response_or = reqwest::get(format!(
+        "https://fdrpodcasts.com/api/v2/podcasts/?pageNumber={}",
+        page_number
+    ))
+    .await;
 
     let data_or = match response_or {
-        Ok(response) => {
-            response.json().await
-        },
-        Err(err) => return Err(Box::from(err))
+        Ok(response) => response.json().await,
+        Err(err) => return Err(Box::from(err)),
     };
 
     let data: JsonResponse = match data_or {
         Ok(data) => data,
-        Err(err) => return Err(Box::from(err))
+        Err(err) => return Err(Box::from(err)),
     };
 
     Ok(data
@@ -51,7 +53,6 @@ async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, Box<dyn Err
         .map(|json_podcast| json_podcast_to_podcast(json_podcast))
         .collect())
 }
-
 
 pub async fn get_all_podcasts() -> Result<Vec<Podcast>, Box<dyn Error>> {
     let mut current_page_number = 0;
