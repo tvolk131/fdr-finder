@@ -90,12 +90,7 @@ async fn handle_api_request(
         };
         let query = PodcastQuery::new(filter, limit, skip);
         let podcasts = handler_state.database.query_podcasts(query);
-        let json = Value::Array(
-            podcasts
-                .iter()
-                .map(|podcast| podcast.to_json())
-                .collect(),
-        );
+        let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
         return Response::builder()
             .header("content-type", "application/json")
             .body(Body::from(json.to_string()));
