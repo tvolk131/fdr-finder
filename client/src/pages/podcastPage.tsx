@@ -50,7 +50,8 @@ export const PodcastPage = (props: PodcastPageProps) => {
       </Typography>
     );
   } else {
-    // TODO - Display show info without using ShowCard. I only did this because it was quick and easy, but we should display show info in a custom way here.
+    // TODO - Display show info without using ShowCard. I only did this because it
+    // was quick and easy, but we should display show info in a custom way here.
     innerContent = (
       <div className={classes.cardWrapper}>
         <ShowCard show={podcast} onPlay={() => props.setPlayingShow(podcast)}/>

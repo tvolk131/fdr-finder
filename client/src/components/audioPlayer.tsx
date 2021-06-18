@@ -19,32 +19,32 @@ const useStyles = makeStyles((theme: Theme) =>
       borderRadius: 0
     },
     details: {
-      display: 'flex',
+      display: 'flex'
     },
     content: {
       flex: '1 0 auto',
-      padding: '15px',
+      padding: '15px'
     },
     cover: {
-      width: 151,
+      width: 151
     },
     controls: {
       display: 'flex',
       alignItems: 'center',
-      paddingRight: theme.spacing(2),
+      paddingRight: theme.spacing(2)
     },
     playPauseIcon: {
       height: 38,
-      width: 38,
+      width: 38
     },
     sliderWrapper: {
-      height: 0,
+      height: 0
     },
     slider: {
       top: '-15px',
       padding: '15px 0'
     }
-  }),
+  })
 );
 
 interface AudioPlayerProps {
@@ -60,10 +60,12 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const audioRef = useRef(new Audio(props.showInfo?.audioLink));
-  const intervalRef = useRef(setInterval(() => {}, 10000));
+  const intervalRef = useRef<NodeJS.Timeout>();
 
 	const startTimer = () => {
-	  clearInterval(intervalRef.current);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
 
 	  intervalRef.current = setInterval(() => {
 	    if (audioRef.current.ended) {
@@ -80,7 +82,9 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
       startTimer();
     } else {
       audioRef.current.pause();
-      clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     }
   }, [isPlaying]);
 
@@ -110,7 +114,9 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           onChange={(event, newValue) => {
             if (typeof(newValue) === 'number') {
               setTrackProgress(newValue);
-              clearInterval(intervalRef.current);
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+              }
             }
           }}
           onChangeCommitted={(event, newValue) => {
@@ -132,13 +138,28 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           </Typography>
         </div>
         <div className={classes.controls}>
-          <IconButton aria-label='previous' onClick={() => seekRelative(-10)} disabled={props.showInfo === undefined}>
+          <IconButton
+            aria-label='previous'
+            onClick={() => seekRelative(-10)}
+            disabled={props.showInfo === undefined}
+          >
             {theme.direction === 'rtl' ? <Forward30Icon/> : <Replay10Icon/>}
           </IconButton>
-          <IconButton aria-label='play/pause' onClick={() => setIsPlaying(!isPlaying)} disabled={props.showInfo === undefined}>
-            {isPlaying ? <PauseIcon className={classes.playPauseIcon}/> : <PlayArrowIcon className={classes.playPauseIcon}/>}
+          <IconButton
+            aria-label='play/pause'
+            onClick={() => setIsPlaying(!isPlaying)}
+            disabled={props.showInfo === undefined}
+          >
+            {
+              isPlaying ? <PauseIcon className={classes.playPauseIcon}/>
+                        : <PlayArrowIcon className={classes.playPauseIcon}/>
+            }
           </IconButton>
-          <IconButton aria-label='next' onClick={() => seekRelative(30)} disabled={props.showInfo === undefined}>
+          <IconButton
+            aria-label='next'
+            onClick={() => seekRelative(30)}
+            disabled={props.showInfo === undefined}
+          >
             {theme.direction === 'rtl' ? <Replay10Icon/> : <Forward30Icon/>}
           </IconButton>
         </div>

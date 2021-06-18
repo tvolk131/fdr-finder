@@ -90,7 +90,13 @@ export const SearchPage = (props: SearchPageProps) => {
             </CopyToClipboard>
           </div>
           <div className={classes.nested}>
-            {podcasts.map((show) => <div className={classes.showCardWrapper}><ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/></div>)}
+            {
+              podcasts.map((show) => (
+                <div className={classes.showCardWrapper}>
+                  <ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/>
+                </div>
+              ))
+            }
           </div>
         </div>
       }
