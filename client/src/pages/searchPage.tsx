@@ -1,12 +1,16 @@
 import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
 import {getPodcastRssUrl, getPodcasts} from '../api';
 import {Button, CircularProgress, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {RssFeed as RssFeedIcon} from '@material-ui/icons';
+import {useHistory} from 'react-router';
+import * as qs from 'qs';
+
+const queryFieldName = 'query';
 
 const useStyles = makeStyles({
   root: {
@@ -29,25 +33,45 @@ const useStyles = makeStyles({
   }
 });
 
-const SearchPage = () => {
+export const SearchPage = () => {
   const classes = useStyles();
+  const history = useHistory();
+
+  const params = qs.parse(history.location.search.replace('?', ''));
+  let query = params[queryFieldName];
+  if (typeof query !== 'string') {
+    query = '';
+  }
 
   const [isSearching, setIsSearching] = useState(false);
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(query);
   const [showSnackbar, setShowSnackbar] = useState(false);
+
+  const search = async () => {
+    if (!isSearching) {
+      setIsSearching(true);
+      history.push(`/?${queryFieldName}=${searchTerm}`);
+      setPodcasts(await getPodcasts(searchTerm, 50, 0));
+      setIsSearching(false);
+    }
+  };
+
+  // If a search term was loaded from query parameter, immediately pull the results.
+  useEffect(() => {
+    if (searchTerm.length) {
+      search();
+    }
+  }, []);
 
   return (
     <div className={classes.root}>
       <div className={classes.nested}>
-        <SearchBar onSearch={async (query) => {
-          if (!isSearching) {
-            setIsSearching(true);
-            setPodcasts(await getPodcasts(query, 50, 0));
-            setSearchTerm(query);
-            setIsSearching(false);
-          }
-        }}/>
+        <SearchBar
+          onSearch={search}
+          searchText={searchTerm}
+          setSearchText={setSearchTerm}
+        />
       </div>
       {isSearching ? <CircularProgress className={classes.loadingSpinner} size={100}/> :
         <div>
@@ -83,5 +107,3 @@ const SearchPage = () => {
     </div>
   );
 };
-
-export default SearchPage;
