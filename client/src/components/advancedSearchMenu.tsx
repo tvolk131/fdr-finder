@@ -5,7 +5,7 @@ import {useState} from 'react';
 
 const useStyles = makeStyles({
   root: {
-    padding: '15px 5px 5px 15px',
+    padding: '15px 5px 5px 15px'
   }
 });
 
@@ -20,21 +20,38 @@ const AdvancedSearchMenu = () => {
   return (
     <Paper className={classes.root} elevation={10}>
       <FormGroup>
-        <FormLabel>Show Format</FormLabel>
+        <FormLabel>Show Format (Doesn't actually do anything yet)</FormLabel>
         <FormControlLabel
-          control={<Checkbox checked={interviewsChecked} onChange={(event) => setInterviewsChecked(event.target.checked)}/>}
+          control={
+            <Checkbox
+              checked={interviewsChecked}
+              onChange={(event) => setInterviewsChecked(event.target.checked)}
+            />
+          }
           label={'Interviews'}
         />
         <FormControlLabel
-          control={<Checkbox checked={presentationsChecked} onChange={(event) => setPresentationsChecked(event.target.checked)}/>}
+          control={
+            <Checkbox
+              checked={presentationsChecked}
+              onChange={(event) => setPresentationsChecked(event.target.checked)}
+            />
+          }
           label={'Presentations'}
         />
         <FormControlLabel
-          control={<Checkbox checked={callInsChecked} onChange={(event) => setCallInsChecked(event.target.checked)}/>}
+          control={
+            <Checkbox
+              checked={callInsChecked}
+              onChange={(event) => setCallInsChecked(event.target.checked)}
+            />
+          }
           label={'Call-Ins'}
         />
         <FormControlLabel
-          control={<Checkbox checked={roundtablesChecked} onChange={(event) => setRoundtablesChecked(event.target.checked)}/>}
+          control={
+            <Checkbox checked={roundtablesChecked} onChange={(event) => setRoundtablesChecked(event.target.checked)}/>
+          }
           label={'Roundtables'}
         />
       </FormGroup>
