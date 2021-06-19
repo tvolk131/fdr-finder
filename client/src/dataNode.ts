@@ -12,10 +12,10 @@ export interface LeafDataNode extends BaseDataNode {
 
 export type DataNode = TrunkDataNode | LeafDataNode;
 
-export const isTrunkNode = (object: any): object is TrunkDataNode => {
-  return 'children' in object;
+export const isTrunkNode = (node: DataNode): node is TrunkDataNode => {
+  return 'children' in node;
 }
 
-export const isLeafNode = (object: any): object is LeafDataNode => {
-  return 'value' in object;
+export const isLeafNode = (node: DataNode): node is LeafDataNode => {
+  return 'value' in node;
 }

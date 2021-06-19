@@ -1,16 +1,16 @@
 import * as React from 'react';
 import {useEffect, useRef} from 'react';
 import * as d3 from 'd3';
-import {TrunkDataNode, LeafDataNode, isLeafNode} from '../dataNode';
+import {TrunkDataNode, LeafDataNode, isLeafNode, DataNode} from '../dataNode';
 
 const width = 975;
 const height = 1200;
 
-const partition = (data: TrunkDataNode | LeafDataNode) => {
+const partition = (data: DataNode) => {
   const root = d3.hierarchy(data)
       .sum(d => isLeafNode(d) ? d.value : 0)
       .sort((a, b) => b.height - a.height || ((a.value && b.value) ? b.value - a.value : 0));
-  return d3.partition<TrunkDataNode | LeafDataNode>()
+  return d3.partition<DataNode>()
       .size([height, (root.height + 1) * width / 3])
     (root);
 }
