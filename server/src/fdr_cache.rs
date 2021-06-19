@@ -1,7 +1,5 @@
-use crate::{
-    http::get_all_podcasts,
-    podcast::{Podcast, PodcastNumber},
-};
+use crate::http::get_all_podcasts;
+use crate::podcast::{Podcast, PodcastNumber};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::{cmp::Ordering, error::Error};
@@ -63,6 +61,10 @@ impl FdrCache {
             .skip(query.skip)
             .take(query.limit)
             .collect()
+    }
+
+    pub fn get_all_podcasts(&self) -> &[Arc<Podcast>] {
+        &self.num_sorted_podcast_list
     }
 
     pub fn get_podcast(&self, num: &PodcastNumber) -> Option<&Arc<Podcast>> {

@@ -69,7 +69,18 @@ async fn handle_api_request(
     req: Request<Body>,
     handler_state: Arc<HandlerState>,
 ) -> Result<Response<Body>, Error> {
-    if req.uri().path() == "/api/podcasts" {
+    if req.uri().path() == "/api/podcasts/all" {
+        let podcasts = handler_state.database.get_all_podcasts();
+        let json = Value::Array(
+            podcasts
+                .into_iter()
+                .map(|podcast| podcast.to_json())
+                .collect(),
+        );
+        return Response::builder()
+            .header("content-type", "application/json")
+            .body(Body::from(json.to_string()));
+    } else if req.uri().path() == "/api/podcasts" {
         let url = url::Url::from_str(&format!("http://example.com{}", req.uri())).unwrap();
         let query_pairs = url.query_pairs();
         let mut query_params: HashMap<String, String> = HashMap::new();
@@ -90,12 +101,7 @@ async fn handle_api_request(
         };
         let query = PodcastQuery::new(filter, limit, skip);
         let podcasts = handler_state.database.query_podcasts(query);
-        let json = Value::Array(
-            podcasts
-                .into_iter()
-                .map(|podcast| podcast.to_json())
-                .collect(),
-        );
+        let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
         return Response::builder()
             .header("content-type", "application/json")
             .body(Body::from(json.to_string()));
