@@ -27,10 +27,13 @@ const data = {
 };
 
 const labelVisible = (d: any) => {
-  return d.y1 <= 3 && d.y0 >= 1 && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.03;
+  return d && d.y1 <= 3 && d.y0 >= 1 && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.03;
 }
 
 const labelTransform = (d: any) => {
+  if (!d) {
+    return '';
+  }
   const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
   const y = (d.y0 + d.y1) / 2 * radius;
   return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
@@ -67,8 +70,8 @@ export const D3Example = () => {
     }
 
     const arc = d3.arc()
-      .startAngle((d: any) => d.x0)
-      .endAngle((d: any) => d.x1)
+      .startAngle((d: any) => d?.x0)
+      .endAngle((d: any) => d?.x1)
       .padAngle((d: any) => Math.min((d.x1 - d.x0) / 2, 0.005))
       .padRadius(radius * 1.5)
       .innerRadius((d: any) => d ? d.y0 * radius : 0)
@@ -131,8 +134,8 @@ export const D3Example = () => {
             throw Error('Whoa, oh no!');
           }
         })
-        // .attr("fill-opacity", d => arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0)
-        // .attrTween("d", d => () => arc(d.current));
+        .attr("fill-opacity", (d: any) => arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0)
+        .attrTween("d", (d: any) => () => (arc as any)(d.current));
   
       label.filter(function(d: any) {
         if (this instanceof SVGTextElement) {
