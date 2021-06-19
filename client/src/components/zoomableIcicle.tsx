@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {useEffect, useRef} from 'react';
 import * as d3 from 'd3';
-import {BaseDataNode, TrunkDataNode, flareData, LeafDataNode, isLeafNode} from '../zoomableSunburstData';
+import {TrunkDataNode, LeafDataNode, isLeafNode} from '../dataNode';
 
 const width = 975;
 const height = 1200;
@@ -74,29 +74,29 @@ export const ZoomableIcicle = (props: ZoomableIcicleProps) => {
         });
       
         const t = cell.transition().duration(750)
-            .attr("transform", d => `translate(${(d as any).target.y0},${(d as any).target.x0})`);
+            .attr('transform', d => `translate(${(d as any).target.y0},${(d as any).target.x0})`);
       
-        rect.transition(t).attr("height", d => rectHeight((d as any).target));
-        text.transition(t).attr("fill-opacity", d => +labelVisible((d as any).target));
-        tspan.transition(t).attr("fill-opacity", d => (labelVisible((d as any).target) ? 1 : 0) * 0.7);
+        rect.transition(t).attr('height', d => rectHeight((d as any).target));
+        text.transition(t).attr('fill-opacity', d => +labelVisible((d as any).target));
+        tspan.transition(t).attr('fill-opacity', d => (labelVisible((d as any).target) ? 1 : 0) * 0.7);
       });
 
-    const text = cell.append("text")
-      .style("user-select", "none")
-      .attr("pointer-events", "none")
-      .attr("x", 4)
-      .attr("y", 13)
-      .attr("fill-opacity", d => +labelVisible(d));
+    const text = cell.append('text')
+      .style('user-select', 'none')
+      .attr('pointer-events', 'none')
+      .attr('x', 4)
+      .attr('y', 13)
+      .attr('fill-opacity', d => +labelVisible(d));
 
-    text.append("tspan")
+    text.append('tspan')
         .text(d => d.data.name);
 
-    const tspan = text.append("tspan")
-        .attr("fill-opacity", d => (labelVisible(d) ? 1 : 0) * 0.7)
+    const tspan = text.append('tspan')
+        .attr('fill-opacity', d => (labelVisible(d) ? 1 : 0) * 0.7)
         .text(d => ` ${format(d.value!)}`);
 
-    cell.append("title")
-        .text(d => `${d.ancestors().map(d => d.data.name).reverse().join("/")}\n${format(d.value!)}`);
+    cell.append('title')
+        .text(d => `${d.ancestors().map(d => d.data.name).reverse().join('/')}\n${format(d.value!)}`);
   }, [props.data]);
 
   return (<svg className={`target-${uniqueId.current}`}/>);

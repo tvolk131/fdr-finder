@@ -39,7 +39,7 @@ const labelTransform = (d: any) => {
   return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
 }
 
-const format = d3.format(",d");
+const format = d3.format(',d');
 
 export const D3Example = () => {
   useEffect(() => {
@@ -85,27 +85,27 @@ export const D3Example = () => {
         .attr('fill-opacity', (d: any) => arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0)
         .attr('d', (d: any) => arc(d.current));
 
-    path.append("title")
-      .text((d: any) => `${d.ancestors().map((d: any) => d.data.name).reverse().join("/")}\n${format(d.value)}`);
+    path.append('title')
+      .text((d: any) => `${d.ancestors().map((d: any) => d.data.name).reverse().join('/')}\n${format(d.value)}`);
 
-    const label = g.append("g")
-      .attr("pointer-events", "none")
-      .attr("text-anchor", "middle")
-      .style("user-select", "none")
-      .selectAll("text")
+    const label = g.append('g')
+      .attr('pointer-events', 'none')
+      .attr('text-anchor', 'middle')
+      .style('user-select', 'none')
+      .selectAll('text')
       .data(root.descendants().slice(1))
-      .join("text")
-      .attr("dy", "0.35em")
-      .attr("fill-opacity", (d: any) => +labelVisible(d.current))
-      .attr("transform", (d: any) => labelTransform(d.current))
+      .join('text')
+      .attr('dy', '0.35em')
+      .attr('fill-opacity', (d: any) => +labelVisible(d.current))
+      .attr('transform', (d: any) => labelTransform(d.current))
       .text((d: any) => d.data.name);
 
-    const parent = g.append("circle")
+    const parent = g.append('circle')
       .datum(root)
-      .attr("r", radius)
-      .attr("fill", "none")
-      .attr("pointer-events", "all")
-      .on("click", clicked);
+      .attr('r', radius)
+      .attr('fill', 'none')
+      .attr('pointer-events', 'all')
+      .on('click', clicked);
 
     function clicked(event: any, p: any) {
       parent.datum(p.parent || root);
@@ -123,34 +123,34 @@ export const D3Example = () => {
       // so that if this transition is interrupted, entering arcs will start
       // the next transition from the desired position.
       path.transition(t as any)
-        .tween("data", (d: any) => {
+        .tween('data', (d: any) => {
           const i = d3.interpolate(d.current, d.target);
           return (t: any) => d.current = i(t);
         })
         .filter(function(d: any) {
           if (this instanceof SVGPathElement) {
-            return (+this.getAttribute("fill-opacity")!) > 0 || arcVisible(d.target);
+            return (+this.getAttribute('fill-opacity')!) > 0 || arcVisible(d.target);
           } else {
             throw Error('Whoa, oh no!');
           }
         })
-        .attr("fill-opacity", (d: any) => arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0)
-        .attrTween("d", (d: any) => () => (arc as any)(d.current));
+        .attr('fill-opacity', (d: any) => arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0)
+        .attrTween('d', (d: any) => () => (arc as any)(d.current));
   
       label.filter(function(d: any) {
         if (this instanceof SVGTextElement) {
-          return (+this.getAttribute("fill-opacity")!) > 0 || labelVisible(d.target);
+          return (+this.getAttribute('fill-opacity')!) > 0 || labelVisible(d.target);
         } else {
           throw Error('Uh oh!');
         }
       }).transition(t as any)
-        .attr("fill-opacity", (d: any) => +labelVisible(d.target))
-        .attrTween("transform", (d: any) => () => labelTransform(d.current));
+        .attr('fill-opacity', (d: any) => +labelVisible(d.target))
+        .attrTween('transform', (d: any) => () => labelTransform(d.current));
     }
 
     path.filter((d: any) => d.children)
-      .style("cursor", "pointer")
-      .on("click", clicked);
+      .style('cursor', 'pointer')
+      .on('click', clicked);
   }, []);
 
   return (<svg className='target'/>);

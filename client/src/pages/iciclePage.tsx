@@ -4,7 +4,7 @@ import {useState, useEffect} from 'react';
 import {getAllPodcasts} from '../api';
 import {ShowInfo} from '../components/showCard';
 import {ZoomableIcicle} from '../components/zoomableIcicle';
-import {TrunkDataNode} from '../zoomableSunburstData';
+import {TrunkDataNode} from '../dataNode';
 import {makeStyles} from '@material-ui/core/styles';
 
 const chunk = <T extends unknown>(data: T[], chunkSize: number): T[][] => {
