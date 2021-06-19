@@ -66,7 +66,14 @@ export const D3Example = () => {
     const color = d3.scaleOrdinal(d3.quantize(d3.interpolateRainbow, data.children.length + 1));
 
     const arcVisible = (d: any) => {
-      return d && d.y1 !== undefined && d.y0 !== undefined && d.x1 !== undefined && d.y0 !== undefined && d.y1 <= 3 && d.y0 >= 1 && d.x1 > d.x0;
+      return d
+          && d.y1 !== undefined
+          && d.y0 !== undefined
+          && d.x1 !== undefined
+          && d.y0 !== undefined
+          && d.y1 <= 3
+          && d.y0 >= 1
+          && d.x1 > d.x0;
     }
 
     const arc = d3.arc()
@@ -109,16 +116,16 @@ export const D3Example = () => {
 
     function clicked(event: any, p: any) {
       parent.datum(p.parent || root);
-  
+
       root.each((d: any) => d.target = {
         x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
         x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
         y0: Math.max(0, d.y0 - p.depth),
         y1: Math.max(0, d.y1 - p.depth)
       });
-  
+
       const t = g.transition().duration(750);
-  
+
       // Transition the data on all arcs, even the ones that aren’t visible,
       // so that if this transition is interrupted, entering arcs will start
       // the next transition from the desired position.
@@ -136,7 +143,7 @@ export const D3Example = () => {
         })
         .attr('fill-opacity', (d: any) => arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0)
         .attrTween('d', (d: any) => () => (arc as any)(d.current));
-  
+
       label.filter(function(d: any) {
         if (this instanceof SVGTextElement) {
           return (+this.getAttribute('fill-opacity')!) > 0 || labelVisible(d.target);

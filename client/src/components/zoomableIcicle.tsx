@@ -14,7 +14,7 @@ const partition = (data: TrunkDataNode | LeafDataNode) => {
       .size([height, (root.height + 1) * width / 3])
     (root);
 }
-  
+
 const rectHeight = (d: d3.HierarchyRectangularNode<any>) => {
   return d.x1 - d.x0 - Math.min(1, (d.x1 - d.x0) / 2);
 }
@@ -38,7 +38,7 @@ export const ZoomableIcicle = (props: ZoomableIcicleProps) => {
 
     const root = partition(props.data);
     let focus = root;
-      
+
     const svg = d3
       .select(`.target-${uniqueId.current}`)
       .attr('viewBox', [0, 0, width, height].join(', '))
@@ -65,17 +65,17 @@ export const ZoomableIcicle = (props: ZoomableIcicleProps) => {
       .style('cursor', 'pointer')
       .on('click', (event, p) => {
         focus = (focus === p && p.parent) ? p = p.parent : p;
-      
+
         root.each(d => (d as any).target = {
           x0: (d.x0 - p.x0) / (p.x1 - p.x0) * height,
           x1: (d.x1 - p.x0) / (p.x1 - p.x0) * height,
           y0: d.y0 - p.y0,
           y1: d.y1 - p.y0
         });
-      
+
         const t = cell.transition().duration(750)
             .attr('transform', d => `translate(${(d as any).target.y0},${(d as any).target.x0})`);
-      
+
         rect.transition(t).attr('height', d => rectHeight((d as any).target));
         text.transition(t).attr('fill-opacity', d => +labelVisible((d as any).target));
         tspan.transition(t).attr('fill-opacity', d => (labelVisible((d as any).target) ? 1 : 0) * 0.7);
