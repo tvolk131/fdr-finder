@@ -7,6 +7,14 @@ import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {TrunkDataNode} from '../zoomableSunburstData';
 import {makeStyles} from '@material-ui/core/styles';
 
+const chunk = <T extends unknown>(data: T[], chunkSize: number): T[][] => {
+  const chunks = [];
+  for (let i = 0; i < data.length; i += chunkSize) {
+    chunks.push(data.slice(i, i + chunkSize));
+  }
+  return chunks;
+};
+
 const useStyles = makeStyles({
   root: {
     margin: '10px',
@@ -41,11 +49,15 @@ export const IciclePage = () => {
       </Typography>
     );
   } else {
+    const chunks = chunk(allPodcasts, 100);
     const data: TrunkDataNode = {
       name: 'All Podcasts',
-      children: allPodcasts.map((podcast) => ({
-        name: podcast.title,
-        value: podcast.lengthInSeconds
+      children: chunks.map((chunk, i) => ({
+        name: `Chunk ${i}`,
+        children: chunk.map((podcast) => ({
+          name: podcast.title,
+          value: podcast.lengthInSeconds
+        }))
       }))
     };
     innerContent = (<ZoomableIcicle data={data}/>);
