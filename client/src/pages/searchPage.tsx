@@ -7,10 +7,8 @@ import {getPodcastRssUrl, getPodcasts} from '../api';
 import {Button, CircularProgress, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {RssFeed as RssFeedIcon} from '@material-ui/icons';
-import {ZoomableIcicle} from '../components/ZoomableIcicle';
 import {useHistory} from 'react-router';
 import * as qs from 'qs';
-import {flareData} from '../zoomableSunburstData';
 
 const queryFieldName = 'query';
 
@@ -116,7 +114,6 @@ export const SearchPage = (props: SearchPageProps) => {
         }}
         message={'Link copied!'}
       />
-      <ZoomableIcicle data={flareData()}/>
     </div>
   );
 };
