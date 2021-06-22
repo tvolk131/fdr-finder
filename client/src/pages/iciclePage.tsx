@@ -4,9 +4,8 @@ import {useState, useEffect} from 'react';
 import {getAllPodcasts} from '../api';
 import {ShowInfo} from '../components/showCard';
 import {ZoomableIcicle} from '../components/zoomableIcicle';
-import {TrunkDataNode} from '../dataNode';
 import {makeStyles} from '@material-ui/core/styles';
-import {chunk} from '../helper';
+import {createTree} from '../helper';
 
 const useStyles = makeStyles({
   root: {
@@ -42,18 +41,17 @@ export const IciclePage = () => {
       </Typography>
     );
   } else {
-    const chunks = chunk(allPodcasts, 100);
-    const data: TrunkDataNode = {
-      name: 'All Podcasts',
-      children: chunks.map((chunk, i) => ({
-        name: `Chunk ${i}`,
-        children: chunk.map((podcast) => ({
-          name: podcast.title,
-          value: podcast.lengthInSeconds
-        }))
-      }))
-    };
-    innerContent = (<ZoomableIcicle data={data}/>);
+    innerContent = (
+      <ZoomableIcicle
+        height={600}
+        width={975}
+        showValue={false}
+        data={createTree(allPodcasts, [
+          {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
+          {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+        ])}
+      />
+    );
   }
 
   return (

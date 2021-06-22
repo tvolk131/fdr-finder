@@ -4,11 +4,13 @@ import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
 import {getPodcastRssUrl, getPodcasts} from '../api';
-import {Button, CircularProgress, Snackbar} from '@material-ui/core';
+import {Button, CircularProgress, Dialog, DialogContent, DialogTitle, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {RssFeed as RssFeedIcon} from '@material-ui/icons';
+import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
 import {useHistory} from 'react-router';
 import * as qs from 'qs';
+import {ZoomableIcicle} from '../components/zoomableIcicle';
+import {createTree} from '../helper';
 
 const queryFieldName = 'query';
 
@@ -25,7 +27,7 @@ const useStyles = makeStyles({
   showCardWrapper: {
     padding: '10px 0 0 0'
   },
-  rssButton: {
+  button: {
     padding: '10px 0 0 0'
   },
   loadingSpinner: {
@@ -51,6 +53,8 @@ export const SearchPage = (props: SearchPageProps) => {
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
   const [searchTerm, setSearchTerm] = useState(query);
   const [showSnackbar, setShowSnackbar] = useState(false);
+
+  const [showIcicleDialog, setShowIcicleDialog] = useState(false);
 
   const search = async () => {
     if (!isSearching) {
@@ -79,7 +83,7 @@ export const SearchPage = (props: SearchPageProps) => {
       </div>
       {isSearching ? <CircularProgress className={classes.loadingSpinner} size={100}/> :
         <div>
-          <div className={classes.rssButton}>
+          <div className={classes.button}>
             <CopyToClipboard
               text={getPodcastRssUrl(searchTerm)}
               onCopy={() => setShowSnackbar(true)}
@@ -88,6 +92,11 @@ export const SearchPage = (props: SearchPageProps) => {
                 Copy Search-Filtered RSS Feed
               </Button>
             </CopyToClipboard>
+          </div>
+          <div className={classes.button}>
+            <Button onClick={() => setShowIcicleDialog(true)} variant={'contained'} startIcon={<PieChartIcon/>}>
+              See Visualized Results
+            </Button>
           </div>
           <div className={classes.nested}>
             {
@@ -98,6 +107,18 @@ export const SearchPage = (props: SearchPageProps) => {
               ))
             }
           </div>
+          <Dialog onClose={() => setShowIcicleDialog(false)} open={showIcicleDialog} maxWidth={'xl'} fullWidth>
+            <DialogTitle>Results for '{searchTerm}'</DialogTitle>
+            <ZoomableIcicle
+              height={600}
+              width={975}
+              showValue={false}
+              data={createTree(podcasts, [
+                {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
+                {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+              ])}
+            />
+          </Dialog>
         </div>
       }
       <Snackbar
