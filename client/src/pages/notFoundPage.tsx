@@ -4,7 +4,7 @@ import * as React from 'react';
 
 const useStyles = makeStyles({
   root: {
-    margin: '10px',
+    marginTop: '10px',
     textAlign: 'center'
   }
 });

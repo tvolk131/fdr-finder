@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {useEffect, useRef} from 'react';
 import * as d3 from 'd3';
-import {TrunkDataNode, LeafDataNode, isLeafNode, DataNode} from '../dataNode';
+import {TrunkDataNode, isLeafNode, DataNode} from '../dataNode';
 
 const width = 975;
 const height = 1200;
@@ -43,6 +43,9 @@ export const ZoomableIcicle = (props: ZoomableIcicleProps) => {
       .select(`.target-${uniqueId.current}`)
       .attr('viewBox', [0, 0, width, height].join(', '))
       .style('font', '10px sans-serif');
+
+    // Remove any elements from previous renders.
+    svg.selectAll('*').remove();
 
     const cell = svg.selectAll('g').data(root.descendants()).join('g').attr('transform', (d) => `translate(${d.y0}, ${d.x0})`);
 

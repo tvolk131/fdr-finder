@@ -14,7 +14,7 @@ const queryFieldName = 'query';
 
 const useStyles = makeStyles({
   root: {
-    margin: '10px',
+    marginTop: '10px',
     textAlign: 'center'
   },
   nested: {

@@ -17,7 +17,7 @@ const chunk = <T extends unknown>(data: T[], chunkSize: number): T[][] => {
 
 const useStyles = makeStyles({
   root: {
-    margin: '10px',
+    marginTop: '10px',
     textAlign: 'center'
   },
   loadingSpinner: {
