@@ -6,14 +6,7 @@ import {ShowInfo} from '../components/showCard';
 import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {TrunkDataNode} from '../dataNode';
 import {makeStyles} from '@material-ui/core/styles';
-
-const chunk = <T extends unknown>(data: T[], chunkSize: number): T[][] => {
-  const chunks = [];
-  for (let i = 0; i < data.length; i += chunkSize) {
-    chunks.push(data.slice(i, i + chunkSize));
-  }
-  return chunks;
-};
+import {chunk} from '../helper';
 
 const useStyles = makeStyles({
   root: {
