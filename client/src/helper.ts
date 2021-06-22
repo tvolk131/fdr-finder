@@ -1,4 +1,4 @@
-import {ShowInfo} from "./components/showCard";
+import {ShowInfo} from './components/showCard';
 import {isTrunkNode, LeafDataNode, TrunkDataNode} from './dataNode';
 
 const showInfoToLeafNode = (showInfo: ShowInfo): LeafDataNode => {
