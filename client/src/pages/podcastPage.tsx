@@ -8,7 +8,7 @@ import ShowCard, {ShowInfo} from '../components/showCard';
 
 const useStyles = makeStyles({
   root: {
-    marginTop: '10px',
+    margin: '10px',
     textAlign: 'center'
   },
   cardWrapper: {

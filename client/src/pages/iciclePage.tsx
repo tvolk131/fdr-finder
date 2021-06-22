@@ -10,7 +10,7 @@ import {chunk} from '../helper';
 
 const useStyles = makeStyles({
   root: {
-    marginTop: '10px',
+    margin: '10px',
     textAlign: 'center'
   },
   loadingSpinner: {
