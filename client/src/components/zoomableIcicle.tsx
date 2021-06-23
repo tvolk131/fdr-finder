@@ -102,7 +102,7 @@ export const ZoomableIcicle = (props: ZoomableIcicleProps) => {
 
     cell.append('title')
         .text(d => `${d.ancestors().map(d => d.data.name).reverse().join('/')}\n${format(d.value!)}`);
-  }, [height, width, data]);
+  }, [height, width, showValue, data]);
 
   return (<svg className={`target-${uniqueId.current}`}/>);
 }

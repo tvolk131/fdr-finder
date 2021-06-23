@@ -4,10 +4,7 @@ import {isTrunkNode, LeafDataNode, TrunkDataNode} from './dataNode';
 const showInfoToLeafNode = (showInfo: ShowInfo): LeafDataNode => {
   return {
     name: showInfo.title,
-    // We're getting the square of the log so that extremely short podcasts are still visible.
-    // This is acceptable because the value here is ultimately only meaningful in comparison
-    // to other values and *not* as an absolute number.
-    value: Math.pow(Math.log(showInfo.lengthInSeconds), 2)
+    value: showInfo.lengthInSeconds
   };
 };
 

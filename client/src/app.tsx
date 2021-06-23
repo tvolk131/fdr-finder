@@ -16,6 +16,7 @@ import {PodcastPage} from './pages/podcastPage';
 import {AudioPlayer} from './components/audioPlayer';
 import {ShowInfo} from './components/showCard';
 import {IciclePage} from './pages/iciclePage';
+import {CirclePackingPage} from './pages/circlePackingPage';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -47,6 +48,9 @@ const SubApp = () => {
           </Route>
           <Route exact path='/visualization/icicle'>
             <IciclePage/>
+          </Route>
+          <Route exact path='/visualization/circlePacking'>
+            <CirclePackingPage/>
           </Route>
           <Route path='*'>
             <NotFoundPage/>
