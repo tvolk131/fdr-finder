@@ -118,7 +118,7 @@ export const SearchPage = (props: SearchPageProps) => {
             <DialogTitle>Results for '{searchTerm}'</DialogTitle>
             <DialogActions>
               <Button onClick={() => setVisualizationFormat('circlePacking')} disabled={visualizationFormat === 'circlePacking'}>
-                CirclePacking
+                Circle Packing
               </Button>
               <Button onClick={() => setVisualizationFormat('icicle')} disabled={visualizationFormat === 'icicle'}>
                 Icicle
