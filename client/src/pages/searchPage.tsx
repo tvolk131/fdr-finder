@@ -11,6 +11,7 @@ import {useHistory} from 'react-router';
 import * as qs from 'qs';
 import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
+import {ZoomableSunburst} from '../components/zoomableSunburst';
 import {createTree} from '../helper';
 
 const queryFieldName = 'query';
@@ -56,7 +57,7 @@ export const SearchPage = (props: SearchPageProps) => {
   const [showSnackbar, setShowSnackbar] = useState(false);
 
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
-  const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'icicle'>('circlePacking');
+  const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
   const search = async () => {
     if (!isSearching) {
@@ -120,6 +121,9 @@ export const SearchPage = (props: SearchPageProps) => {
               <Button onClick={() => setVisualizationFormat('circlePacking')} disabled={visualizationFormat === 'circlePacking'}>
                 Circle Packing
               </Button>
+              <Button onClick={() => setVisualizationFormat('sunburst')} disabled={visualizationFormat === 'sunburst'}>
+                Sunburst
+              </Button>
               <Button onClick={() => setVisualizationFormat('icicle')} disabled={visualizationFormat === 'icicle'}>
                 Icicle
               </Button>
@@ -127,6 +131,15 @@ export const SearchPage = (props: SearchPageProps) => {
             {
               visualizationFormat === 'circlePacking' && <ZoomableCirclePacking
                 height={600}
+                width={975}
+                data={createTree(podcasts, [
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
+                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                ])}
+              />
+            }
+            {
+              visualizationFormat === 'sunburst' && <ZoomableSunburst
                 width={975}
                 data={createTree(podcasts, [
                   {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
