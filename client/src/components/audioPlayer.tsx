@@ -14,7 +14,7 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       bottom: '0%',
       width: '100%',
-      position: 'fixed',
+      position: 'sticky',
       flexDirection: 'column',
       borderRadius: 0
     },

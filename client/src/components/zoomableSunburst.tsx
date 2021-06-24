@@ -23,14 +23,14 @@ const labelVisible = (d: any) => {
 const format = d3.format(',d');
 
 interface ZoomableSunburstProps {
-  width: number,
+  size: number,
   data: TrunkDataNode
 }
 
 // Built from the example at https://observablehq.com/@d3/zoomable-sunburst.
 export const ZoomableSunburst = (props: ZoomableSunburstProps) => {
-  const {width, data} = props;
-  const radius = width / 6;
+  const {size, data} = props;
+  const radius = size / 6;
 
   const uniqueId = useRef(Math.floor(Math.random() * 100000000));
 
@@ -55,14 +55,14 @@ export const ZoomableSunburst = (props: ZoomableSunburstProps) => {
 
     const svg = d3
       .select(`.target-${uniqueId.current}`)
-      .attr('viewBox', `${0} ${0} ${width} ${width}`)
+      .attr('viewBox', `${0} ${0} ${size} ${size}`)
       .style('font', '10px sans-serif');
 
     // Remove any elements from previous renders.
     svg.selectAll('*').remove();
 
     const g = svg.append('g')
-      .attr('transform', `translate(${width / 2},${width / 2})`);
+      .attr('transform', `translate(${size / 2},${size / 2})`);
 
     const color = d3.scaleOrdinal(d3.quantize(d3.interpolateRainbow, data.children.length + 1));
 
@@ -138,7 +138,7 @@ export const ZoomableSunburst = (props: ZoomableSunburstProps) => {
       .attr('fill', 'none')
       .attr('pointer-events', 'all')
       .on('click', clicked);
-  }, [width, data]);
+  }, [size, data]);
 
   return (<svg className={`target-${uniqueId.current}`}/>);
 };

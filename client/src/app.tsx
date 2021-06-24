@@ -23,8 +23,12 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       backgroundColor: theme.palette.background.default,
-      height: '100%',
-      overflowY: 'auto'
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh'
+    },
+    pageContent: {
+      flex: 1
     }
   })
 );
@@ -39,28 +43,30 @@ const SubApp = () => {
       {/* This meta tag makes the mobile experience
       much better by preventing text from being tiny. */}
       <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
-      <BrowserRouter>
-        <Switch>
-          <Route exact path='/'>
-            <SearchPage setPlayingShow={setPlayingShow}/>
-          </Route>
-          <Route exact path='/podcasts/:podcastNum'>
-            <PodcastPage setPlayingShow={setPlayingShow}/>
-          </Route>
-          <Route exact path='/visualization/circlePacking'>
-            <CirclePackingPage/>
-          </Route>
-          <Route exact path='/visualization/sunburst'>
-            <SunburstPage/>
-          </Route>
-          <Route exact path='/visualization/icicle'>
-            <IciclePage/>
-          </Route>
-          <Route path='*'>
-            <NotFoundPage/>
-          </Route>
-        </Switch>
-      </BrowserRouter>
+      <div className={classes.pageContent}>
+        <BrowserRouter>
+          <Switch>
+            <Route exact path='/'>
+              <SearchPage setPlayingShow={setPlayingShow}/>
+            </Route>
+            <Route exact path='/podcasts/:podcastNum'>
+              <PodcastPage setPlayingShow={setPlayingShow}/>
+            </Route>
+            <Route exact path='/visualization/circlePacking'>
+              <CirclePackingPage/>
+            </Route>
+            <Route exact path='/visualization/sunburst'>
+              <SunburstPage/>
+            </Route>
+            <Route exact path='/visualization/icicle'>
+              <IciclePage/>
+            </Route>
+            <Route path='*'>
+              <NotFoundPage/>
+            </Route>
+          </Switch>
+        </BrowserRouter>
+      </div>
       <AudioPlayer showInfo={playingShow} autoPlay={true}/>
     </div>
   );

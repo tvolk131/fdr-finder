@@ -130,8 +130,7 @@ export const SearchPage = (props: SearchPageProps) => {
             </DialogActions>
             {
               visualizationFormat === 'circlePacking' && <ZoomableCirclePacking
-                height={600}
-                width={975}
+                size={975}
                 data={createTree(podcasts, [
                   {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
                   {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
@@ -140,7 +139,7 @@ export const SearchPage = (props: SearchPageProps) => {
             }
             {
               visualizationFormat === 'sunburst' && <ZoomableSunburst
-                width={975}
+                size={975}
                 data={createTree(podcasts, [
                   {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
                   {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
