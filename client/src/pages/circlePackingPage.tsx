@@ -36,8 +36,6 @@ export const CirclePackingPage = () => {
       .catch(() => setAllPodcasts(null));
   }, []);
 
-  let innerContent;
-
   if (allPodcasts === undefined) {
     return (
       <div className={classes.loadingRoot}>
