@@ -19,7 +19,9 @@ const useStyles = makeStyles((theme: Theme) =>
       borderRadius: 0
     },
     details: {
-      display: 'flex'
+      display: 'flex',
+      flexFlow: 'wrap',
+      overflow: 'auto'
     },
     content: {
       flex: '1 0 auto',
