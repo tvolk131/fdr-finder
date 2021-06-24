@@ -16,7 +16,8 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '100%',
       position: 'sticky',
       flexDirection: 'column',
-      borderRadius: 0
+      borderRadius: 0,
+      overflowX: 'clip'
     },
     details: {
       display: 'flex',
@@ -63,6 +64,9 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   const audioRef = useRef(new Audio(props.showInfo?.audioLink));
   const intervalRef = useRef<NodeJS.Timeout>();
+
+  audioRef.current.onpause = () => setIsPlaying(false);
+  audioRef.current.onplay = () => setIsPlaying(true);
 
 	const startTimer = () => {
     if (intervalRef.current) {
