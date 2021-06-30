@@ -79,7 +79,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 	    } else {
 	      setTrackProgress(audioRef.current.currentTime);
 	    }
-	  }, 500);
+	  }, 50);
 	}
 
   useEffect(() => {
@@ -107,6 +107,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   const seekRelative = (seconds: number) => {
     audioRef.current.currentTime += seconds;
+    setTrackProgress(audioRef.current.currentTime);
   };
 
   return (
@@ -130,6 +131,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
               setTrackProgress(newValue);
               startTimer();
               audioRef.current.currentTime = newValue;
+              setTrackProgress(audioRef.current.currentTime);
             }
           }}
         />
