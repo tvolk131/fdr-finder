@@ -34,6 +34,10 @@ impl PodcastNumber {
     pub fn new(num: Number) -> Self {
         Self { num }
     }
+
+    pub fn to_string(&self) -> String {
+        self.num.to_string()
+    }
 }
 
 #[derive(Debug)]
@@ -97,6 +101,10 @@ impl Podcast {
 
     pub fn get_title(&self) -> &str {
         &self.title
+    }
+
+    pub fn get_description(&self) -> &str {
+        &self.description
     }
 
     pub fn get_podcast_number(&self) -> &PodcastNumber {

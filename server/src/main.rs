@@ -1,11 +1,13 @@
 mod fdr_cache;
 mod http;
 mod podcast;
+mod sonic;
 
 use fdr_cache::{FdrCache, PodcastQuery};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{http::Error, Body, Request, Response, Server};
 use serde_json::Value;
+use sonic::SonicInstance;
 use std::{collections::HashMap, net::SocketAddr};
 use std::{str::FromStr, sync::Arc};
 
@@ -15,13 +17,22 @@ const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
 
 struct HandlerState {
-    database: FdrCache,
+    sonic_instance: SonicInstance,
+    database: Arc<FdrCache>,
 }
 
 impl HandlerState {
     async fn new() -> Self {
+        let database = Arc::from(FdrCache::new().await.unwrap());
+        let sonic_instance = SonicInstance::new("127.0.0.1:1491", "password", database.clone());
+
+        println!("Ingesting Sonic search index...");
+        sonic_instance.ingest_all();
+        println!("Search index is complete!");
+
         HandlerState {
-            database: FdrCache::new().await.unwrap(),
+            sonic_instance,
+            database,
         }
     }
 }
@@ -99,8 +110,7 @@ async fn handle_api_request(
             Some(skip) => skip.parse::<usize>().unwrap(),
             None => 0,
         };
-        let query = PodcastQuery::new(filter, limit, skip);
-        let podcasts = handler_state.database.query_podcasts(query);
+        let podcasts = handler_state.sonic_instance.search(&filter);
         let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
         return Response::builder()
             .header("content-type", "application/json")
