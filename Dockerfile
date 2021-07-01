@@ -1,4 +1,4 @@
-FROM node:15.14.0 AS client-base
+FROM node:16.3.0 AS client-base
 COPY ./ ./app
 WORKDIR /app
 RUN cd client && npm ci && npm run build-prod
@@ -10,5 +10,6 @@ RUN cd server && rustup default nightly && cargo build --release && mkdir -p /bu
 
 FROM debian:10-slim
 COPY --from=server-base /build-out/fdr-show-indexer-server /
+ENV ROCKET_PORT=80
 EXPOSE 80
 CMD /fdr-show-indexer-server
