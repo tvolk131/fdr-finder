@@ -8,14 +8,14 @@ mod podcast;
 mod sonic;
 
 use crate::podcast::{generate_rss_feed, PodcastNumber};
-use fdr_cache::{FdrCache};
+use fdr_cache::FdrCache;
 use rocket::{
     http::{ContentType, RawStr, Status},
     Request, Response, State,
 };
 use serde_json::Value;
 use sonic::SonicInstance;
-use std::{io::Cursor};
+use std::io::Cursor;
 use std::sync::Arc;
 
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
@@ -111,7 +111,10 @@ fn search_podcasts<'a>(
 }
 
 #[get("/search/podcasts/rss?<query>")]
-fn search_podcasts_as_rss_feed<'a>(query: String, sonic_instance: State<SonicInstance>) -> Response<'a> {
+fn search_podcasts_as_rss_feed<'a>(
+    query: String,
+    sonic_instance: State<SonicInstance>,
+) -> Response<'a> {
     let podcasts = sonic_instance.search(&query);
     let rss = generate_rss_feed(
         &podcasts,
