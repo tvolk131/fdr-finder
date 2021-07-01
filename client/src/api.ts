@@ -22,10 +22,10 @@ export const getAllPodcasts = async (): Promise<ShowInfo[]> => {
   return (await axios.get('/api/allPodcasts')).data.map(deserializeShowInfo);
 }
 
-export const getPodcastRssUrl = (filter: string) => {
+export const getPodcastRssUrl = (query: string) => {
   let url = 'https://fdr-finder.tommyvolk.com/api/search/podcasts/rss';
-  if (filter.length) {
-    url += `?filter=${filter}`;
+  if (query.length) {
+    url += `?query=${query}`;
   }
   return encodeURI(url);
 }
