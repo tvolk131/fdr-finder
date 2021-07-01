@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
-import {getPodcastRssUrl, getPodcasts} from '../api';
+import {getPodcastRssUrl, searchPodcasts} from '../api';
 import {Button, CircularProgress, Dialog, DialogActions, DialogTitle, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
@@ -63,7 +63,7 @@ export const SearchPage = (props: SearchPageProps) => {
     if (!isSearching) {
       setIsSearching(true);
       history.push(`/?${queryFieldName}=${searchTerm}`);
-      setPodcasts(await getPodcasts(searchTerm, 50, 0));
+      setPodcasts(await searchPodcasts(searchTerm, 50, 0));
       setIsSearching(false);
     }
   };
