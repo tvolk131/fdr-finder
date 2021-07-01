@@ -43,7 +43,7 @@ export const SunburstPage = () => {
   } else {
     innerContent = (
       <ZoomableSunburst
-        width={975}
+        size={975}
         data={createTree(allPodcasts, [
           {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
           {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}

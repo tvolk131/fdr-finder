@@ -22,14 +22,15 @@ const color = d3.scaleLinear()
                 .interpolate(d3.interpolateHcl as any);
 
 interface ZoomableCirclePackingProps {
-  height: number,
-  width: number,
+  size: number,
   data: TrunkDataNode
 }
 
 // Built from the example at https://observablehq.com/@d3/zoomable-circle-packing.
 export const ZoomableCirclePacking = (props: ZoomableCirclePackingProps) => {
-  const {height, width, data} = props;
+  const {size, data} = props;
+  const height = size;
+  const width = size;
 
   const uniqueId = useRef(Math.floor(Math.random() * 100000000));
 
@@ -103,7 +104,7 @@ export const ZoomableCirclePacking = (props: ZoomableCirclePackingProps) => {
             .on('start', function(d) { if (d.parent === focus) (this as any).style.display = 'inline'; })
             .on('end', function(d) { if (d.parent !== focus) (this as any).style.display = 'none'; });
       }
-  }, [height, width, data]);
+  }, [size, data]);
 
   return (<svg className={`target-${uniqueId.current}`}/>);
 };

@@ -14,12 +14,15 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       bottom: '0%',
       width: '100%',
-      position: 'fixed',
+      position: 'sticky',
       flexDirection: 'column',
-      borderRadius: 0
+      borderRadius: 0,
+      overflowX: 'clip'
     },
     details: {
-      display: 'flex'
+      display: 'flex',
+      flexFlow: 'wrap',
+      overflow: 'auto'
     },
     content: {
       flex: '1 0 auto',
@@ -62,6 +65,9 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   const audioRef = useRef(new Audio(props.showInfo?.audioLink));
   const intervalRef = useRef<NodeJS.Timeout>();
 
+  audioRef.current.onpause = () => setIsPlaying(false);
+  audioRef.current.onplay = () => setIsPlaying(true);
+
 	const startTimer = () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -73,7 +79,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 	    } else {
 	      setTrackProgress(audioRef.current.currentTime);
 	    }
-	  }, 500);
+	  }, 50);
 	}
 
   useEffect(() => {
@@ -101,6 +107,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   const seekRelative = (seconds: number) => {
     audioRef.current.currentTime += seconds;
+    setTrackProgress(audioRef.current.currentTime);
   };
 
   return (
@@ -124,6 +131,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
               setTrackProgress(newValue);
               startTimer();
               audioRef.current.currentTime = newValue;
+              setTrackProgress(audioRef.current.currentTime);
             }
           }}
         />
