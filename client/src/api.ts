@@ -9,8 +9,8 @@ const deserializeShowInfo = (data: any): ShowInfo => {
   };
 };
 
-export const getPodcasts = async (filter: string = '', limit: number = 0, skip: number = 0): Promise<ShowInfo[]> => {
-  return (await axios.get(`/api/podcasts?filter=${filter}&limit=${limit}&skip=${skip}`)).data.map(deserializeShowInfo);
+export const searchPodcasts = async (query: string = '', limit: number = 0, skip: number = 0): Promise<ShowInfo[]> => {
+  return (await axios.get(`/api/search/podcasts?query=${query}&limit=${limit}&skip=${skip}`)).data.map(deserializeShowInfo);
 };
 
 export const getPodcast = async (podcastNum: number): Promise<ShowInfo> => {
@@ -18,11 +18,11 @@ export const getPodcast = async (podcastNum: number): Promise<ShowInfo> => {
 };
 
 export const getAllPodcasts = async (): Promise<ShowInfo[]> => {
-  return (await axios.get('/api/podcasts/all')).data.map(deserializeShowInfo);
+  return (await axios.get('/api/allPodcasts')).data.map(deserializeShowInfo);
 }
 
 export const getPodcastRssUrl = (filter: string) => {
-  let url = 'https://fdr-finder.tommyvolk.com/api/podcasts/rss';
+  let url = 'https://fdr-finder.tommyvolk.com/api/search/podcasts/rss';
   if (filter.length) {
     url += `?filter=${filter}`;
   }

@@ -1,159 +1,124 @@
+#![feature(decl_macro)]
+#[macro_use] extern crate rocket;
+
 mod fdr_cache;
 mod http;
 mod podcast;
 
+use rocket::{Request, Response, State, http::{ContentType, RawStr, Status}};
 use fdr_cache::{FdrCache, PodcastQuery};
-use hyper::service::{make_service_fn, service_fn};
-use hyper::{http::Error, Body, Request, Response, Server};
+use std::io::Cursor;
 use serde_json::Value;
-use std::{collections::HashMap, net::SocketAddr};
-use std::{str::FromStr, sync::Arc};
-
 use crate::podcast::{generate_rss_feed, PodcastNumber};
 
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
 
-struct HandlerState {
-    database: FdrCache,
-}
-
-impl HandlerState {
-    async fn new() -> Self {
-        HandlerState {
-            database: FdrCache::new().await.unwrap(),
-        }
+#[catch(404)]
+fn not_found<'a>(req: &Request) -> Response<'a> {
+    if req.uri().path().split('/').filter(|chunk| !chunk.is_empty()).next().unwrap_or_default() == "api" {
+        return Response::build()
+            .status(Status::NotFound)
+            .header(ContentType::Plain)
+            .sized_body(Cursor::new(format!("404 - API path '{}' does not exist!", req.uri().path())))
+            .finalize();
+    } else if req.uri().path().split('/').last().unwrap_or_default() == "bundle.js" {
+        return Response::build()
+            .status(Status::Ok)
+            .header(ContentType::JavaScript)
+            .sized_body(Cursor::new(JS_BUNDLE_BYTES))
+            .finalize();
+    } else {
+        return Response::build()
+            .status(Status::Ok)
+            .header(ContentType::HTML)
+            .sized_body(Cursor::new(HTML_BYTES))
+            .finalize();
     }
 }
 
+#[get("/podcasts/<podcast_num>")]
+fn get_podcast<'a>(podcast_num: &RawStr, fdr_cache: State<FdrCache>) -> Response<'a> {
+    let podcast_or = match podcast_num.parse::<serde_json::Number>() {
+        Ok(num) => fdr_cache.get_podcast(&PodcastNumber::new(num)),
+        Err(_) => None
+    };
+
+    return match podcast_or {
+        Some(podcast) => Response::build()
+            .status(Status::Ok)
+            .header(ContentType::JSON)
+            .sized_body(Cursor::new(podcast.to_json().to_string()))
+            .finalize(),
+        None => Response::build()
+            .status(Status::NotFound)
+            .header(ContentType::HTML)
+            .sized_body(Cursor::new("Podcast does not exist"))
+            .finalize(),
+    };
+}
+
+#[get("/allPodcasts")]
+fn get_all_podcasts<'a>(fdr_cache: State<FdrCache>) -> Response<'a> {
+    let podcasts = fdr_cache.get_all_podcasts();
+    let json = Value::Array(
+        podcasts
+            .into_iter()
+            .map(|podcast| podcast.to_json())
+            .collect(),
+    );
+
+    Response::build()
+        .status(Status::Ok)
+        .header(ContentType::JSON)
+        .sized_body(Cursor::new(json.to_string()))
+        .finalize()
+}
+
+#[get("/search/podcasts?<query>&<limit>&<skip>")]
+fn search_podcasts<'a>(query: String, limit: usize, skip: usize, fdr_cache: State<FdrCache>) -> Response<'a> {
+    let podcast_query = PodcastQuery::new(query, limit, skip);
+    let podcasts = fdr_cache.query_podcasts(podcast_query);
+    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
+
+    Response::build()
+        .status(Status::Ok)
+        .header(ContentType::JSON)
+        .sized_body(Cursor::new(json.to_string()))
+        .finalize()
+}
+
+#[get("/search/podcasts/rss?<query>")]
+fn search_podcasts_as_rss_feed<'a>(query: String, fdr_cache: State<FdrCache>) -> Response<'a> {
+    // TODO - Find a better way to do this than just putting 999999 for the limit.
+    let podcast_query = PodcastQuery::new(query.clone(), 999999, 0);
+    let podcasts = fdr_cache.query_podcasts(podcast_query);
+    let rss = generate_rss_feed(
+        &podcasts,
+        &format!("Freedomain Custom Feed: {}", query),
+        &format!(
+            "A generated feed containing all Freedomain podcasts about: {}",
+            query
+        ),
+    );
+
+    Response::build()
+        .status(Status::Ok)
+        .header(ContentType::XML)
+        .sized_body(Cursor::new(rss))
+        .finalize()
+}
+
+// TODO - Make sure that running on port 8000 is ok... Or add env variable to control what port the server runs on.
 #[tokio::main]
 async fn main() {
-    let port = 80;
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    let handler_state = Arc::from(HandlerState::new().await);
-    let make_svc = make_service_fn(move |_| {
-        let handler_state = handler_state.clone();
-
-        async {
-            Ok::<_, Error>(service_fn(move |req| {
-                handle_request(req, handler_state.clone())
-            }))
-        }
-    });
-    let server = Server::bind(&addr).serve(make_svc);
-    println!("Server started on port {}.", port);
-    if let Err(e) = server.await {
-        eprintln!("Server error: {}", e);
-    }
-}
-
-async fn handle_request(
-    req: Request<Body>,
-    handler_state: Arc<HandlerState>,
-) -> Result<Response<Body>, Error> {
-    if req.uri().path().starts_with("/api/") {
-        return handle_api_request(req, handler_state).await;
-    }
-
-    if req.uri().path().split('/').last().unwrap() == "bundle.js" {
-        return Response::builder()
-            .header("content-type", "application/javascript; charset=utf-8")
-            .body(Body::from(JS_BUNDLE_BYTES.to_vec()));
-    }
-    Response::builder()
-        .header("content-type", "text/html; charset=utf-8")
-        .body(Body::from(HTML_BYTES.to_vec()))
-}
-
-async fn handle_api_request(
-    req: Request<Body>,
-    handler_state: Arc<HandlerState>,
-) -> Result<Response<Body>, Error> {
-    if req.uri().path() == "/api/podcasts/all" {
-        let podcasts = handler_state.database.get_all_podcasts();
-        let json = Value::Array(
-            podcasts
-                .into_iter()
-                .map(|podcast| podcast.to_json())
-                .collect(),
-        );
-        return Response::builder()
-            .header("content-type", "application/json")
-            .body(Body::from(json.to_string()));
-    } else if req.uri().path() == "/api/podcasts" {
-        let url = url::Url::from_str(&format!("http://example.com{}", req.uri())).unwrap();
-        let query_pairs = url.query_pairs();
-        let mut query_params: HashMap<String, String> = HashMap::new();
-        for pair in query_pairs {
-            query_params.insert(pair.0.to_string(), pair.1.to_string());
-        }
-        let filter = match query_params.get("filter") {
-            Some(filter) => filter.clone(),
-            None => String::from(""),
-        };
-        let limit = match query_params.get("limit") {
-            Some(limit) => limit.parse::<usize>().unwrap(),
-            None => 0,
-        };
-        let skip = match query_params.get("skip") {
-            Some(skip) => skip.parse::<usize>().unwrap(),
-            None => 0,
-        };
-        let query = PodcastQuery::new(filter, limit, skip);
-        let podcasts = handler_state.database.query_podcasts(query);
-        let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
-        return Response::builder()
-            .header("content-type", "application/json")
-            .body(Body::from(json.to_string()));
-    } else if req.uri().path() == "/api/podcasts/rss" {
-        let url = url::Url::from_str(&format!("http://example.com{}", req.uri())).unwrap();
-        let query_pairs = url.query_pairs();
-        let mut query_params: HashMap<String, String> = HashMap::new();
-        for pair in query_pairs {
-            query_params.insert(pair.0.to_string(), pair.1.to_string());
-        }
-        let filter = match query_params.get("filter") {
-            Some(filter) => filter.clone(),
-            None => String::from(""),
-        };
-        let skip = match query_params.get("skip") {
-            Some(skip) => skip.parse::<usize>().unwrap(),
-            None => 0,
-        };
-        // TODO - Find a better way to do this than just putting 999999 for the limit.
-        let query = PodcastQuery::new(filter.clone(), 999999, skip);
-        let podcasts = handler_state.database.query_podcasts(query);
-        let rss = generate_rss_feed(
-            &podcasts,
-            &format!("Freedomain Custom Feed: {}", filter),
-            &format!(
-                "A generated feed containing all Freedomain podcasts about: {}",
-                filter
-            ),
-        );
-        return Response::builder()
-            .header("content-type", "application/xml")
-            .body(Body::from(rss));
-    } else if req.uri().path().starts_with("/api/podcasts/") {
-        let split_path: Vec<&str> = req.uri().path().split("/api/podcasts/").collect();
-        let path_end = split_path.get(1).unwrap();
-        let podcast_or = handler_state.database.get_podcast(&PodcastNumber::new(
-            path_end.parse::<serde_json::Number>().unwrap(),
-        ));
-
-        return match podcast_or {
-            Some(podcast) => Response::builder()
-                .header("content-type", "application/json")
-                .body(Body::from(podcast.to_json().to_string())),
-            None => Response::builder()
-                .header("content-type", "text/html")
-                .status(404)
-                .body(Body::from("Podcast does not exist")),
-        };
-    }
-
-    Response::builder()
-        .status(404)
-        .header("content-type", "text/plain")
-        .body(Body::from("API endpoint not found"))
+    println!("Fetching podcasts and building cache...");
+    let fdr_cache = FdrCache::new().await.unwrap();
+    println!("Podcast cache successfully built!");
+    println!("Starting server...");
+    rocket::ignite()
+        .manage(fdr_cache)
+        .register(catchers![not_found])
+        .mount("/api", routes![get_podcast, get_all_podcasts, search_podcasts, search_podcasts_as_rss_feed])
+        .launch();
 }
