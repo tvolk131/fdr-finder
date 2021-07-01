@@ -1,26 +1,41 @@
 #![feature(decl_macro)]
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
 mod fdr_cache;
 mod http;
 mod podcast;
 
-use rocket::{Request, Response, State, http::{ContentType, RawStr, Status}};
-use fdr_cache::{FdrCache, PodcastQuery};
-use std::io::Cursor;
-use serde_json::Value;
 use crate::podcast::{generate_rss_feed, PodcastNumber};
+use fdr_cache::{FdrCache, PodcastQuery};
+use rocket::{
+    http::{ContentType, RawStr, Status},
+    Request, Response, State,
+};
+use serde_json::Value;
+use std::io::Cursor;
 
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
 
 #[catch(404)]
 fn not_found<'a>(req: &Request) -> Response<'a> {
-    if req.uri().path().split('/').filter(|chunk| !chunk.is_empty()).next().unwrap_or_default() == "api" {
+    if req
+        .uri()
+        .path()
+        .split('/')
+        .filter(|chunk| !chunk.is_empty())
+        .next()
+        .unwrap_or_default()
+        == "api"
+    {
         return Response::build()
             .status(Status::NotFound)
             .header(ContentType::Plain)
-            .sized_body(Cursor::new(format!("404 - API path '{}' does not exist!", req.uri().path())))
+            .sized_body(Cursor::new(format!(
+                "404 - API path '{}' does not exist!",
+                req.uri().path()
+            )))
             .finalize();
     } else if req.uri().path().split('/').last().unwrap_or_default() == "bundle.js" {
         return Response::build()
@@ -41,7 +56,7 @@ fn not_found<'a>(req: &Request) -> Response<'a> {
 fn get_podcast<'a>(podcast_num: &RawStr, fdr_cache: State<FdrCache>) -> Response<'a> {
     let podcast_or = match podcast_num.parse::<serde_json::Number>() {
         Ok(num) => fdr_cache.get_podcast(&PodcastNumber::new(num)),
-        Err(_) => None
+        Err(_) => None,
     };
 
     return match podcast_or {
@@ -76,7 +91,12 @@ fn get_all_podcasts<'a>(fdr_cache: State<FdrCache>) -> Response<'a> {
 }
 
 #[get("/search/podcasts?<query>&<limit>&<skip>")]
-fn search_podcasts<'a>(query: String, limit: usize, skip: usize, fdr_cache: State<FdrCache>) -> Response<'a> {
+fn search_podcasts<'a>(
+    query: String,
+    limit: usize,
+    skip: usize,
+    fdr_cache: State<FdrCache>,
+) -> Response<'a> {
     let podcast_query = PodcastQuery::new(query, limit, skip);
     let podcasts = fdr_cache.query_podcasts(podcast_query);
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
@@ -119,6 +139,14 @@ async fn main() {
     rocket::ignite()
         .manage(fdr_cache)
         .register(catchers![not_found])
-        .mount("/api", routes![get_podcast, get_all_podcasts, search_podcasts, search_podcasts_as_rss_feed])
+        .mount(
+            "/api",
+            routes![
+                get_podcast,
+                get_all_podcasts,
+                search_podcasts,
+                search_podcasts_as_rss_feed
+            ],
+        )
         .launch();
 }

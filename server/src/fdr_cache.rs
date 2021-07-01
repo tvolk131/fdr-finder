@@ -12,11 +12,7 @@ pub struct PodcastQuery {
 
 impl PodcastQuery {
     pub fn new(query: String, limit: usize, skip: usize) -> Self {
-        Self {
-            query,
-            limit,
-            skip,
-        }
+        Self { query, limit, skip }
     }
 }
 

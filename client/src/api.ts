@@ -10,7 +10,8 @@ const deserializeShowInfo = (data: any): ShowInfo => {
 };
 
 export const searchPodcasts = async (query: string = '', limit: number = 0, skip: number = 0): Promise<ShowInfo[]> => {
-  return (await axios.get(`/api/search/podcasts?query=${query}&limit=${limit}&skip=${skip}`)).data.map(deserializeShowInfo);
+  const res = await axios.get(`/api/search/podcasts?query=${query}&limit=${limit}&skip=${skip}`);
+  return res.data.map(deserializeShowInfo);
 };
 
 export const getPodcast = async (podcastNum: number): Promise<ShowInfo> => {
