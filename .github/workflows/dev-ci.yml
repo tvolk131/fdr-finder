@@ -27,4 +27,8 @@ jobs:
           npm run build-prod
           cd ../server
           rustup default nightly
+          rustup component add rustfmt
+          rustup component add clippy
+          cargo fmt -- --check
+          cargo clippy --all-targets --all-features -- -D warnings
           cargo test
