@@ -93,14 +93,9 @@ fn get_all_podcasts<'a>(fdr_cache: State<FdrCache>) -> Response<'a> {
         .finalize()
 }
 
-#[get("/search/podcasts?<query>&<limit>&<skip>")]
-fn search_podcasts<'a>(
-    query: String,
-    limit: usize,
-    skip: usize,
-    sonic_instance: State<SonicInstance>,
-) -> Response<'a> {
-    let podcasts = sonic_instance.search(&query);
+#[get("/search/podcasts?<query>")]
+fn search_podcasts<'a>(query: String, sonic_instance: State<SonicInstance>) -> Response<'a> {
+    let podcasts = sonic_instance.search_by_title(&query);
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
     Response::build()
@@ -115,7 +110,7 @@ fn search_podcasts_as_rss_feed<'a>(
     query: String,
     sonic_instance: State<SonicInstance>,
 ) -> Response<'a> {
-    let podcasts = sonic_instance.search(&query);
+    let podcasts = sonic_instance.search_by_title(&query);
     let rss = generate_rss_feed(
         &podcasts,
         &format!("Freedomain Custom Feed: {}", query),
@@ -132,7 +127,6 @@ fn search_podcasts_as_rss_feed<'a>(
         .finalize()
 }
 
-// TODO - Make sure that running on port 8000 is ok... Or add env variable to control what port the server runs on.
 #[tokio::main]
 async fn main() {
     println!("Fetching podcasts and building cache...");

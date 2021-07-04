@@ -7,6 +7,9 @@ use crate::{
     podcast::{Podcast, PodcastNumber},
 };
 
+const FDR_COLLECTION: &'static str = "fdr";
+const FDR_TITLE_BUCKET: &'static str = "title";
+
 pub struct SonicInstance {
     search_channel: SearchChannel,
     ingest_channel: IngestChannel,
@@ -22,9 +25,9 @@ impl SonicInstance {
         }
     }
 
-    pub fn search(&self, query: &str) -> Vec<&Arc<Podcast>> {
+    pub fn search_by_title(&self, query: &str) -> Vec<&Arc<Podcast>> {
         self.search_channel
-            .query("fdr", "default", query)
+            .query(FDR_COLLECTION, FDR_TITLE_BUCKET, query)
             .unwrap()
             .into_iter()
             .filter_map(|podcast_num| {
@@ -35,16 +38,16 @@ impl SonicInstance {
             .collect()
     }
 
-    pub fn suggest(&self, query: &str) -> Vec<String> {
+    pub fn suggest_by_title(&self, query: &str) -> Vec<String> {
         self.search_channel
-            .suggest_with_limit("fdr", "default", query, 5)
+            .suggest_with_limit(FDR_COLLECTION, FDR_TITLE_BUCKET, query, 5)
             .unwrap()
     }
 
     fn ingest(&self, podcast: &Podcast) {
         match self.ingest_channel.push(
-            "fdr",
-            "default",
+            FDR_COLLECTION,
+            FDR_TITLE_BUCKET,
             &podcast.get_podcast_number().to_string(),
             podcast.get_title(),
         ) {
