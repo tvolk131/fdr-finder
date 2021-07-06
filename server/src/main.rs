@@ -6,6 +6,7 @@ mod fdr_cache;
 mod http;
 mod podcast;
 mod sonic;
+mod environment;
 
 use crate::podcast::{generate_rss_feed, PodcastNumber};
 use fdr_cache::FdrCache;
@@ -129,11 +130,12 @@ fn search_podcasts_as_rss_feed<'a>(
 
 #[tokio::main]
 async fn main() {
+    let env_vars = environment::EnvironmentVariables::new();
     println!("Fetching podcasts and building cache...");
     let fdr_cache = Arc::from(FdrCache::new().await.unwrap());
     println!("Podcast cache successfully built!");
     println!("Connecting to Sonic...");
-    let sonic_instance = SonicInstance::new("127.0.0.1", "password", fdr_cache.clone());
+    let sonic_instance = SonicInstance::new(env_vars.get_sonic_uri(), env_vars.get_sonic_password(), fdr_cache.clone());
     println!("Ingesting Sonic search index...");
     sonic_instance.ingest_all();
     println!("Search index is complete!");

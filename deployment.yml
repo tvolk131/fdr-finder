@@ -17,6 +17,11 @@ spec:
         image: <IMAGE>
         ports:
         - containerPort: 80
+        env:
+        - name: SONIC_URI
+          value: "<SONIC_URI>"
+        - name: SONIC_PASSWORD
+          value: "<SONIC_PASSWORD>"
 ---
 apiVersion: v1
 kind: Service
