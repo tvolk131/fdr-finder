@@ -1,3 +1,4 @@
+#![allow(clippy::all)] // TODO - Remove this line. Rocket expanded macro code currently generates clippy warnings.
 #![feature(decl_macro)]
 #[macro_use]
 extern crate rocket;
