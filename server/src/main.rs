@@ -2,11 +2,11 @@
 #[macro_use]
 extern crate rocket;
 
+mod environment;
 mod fdr_cache;
 mod http;
 mod podcast;
 mod sonic;
-mod environment;
 
 use crate::podcast::{generate_rss_feed, PodcastNumber};
 use fdr_cache::FdrCache;

@@ -1,4 +1,6 @@
+use serde::Serialize;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::{
     ops::Add,
@@ -6,10 +8,26 @@ use std::{
 };
 
 use serde_json::{json, Number, Value};
+use std::hash::{Hash, Hasher};
+
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize)]
+pub struct PodcastTag(String);
+
+impl PodcastTag {
+    pub fn new(tag: String) -> Self {
+        Self(tag)
+    }
+}
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct PodcastNumber {
     num: Number,
+}
+
+impl Hash for PodcastNumber {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.to_string().hash(state);
+    }
 }
 
 impl PartialOrd for PodcastNumber {
@@ -40,7 +58,7 @@ impl PodcastNumber {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Podcast {
     title: String,
     description: String,
@@ -48,6 +66,13 @@ pub struct Podcast {
     length_in_seconds: i32,
     podcast_number: PodcastNumber,
     create_time: i64,
+    tags: HashSet<PodcastTag>,
+}
+
+impl Hash for Podcast {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.podcast_number.hash(state);
+    }
 }
 
 impl Podcast {
@@ -58,6 +83,7 @@ impl Podcast {
         length_in_seconds: i32,
         podcast_number: PodcastNumber,
         create_time: i64,
+        tags: HashSet<PodcastTag>,
     ) -> Self {
         Self {
             title,
@@ -66,6 +92,7 @@ impl Podcast {
             length_in_seconds,
             podcast_number,
             create_time,
+            tags,
         }
     }
 
@@ -76,7 +103,8 @@ impl Podcast {
             "audioLink": self.audio_link,
             "lengthInSeconds": self.length_in_seconds,
             "podcastNumber": self.podcast_number.num,
-            "createTime": self.create_time
+            "createTime": self.create_time,
+            "tags": self.tags.iter().collect::<Vec<&PodcastTag>>()
         })
     }
 
@@ -109,6 +137,10 @@ impl Podcast {
 
     pub fn get_podcast_number(&self) -> &PodcastNumber {
         &self.podcast_number
+    }
+
+    pub fn get_tags(&self) -> &HashSet<PodcastTag> {
+        &self.tags
     }
 }
 
