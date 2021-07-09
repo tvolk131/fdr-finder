@@ -3,9 +3,9 @@ import * as React from 'react';
 import {useState, useEffect} from 'react';
 import {getAllPodcasts} from '../api';
 import {ShowInfo} from '../components/showCard';
-import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {makeStyles} from '@material-ui/core/styles';
 import {createTree} from '../helper';
+import {ZoomableSunburst} from '../components/zoomableSunburst';
 
 const useStyles = makeStyles({
   root: {
@@ -17,7 +17,7 @@ const useStyles = makeStyles({
   }
 });
 
-export const IciclePage = () => {
+export const SunburstPage = () => {
   const classes = useStyles();
 
   const [allPodcasts, setAllPodcasts] = useState<ShowInfo[] | null>();
@@ -42,10 +42,8 @@ export const IciclePage = () => {
     );
   } else {
     innerContent = (
-      <ZoomableIcicle
-        height={600}
-        width={975}
-        showValue={false}
+      <ZoomableSunburst
+        size={975}
         data={createTree(allPodcasts, [
           {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
           {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}

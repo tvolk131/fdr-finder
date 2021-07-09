@@ -1,6 +1,4 @@
-# TODO - If client build fails, don't start server.
-cd ./client
-npm i
-npm run build-dev
-cd ../server
+# TODO - If client build fails, fail and don't start server.
+sh build.sh
+cd ./server
 cargo run

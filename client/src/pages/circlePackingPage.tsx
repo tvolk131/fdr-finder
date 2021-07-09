@@ -3,21 +3,29 @@ import * as React from 'react';
 import {useState, useEffect} from 'react';
 import {getAllPodcasts} from '../api';
 import {ShowInfo} from '../components/showCard';
-import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {makeStyles} from '@material-ui/core/styles';
 import {createTree} from '../helper';
+import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
 
 const useStyles = makeStyles({
-  root: {
+  loadingRoot: {
     margin: '10px',
     textAlign: 'center'
+  },
+  errorRoot: {
+    margin: '10px',
+    textAlign: 'center'
+  },
+  loadedroot: {
+    maxHeight: '100%',
+    display: 'flex'
   },
   loadingSpinner: {
     padding: '50px'
   }
 });
 
-export const IciclePage = () => {
+export const CirclePackingPage = () => {
   const classes = useStyles();
 
   const [allPodcasts, setAllPodcasts] = useState<ShowInfo[] | null>();
@@ -28,35 +36,31 @@ export const IciclePage = () => {
       .catch(() => setAllPodcasts(null));
   }, []);
 
-  let innerContent;
-
   if (allPodcasts === undefined) {
-    innerContent = (
-      <CircularProgress className={classes.loadingSpinner} size={100}/>
+    return (
+      <div className={classes.loadingRoot}>
+        <CircularProgress className={classes.loadingSpinner} size={100}/>
+      </div>
     );
   } else if (allPodcasts === null) {
-    innerContent = (
-      <Typography variant='h2'>
-        Could not load podcasts - try refreshing the page
-      </Typography>
+    return (
+      <div className={classes.errorRoot}>
+        <Typography variant='h2'>
+          Could not load podcasts - try refreshing the page
+        </Typography>
+      </div>
     );
-  } else {
-    innerContent = (
-      <ZoomableIcicle
-        height={600}
-        width={975}
-        showValue={false}
+  }
+
+  return (
+    <div className={classes.loadedroot}>
+      <ZoomableCirclePacking
+        size={975}
         data={createTree(allPodcasts, [
           {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
           {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
         ])}
       />
-    );
-  }
-
-  return (
-    <div className={classes.root}>
-      {innerContent}
     </div>
   );
 };

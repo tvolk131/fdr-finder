@@ -5,18 +5,14 @@ use std::sync::Arc;
 use std::{cmp::Ordering, error::Error};
 
 pub struct PodcastQuery {
-    filter: String,
+    query: String,
     limit: usize,
     skip: usize,
 }
 
 impl PodcastQuery {
-    pub fn new(filter: String, limit: usize, skip: usize) -> Self {
-        Self {
-            filter,
-            limit,
-            skip,
-        }
+    pub fn new(query: String, limit: usize, skip: usize) -> Self {
+        Self { query, limit, skip }
     }
 }
 
@@ -56,7 +52,7 @@ impl FdrCache {
                 podcast
                     .get_title()
                     .to_lowercase()
-                    .contains(&query.filter.to_lowercase())
+                    .contains(&query.query.to_lowercase())
             })
             .skip(query.skip)
             .take(query.limit)

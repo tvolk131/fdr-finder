@@ -3,12 +3,16 @@ import * as React from 'react';
 import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
-import {getPodcastRssUrl, getPodcasts} from '../api';
-import {Button, CircularProgress, Snackbar} from '@material-ui/core';
+import {getPodcastRssUrl, searchPodcasts} from '../api';
+import {Button, CircularProgress, Dialog, DialogActions, DialogTitle, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {RssFeed as RssFeedIcon} from '@material-ui/icons';
+import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
 import {useHistory} from 'react-router';
 import * as qs from 'qs';
+import {ZoomableIcicle} from '../components/zoomableIcicle';
+import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
+import {ZoomableSunburst} from '../components/zoomableSunburst';
+import {createTree} from '../helper';
 
 const queryFieldName = 'query';
 
@@ -25,7 +29,7 @@ const useStyles = makeStyles({
   showCardWrapper: {
     padding: '10px 0 0 0'
   },
-  rssButton: {
+  button: {
     padding: '10px 0 0 0'
   },
   loadingSpinner: {
@@ -52,11 +56,14 @@ export const SearchPage = (props: SearchPageProps) => {
   const [searchTerm, setSearchTerm] = useState(query);
   const [showSnackbar, setShowSnackbar] = useState(false);
 
+  const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
+  const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
+
   const search = async () => {
     if (!isSearching) {
       setIsSearching(true);
       history.push(`/?${queryFieldName}=${searchTerm}`);
-      setPodcasts(await getPodcasts(searchTerm, 50, 0));
+      setPodcasts(await searchPodcasts(searchTerm, 50, 0));
       setIsSearching(false);
     }
   };
@@ -79,7 +86,7 @@ export const SearchPage = (props: SearchPageProps) => {
       </div>
       {isSearching ? <CircularProgress className={classes.loadingSpinner} size={100}/> :
         <div>
-          <div className={classes.rssButton}>
+          <div className={classes.button}>
             <CopyToClipboard
               text={getPodcastRssUrl(searchTerm)}
               onCopy={() => setShowSnackbar(true)}
@@ -88,6 +95,11 @@ export const SearchPage = (props: SearchPageProps) => {
                 Copy Search-Filtered RSS Feed
               </Button>
             </CopyToClipboard>
+          </div>
+          <div className={classes.button}>
+            <Button onClick={() => setShowVisualizationDialog(true)} variant={'contained'} startIcon={<PieChartIcon/>}>
+              See Visualized Results
+            </Button>
           </div>
           <div className={classes.nested}>
             {
@@ -98,6 +110,54 @@ export const SearchPage = (props: SearchPageProps) => {
               ))
             }
           </div>
+          <Dialog
+            onClose={() => setShowVisualizationDialog(false)}
+            open={showVisualizationDialog}
+            maxWidth={'xl'}
+            fullWidth
+          >
+            <DialogTitle>Results for '{searchTerm}'</DialogTitle>
+            <DialogActions>
+              <Button onClick={() => setVisualizationFormat('circlePacking')} disabled={visualizationFormat === 'circlePacking'}>
+                Circle Packing
+              </Button>
+              <Button onClick={() => setVisualizationFormat('sunburst')} disabled={visualizationFormat === 'sunburst'}>
+                Sunburst
+              </Button>
+              <Button onClick={() => setVisualizationFormat('icicle')} disabled={visualizationFormat === 'icicle'}>
+                Icicle
+              </Button>
+            </DialogActions>
+            {
+              visualizationFormat === 'circlePacking' && <ZoomableCirclePacking
+                size={975}
+                data={createTree(podcasts, [
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
+                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                ])}
+              />
+            }
+            {
+              visualizationFormat === 'sunburst' && <ZoomableSunburst
+                size={975}
+                data={createTree(podcasts, [
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
+                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                ])}
+              />
+            }
+            {
+              visualizationFormat === 'icicle' && <ZoomableIcicle
+                height={600}
+                width={975}
+                showValue={false}
+                data={createTree(podcasts, [
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
+                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                ])}
+              />
+            }
+          </Dialog>
         </div>
       }
       <Snackbar
