@@ -136,7 +136,11 @@ async fn main() {
     let fdr_cache = Arc::from(FdrCache::new().await.unwrap());
     println!("Podcast cache successfully built!");
     println!("Connecting to Sonic...");
-    let sonic_instance = SonicInstance::new(env_vars.get_sonic_uri(), env_vars.get_sonic_password(), fdr_cache.clone());
+    let sonic_instance = SonicInstance::new(
+        env_vars.get_sonic_uri(),
+        env_vars.get_sonic_password(),
+        fdr_cache.clone(),
+    );
     println!("Ingesting Sonic search index...");
     sonic_instance.ingest_all();
     println!("Search index is complete!");
