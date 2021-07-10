@@ -252,8 +252,8 @@ async fn main() {
     println!("Podcast cache successfully built!");
     println!("Connecting to Sonic...");
     let sonic_instance = SonicInstance::new(
-        env_vars.get_sonic_uri(),
-        env_vars.get_sonic_password(),
+        env_vars.get_sonic_uri().to_string(),
+        env_vars.get_sonic_password().to_string(),
         fdr_cache.clone(),
     );
     println!("Ingesting Sonic search index...");
