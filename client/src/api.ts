@@ -9,11 +9,6 @@ const deserializeShowInfo = (data: any): ShowInfo => {
   };
 };
 
-export const searchPodcasts = async (query: string = '', limit: number = 0, skip: number = 0): Promise<ShowInfo[]> => {
-  const res = await axios.get(`/api/search/podcasts?query=${query}&limit=${limit}&skip=${skip}`);
-  return res.data.map(deserializeShowInfo);
-};
-
 export const getPodcast = async (podcastNum: number): Promise<ShowInfo> => {
   return deserializeShowInfo((await axios.get(`/api/podcasts/${podcastNum}`)).data);
 };
@@ -22,10 +17,48 @@ export const getAllPodcasts = async (): Promise<ShowInfo[]> => {
   return (await axios.get('/api/allPodcasts')).data.map(deserializeShowInfo);
 }
 
-export const getPodcastRssUrl = (query: string) => {
-  let url = 'https://fdr-finder.tommyvolk.com/api/search/podcasts/rss';
-  if (query.length) {
-    url += `?query=${query}`;
+export const searchPodcasts = async (data: {query?: string, tags?: string[]}): Promise<ShowInfo[]> => {
+  const queryParams: {[key: string]: string} = {};
+  if (data.query && data.query.length) {
+    queryParams['query'] = data.query;
   }
-  return encodeURI(url);
+  if (data.tags && data.tags.length) {
+    queryParams['tags'] = data.tags.join(',');
+  }
+
+  const res = await axios.get(generateUrlWithQueryParams('/api/search/podcasts', queryParams));
+  return res.data.map(deserializeShowInfo);
+};
+
+export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {
+  const queryParams: {[key: string]: string} = {};
+  if (data.query && data.query.length) {
+    queryParams['query'] = data.query;
+  }
+  if (data.tags && data.tags.length) {
+    queryParams['tags'] = data.tags.join(',');
+  }
+
+  return encodeURI(generateUrlWithQueryParams('https://fdr-finder.tommyvolk.com/api/search/podcasts/rss', queryParams));
+}
+
+export const getAllTags = async (): Promise<string[]> => {
+  return (await axios.get('/api/allTags')).data;
+}
+
+export const getFilteredTagsWithCounts = async (tags: string[]): Promise<{tag: string, count: number}[]> => {
+  const queryParams: {[key: string]: string} = {};
+  if (tags.length) {
+    queryParams['tags'] = tags.join(',');
+  }
+  return (await axios.get(generateUrlWithQueryParams('/api/filteredTagsWithCounts', {}))).data;
+}
+
+const generateUrlWithQueryParams = (baseUrl: string, queryParams: {[key: string]: string}) => {
+  let keys = Object.keys(queryParams);
+  if (keys.length) {
+    baseUrl += '?';
+    baseUrl += keys.map((key) => `${key}=${queryParams[key]}`).join('&');
+  }
+  return baseUrl;
 }

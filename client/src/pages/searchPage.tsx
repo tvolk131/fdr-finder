@@ -63,7 +63,7 @@ export const SearchPage = (props: SearchPageProps) => {
     if (!isSearching) {
       setIsSearching(true);
       history.push(`/?${queryFieldName}=${searchTerm}`);
-      setPodcasts(await searchPodcasts(searchTerm, 50, 0));
+      setPodcasts(await searchPodcasts({query: searchTerm}));
       setIsSearching(false);
     }
   };
@@ -88,7 +88,7 @@ export const SearchPage = (props: SearchPageProps) => {
         <div>
           <div className={classes.button}>
             <CopyToClipboard
-              text={getPodcastRssUrl(searchTerm)}
+              text={getPodcastRssUrl({query: searchTerm})}
               onCopy={() => setShowSnackbar(true)}
             >
               <Button variant={'contained'} startIcon={<RssFeedIcon/>}>

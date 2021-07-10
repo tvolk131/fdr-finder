@@ -80,8 +80,42 @@ impl FdrCache {
         &self.num_sorted_podcast_list
     }
 
+    pub fn get_all_tags(&self) -> Vec<&PodcastTag> {
+        self.podcasts_by_tag.keys().collect()
+    }
+
+    // TODO - The `tags` argument can be a reference.
+    pub fn get_filtered_tags_with_podcast_counts(
+        &self,
+        tags: Vec<PodcastTag>,
+    ) -> HashMap<&PodcastTag, i32> {
+        let tag_filtered_podcasts = self.get_podcasts_by_tags(tags.clone());
+        let mut tag_counts = HashMap::new();
+        for podcast in tag_filtered_podcasts.iter() {
+            for tag in podcast.get_tags() {
+                if !tag_counts.contains_key(tag) {
+                    tag_counts.insert(tag, 0);
+                }
+                *tag_counts.get_mut(tag).unwrap() += 1;
+            }
+        }
+        for tag in tags.iter() {
+            tag_counts.remove(tag);
+        }
+        tag_counts
+    }
+
     // TODO - Unit test this function. There's some complex logic in it, so it might be buggy.
-    pub fn get_podcasts_by_tags(&self, tags: &mut Vec<PodcastTag>) -> Vec<&Podcast> {
+    // TODO - The `tags` argument can be a reference.
+    pub fn get_podcasts_by_tags(&self, mut tags: Vec<PodcastTag>) -> Vec<&Arc<Podcast>> {
+        if tags.is_empty() {
+            let mut all_podcasts = Vec::new();
+            for podcast in self.num_sorted_podcast_list.iter() {
+                all_podcasts.push(podcast);
+            }
+            return all_podcasts;
+        }
+
         // Before slicing for each tag, let's make sure that each tag has at least one valid podcast.
         // If any tag has no podcasts, then we can short-circuit and return an empty vector.
         for tag in tags.iter() {
@@ -99,18 +133,24 @@ impl FdrCache {
             Some(first_tag) => self.podcasts_by_tag.get(&first_tag),
             None => return Vec::new(),
         };
-        let mut podcasts: HashSet<Arc<Podcast>> = match first_tag_podcasts_or {
-            Some(first_tag_podcasts) => first_tag_podcasts.clone(),
+        let mut podcasts: HashSet<&Arc<Podcast>> = match first_tag_podcasts_or {
+            Some(first_tag_podcasts) => {
+                let mut first_tag_podcasts_copy = HashSet::new();
+                for podcast in first_tag_podcasts.iter() {
+                    first_tag_podcasts_copy.insert(podcast);
+                }
+                first_tag_podcasts_copy
+            }
             None => return Vec::new(),
         };
         for tag in tags {
-            let tag_podcasts = match self.podcasts_by_tag.get(tag) {
+            let tag_podcasts = match self.podcasts_by_tag.get(&tag) {
                 Some(tag_podcasts) => tag_podcasts,
                 None => return Vec::new(),
             };
             let mut podcasts_to_remove = Vec::new();
             for podcast in podcasts.iter() {
-                if !tag_podcasts.contains(podcast) {
+                if !tag_podcasts.contains(*podcast) {
                     podcasts_to_remove.push(podcast.clone());
                 }
             }
@@ -118,7 +158,8 @@ impl FdrCache {
                 podcasts.remove(&podcast_to_remove);
             }
         }
-        Vec::new()
+
+        podcasts.into_iter().collect()
     }
 
     pub fn get_podcast(&self, num: &PodcastNumber) -> Option<&Arc<Podcast>> {

@@ -13,6 +13,12 @@ use std::hash::{Hash, Hasher};
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize)]
 pub struct PodcastTag(String);
 
+impl AsRef<str> for PodcastTag {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
 impl PodcastTag {
     pub fn new(tag: String) -> Self {
         Self(tag)
