@@ -1,5 +1,0 @@
-tasks:
-  - name: Setup Rust
-    before: rustup default nightly && rustup component add rustfmt clippy
-  - name: Build
-    init: sh build.sh
