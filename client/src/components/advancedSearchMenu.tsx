@@ -3,6 +3,7 @@ import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import * as React from 'react';
 import {useState, useEffect} from 'react';
 import {getFilteredTagsWithCounts} from '../api';
+import {getTagDisplayText} from '../helper/tagFormatting';
 
 const useStyles = makeStyles((theme: Theme) => (
   createStyles({
@@ -40,12 +41,8 @@ const AdvancedSearchMenu = ({searchTags, setSearchTags}: AdvancedSearchMenuProps
 
   return (
     <div>
-      {!!searchTags.length && (
-        <div>
-          {searchTags.map((tag) => <Chip onDelete={() => setSearchTags(searchTags.filter((iterTag) => tag !== iterTag))} className={classes.tagChip} label={tag}/>)}
-          <Divider className={classes.divider}/>
-        </div>
-      )}
+      {!!searchTags.length && searchTags.map((tag) => <Chip onDelete={() => setSearchTags(searchTags.filter((iterTag) => tag !== iterTag))} className={classes.tagChip} label={getTagDisplayText(tag)}/>)}
+      {!!searchTags.length && <Divider className={classes.divider}/>}
       {isLoadingTags ? <CircularProgress/> : tagsWithCounts.sort((a, b) => {
         if (a.count < b.count) {
           return 1;
@@ -59,7 +56,7 @@ const AdvancedSearchMenu = ({searchTags, setSearchTags}: AdvancedSearchMenuProps
           return 0;
         }
       }).map(({tag, count}) => (
-        <Chip onClick={() => setSearchTags([...searchTags, tag])} className={classes.tagChip} label={`${tag} (${count})`}/>
+        <Chip onClick={() => setSearchTags([...searchTags, tag])} className={classes.tagChip} label={`${getTagDisplayText(tag)} (${count})`}/>
       ))}
     </div>
   );
