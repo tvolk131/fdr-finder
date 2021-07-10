@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
-import {getPodcastRssUrl, searchPodcasts} from '../api';
+import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams} from '../api';
 import {Button, CircularProgress, Dialog, DialogActions, DialogTitle, Snackbar} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
@@ -15,6 +15,7 @@ import {ZoomableSunburst} from '../components/zoomableSunburst';
 import {createTree} from '../helper';
 
 const queryFieldName = 'query';
+const tagsFieldName = 'tags';
 
 const useStyles = makeStyles({
   root: {
@@ -47,13 +48,20 @@ export const SearchPage = (props: SearchPageProps) => {
 
   const params = qs.parse(history.location.search.replace('?', ''));
   let query = params[queryFieldName];
+  let tags = params[tagsFieldName];
   if (typeof query !== 'string') {
     query = '';
+  }
+  if (typeof tags === 'string') {
+    tags = tags.split(',');
+  } else {
+    tags = ([] as string[]);
   }
 
   const [isSearching, setIsSearching] = useState(false);
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
   const [searchTerm, setSearchTerm] = useState(query);
+  const [searchTags, setSearchTags] = useState<string[]>(tags);
   const [showSnackbar, setShowSnackbar] = useState(false);
 
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
@@ -61,10 +69,15 @@ export const SearchPage = (props: SearchPageProps) => {
 
   const search = async () => {
     if (!isSearching) {
+      const urlParams: {[key: string]: string} = {};
+      urlParams[queryFieldName] = searchTerm;
+      urlParams[tagsFieldName] = searchTags.join(',');
+      const newLocation = generateUrlWithQueryParams('/', urlParams);
+      if (newLocation !== `${history.location.pathname}${history.location.search}`) {
+        history.push(newLocation);
+      }
       setIsSearching(true);
-      history.push(`/?${queryFieldName}=${searchTerm}`);
-      setPodcasts(await searchPodcasts({query: searchTerm}));
-      setIsSearching(false);
+      setPodcasts(await searchPodcasts({query: searchTerm, tags: searchTags}).finally(() => setIsSearching(false)));
     }
   };
 
@@ -75,6 +88,14 @@ export const SearchPage = (props: SearchPageProps) => {
     }
   }, []);
 
+  useEffect(() => {
+    if (searchTerm.length || searchTags.length) {
+      search();
+    } else {
+      setPodcasts([]);
+    }
+  }, [searchTags]);
+
   return (
     <div className={classes.root}>
       <div className={classes.nested}>
@@ -82,6 +103,8 @@ export const SearchPage = (props: SearchPageProps) => {
           onSearch={search}
           searchText={searchTerm}
           setSearchText={setSearchTerm}
+          searchTags={searchTags}
+          setSearchTags={setSearchTags}
         />
       </div>
       {isSearching ? <CircularProgress className={classes.loadingSpinner} size={100}/> :
@@ -132,8 +155,7 @@ export const SearchPage = (props: SearchPageProps) => {
               visualizationFormat === 'circlePacking' && <ZoomableCirclePacking
                 size={975}
                 data={createTree(podcasts, [
-                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
-                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
             }
@@ -141,8 +163,7 @@ export const SearchPage = (props: SearchPageProps) => {
               visualizationFormat === 'sunburst' && <ZoomableSunburst
                 size={975}
                 data={createTree(podcasts, [
-                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
-                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
             }
@@ -152,8 +173,7 @@ export const SearchPage = (props: SearchPageProps) => {
                 width={975}
                 showValue={false}
                 data={createTree(podcasts, [
-                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
-                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
             }

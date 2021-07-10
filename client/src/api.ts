@@ -54,8 +54,14 @@ export const getFilteredTagsWithCounts = async (tags: string[]): Promise<{tag: s
   return (await axios.get(generateUrlWithQueryParams('/api/filteredTagsWithCounts', queryParams))).data;
 }
 
-const generateUrlWithQueryParams = (baseUrl: string, queryParams: {[key: string]: string}) => {
+export const generateUrlWithQueryParams = (baseUrl: string, queryParams: {[key: string]: string}) => {
   let keys = Object.keys(queryParams);
+  keys.forEach((key) => {
+    if (!queryParams[key].length) {
+      delete queryParams[key];
+    }
+  });
+  keys = Object.keys(queryParams);
   if (keys.length) {
     baseUrl += '?';
     baseUrl += keys.map((key) => `${key}=${queryParams[key]}`).join('&');

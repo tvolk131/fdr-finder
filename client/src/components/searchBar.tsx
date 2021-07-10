@@ -30,6 +30,8 @@ interface SearchBarProps {
   onSearch: () => void
   searchText: string
   setSearchText: (query: string) => void
+  searchTags: string[]
+  setSearchTags: (tags: string[]) => void
 }
 
 const SearchBar = (props: SearchBarProps) => {
@@ -81,7 +83,7 @@ const SearchBar = (props: SearchBarProps) => {
       </AccordionSummary>
       <Divider/>
       <AccordionDetails>
-        <AdvancedSearchMenu/>
+        <AdvancedSearchMenu searchTags={props.searchTags} setSearchTags={props.setSearchTags}/>
       </AccordionDetails>
     </Accordion>
   );

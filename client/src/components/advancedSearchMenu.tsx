@@ -1,61 +1,67 @@
-import {Checkbox, FormGroup, FormControlLabel, FormLabel, Paper} from '@material-ui/core';
-import {makeStyles} from '@material-ui/core/styles';
+import {CircularProgress, Chip, Divider} from '@material-ui/core';
+import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import * as React from 'react';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
+import {getFilteredTagsWithCounts} from '../api';
 
-const useStyles = makeStyles({
-  root: {
-    padding: '15px 5px 5px 15px'
-  }
-});
+const useStyles = makeStyles((theme: Theme) => (
+  createStyles({
+    root: {
+      padding: '15px 5px 5px 15px'
+    },
+    divider: {
+      margin: '5px 0'
+    },
+    tagChip: {
+      margin: theme.spacing(0.5)
+    }
+  })
+));
 
-const AdvancedSearchMenu = () => {
-  const [interviewsChecked, setInterviewsChecked] = useState(false);
-  const [presentationsChecked, setPresentationsChecked] = useState(false);
-  const [callInsChecked, setCallInsChecked] = useState(false);
-  const [roundtablesChecked, setRoundtablesChecked] = useState(false);
+interface AdvancedSearchMenuProps {
+  searchTags: string[]
+  setSearchTags: (tags: string[]) => void
+}
+
+const AdvancedSearchMenu = ({searchTags, setSearchTags}: AdvancedSearchMenuProps) => {
+  const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
+  const [isLoadingTags, setIsLoadingTags] = useState(true);
 
   const classes = useStyles();
 
+  useEffect(() => {
+    setSearchTags(searchTags);
+    setIsLoadingTags(true);
+    getFilteredTagsWithCounts(searchTags).then((tagsWithCounts) => {
+      setTagsWithCounts(tagsWithCounts);
+      setIsLoadingTags(false);
+    });
+  }, [searchTags]);
+
   return (
-    <Paper className={classes.root} elevation={10}>
-      <FormGroup>
-        <FormLabel>Show Format (Doesn't actually do anything yet)</FormLabel>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={interviewsChecked}
-              onChange={(event) => setInterviewsChecked(event.target.checked)}
-            />
-          }
-          label={'Interviews'}
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={presentationsChecked}
-              onChange={(event) => setPresentationsChecked(event.target.checked)}
-            />
-          }
-          label={'Presentations'}
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={callInsChecked}
-              onChange={(event) => setCallInsChecked(event.target.checked)}
-            />
-          }
-          label={'Call-Ins'}
-        />
-        <FormControlLabel
-          control={
-            <Checkbox checked={roundtablesChecked} onChange={(event) => setRoundtablesChecked(event.target.checked)}/>
-          }
-          label={'Roundtables'}
-        />
-      </FormGroup>
-    </Paper>
+    <div>
+      {!!searchTags.length && (
+        <div>
+          {searchTags.map((tag) => <Chip onDelete={() => setSearchTags(searchTags.filter((iterTag) => tag !== iterTag))} className={classes.tagChip} label={tag}/>)}
+          <Divider className={classes.divider}/>
+        </div>
+      )}
+      {isLoadingTags ? <CircularProgress/> : tagsWithCounts.sort((a, b) => {
+        if (a.count < b.count) {
+          return 1;
+        } else if (a.count > b.count) {
+          return -1;
+        } else if (a.tag > b.tag) {
+          return 1;
+        } else if (a.tag < b.tag) {
+          return -1;
+        } else {
+          return 0;
+        }
+      }).map(({tag, count}) => (
+        <Chip onClick={() => setSearchTags([...searchTags, tag])} className={classes.tagChip} label={`${tag} (${count})`}/>
+      ))}
+    </div>
   );
 };
 
