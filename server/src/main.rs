@@ -24,7 +24,7 @@ const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
 
 #[catch(404)]
-fn not_found<'a>(req: &Request) -> Response<'a> {
+fn not_found_handler<'a>(req: &Request) -> Response<'a> {
     if req
         .uri()
         .path()
@@ -58,7 +58,7 @@ fn not_found<'a>(req: &Request) -> Response<'a> {
 }
 
 #[get("/podcasts/<podcast_num>")]
-fn get_podcast<'a>(podcast_num: &RawStr, fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
+fn get_podcast_handler<'a>(podcast_num: &RawStr, fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
     let podcast_or = match podcast_num.parse::<serde_json::Number>() {
         Ok(num) => fdr_cache.get_podcast(&PodcastNumber::new(num)),
         Err(_) => None,
@@ -79,7 +79,7 @@ fn get_podcast<'a>(podcast_num: &RawStr, fdr_cache: State<Arc<FdrCache>>) -> Res
 }
 
 #[get("/allPodcasts")]
-fn get_all_podcasts<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
+fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
     let podcasts = fdr_cache.get_all_podcasts();
     let json = Value::Array(
         podcasts
@@ -96,7 +96,7 @@ fn get_all_podcasts<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
 }
 
 #[get("/search/podcasts?<query>")]
-fn search_podcasts<'a>(query: String, sonic_instance: State<SonicInstance>) -> Response<'a> {
+fn search_podcasts_handler<'a>(query: String, sonic_instance: State<SonicInstance>) -> Response<'a> {
     let podcasts = sonic_instance.search_by_title(&query);
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
@@ -108,7 +108,7 @@ fn search_podcasts<'a>(query: String, sonic_instance: State<SonicInstance>) -> R
 }
 
 #[get("/search/podcasts/rss?<query>")]
-fn search_podcasts_as_rss_feed<'a>(
+fn search_podcasts_as_rss_feed_handler<'a>(
     query: String,
     sonic_instance: State<SonicInstance>,
 ) -> Response<'a> {
@@ -151,14 +151,14 @@ async fn main() {
     rocket::ignite()
         .manage(fdr_cache)
         .manage(sonic_instance)
-        .register(catchers![not_found])
+        .register(catchers![not_found_handler])
         .mount(
             "/api",
             routes![
-                get_podcast,
-                get_all_podcasts,
-                search_podcasts,
-                search_podcasts_as_rss_feed
+                get_podcast_handler,
+                get_all_podcasts_handler,
+                search_podcasts_handler,
+                search_podcasts_as_rss_feed_handler
             ],
         )
         .launch();
