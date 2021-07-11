@@ -4,18 +4,6 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::{cmp::Ordering, error::Error};
 
-pub struct PodcastQuery {
-    query: String,
-    limit: usize,
-    skip: usize,
-}
-
-impl PodcastQuery {
-    pub fn new(query: String, limit: usize, skip: usize) -> Self {
-        Self { query, limit, skip }
-    }
-}
-
 pub struct FdrCache {
     num_sorted_podcast_list: Vec<Arc<Podcast>>,
     podcasts_by_num: BTreeMap<PodcastNumber, Arc<Podcast>>,
@@ -43,20 +31,6 @@ impl FdrCache {
             num_sorted_podcast_list: all_podcasts_rc,
             podcasts_by_num,
         })
-    }
-
-    pub fn query_podcasts(&self, query: PodcastQuery) -> Vec<&Arc<Podcast>> {
-        self.num_sorted_podcast_list
-            .iter()
-            .filter(|podcast| {
-                podcast
-                    .get_title()
-                    .to_lowercase()
-                    .contains(&query.query.to_lowercase())
-            })
-            .skip(query.skip)
-            .take(query.limit)
-            .collect()
     }
 
     pub fn get_all_podcasts(&self) -> &[Arc<Podcast>] {

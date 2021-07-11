@@ -58,7 +58,13 @@ jobs:
         run: docker push registry.digitalocean.com/cards/fdr-finder:$(echo $GITHUB_SHA | head -c7)
 
       - name: Update deployment file
-        run: TAG=$(echo $GITHUB_SHA | head -c7) && sed -i 's|<IMAGE>|registry.digitalocean.com/cards/fdr-finder:'${TAG}'|' $GITHUB_WORKSPACE/deployment.yml
+        run: |
+          TAG=$(echo $GITHUB_SHA | head -c7) && sed -i 's|<IMAGE>|registry.digitalocean.com/cards/fdr-finder:'${TAG}'|' $GITHUB_WORKSPACE/deployment.yml
+          sed -i 's|<SONIC_URI>|'${SONIC_URI}'|' $GITHUB_WORKSPACE/deployment.yml
+          sed -i 's|<SONIC_PASSWORD>|'${SONIC_PASSWORD}'|' $GITHUB_WORKSPACE/deployment.yml
+        env:
+          SONIC_URI: ${{ secrets.SONIC_URI }}
+          SONIC_PASSWORD: ${{ secrets.SONIC_PASSWORD }}
 
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 cards
