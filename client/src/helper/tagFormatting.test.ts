@@ -6,7 +6,7 @@ describe('getTagDisplayText', () => {
     expect(getTagDisplayText('history')).toEqual('History');
     expect(getTagDisplayText('public-school')).toEqual('Public School');
     expect(getTagDisplayText('clinton-email-scandal')).toEqual('Clinton Email Scandal');
-    
+
     // Handles space-separated tags.
     expect(getTagDisplayText('clinton email scandal')).toEqual('Clinton Email Scandal');
   });

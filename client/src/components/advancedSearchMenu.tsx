@@ -41,7 +41,13 @@ const AdvancedSearchMenu = ({searchTags, setSearchTags}: AdvancedSearchMenuProps
 
   return (
     <div>
-      {!!searchTags.length && searchTags.map((tag) => <Chip onDelete={() => setSearchTags(searchTags.filter((iterTag) => tag !== iterTag))} className={classes.tagChip} label={getTagDisplayText(tag)}/>)}
+      {!!searchTags.length && searchTags.map((tag) => (
+        <Chip
+          onDelete={() => setSearchTags(searchTags.filter((iterTag) => tag !== iterTag))}
+          className={classes.tagChip}
+          label={getTagDisplayText(tag)}
+        />
+      ))}
       {!!searchTags.length && <Divider className={classes.divider}/>}
       {isLoadingTags ? <CircularProgress/> : tagsWithCounts.sort((a, b) => {
         if (a.count < b.count) {
@@ -56,7 +62,11 @@ const AdvancedSearchMenu = ({searchTags, setSearchTags}: AdvancedSearchMenuProps
           return 0;
         }
       }).map(({tag, count}) => (
-        <Chip onClick={() => setSearchTags([...searchTags, tag])} className={classes.tagChip} label={`${getTagDisplayText(tag)} (${count})`}/>
+        <Chip
+          onClick={() => setSearchTags([...searchTags, tag])}
+          className={classes.tagChip}
+          label={`${getTagDisplayText(tag)} (${count})`}
+        />
       ))}
     </div>
   );

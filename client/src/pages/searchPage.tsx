@@ -13,9 +13,7 @@ import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
 import {ZoomableSunburst} from '../components/zoomableSunburst';
 import {createTree} from '../helper';
-
-const queryFieldName = 'query';
-const tagsFieldName = 'tags';
+import {queryFieldName, tagsFieldName} from '../constants';
 
 const useStyles = makeStyles({
   root: {
