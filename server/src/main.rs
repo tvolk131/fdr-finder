@@ -256,9 +256,11 @@ async fn main() {
         env_vars.get_sonic_password().to_string(),
         fdr_cache.clone(),
     );
+
     println!("Ingesting Sonic search index...");
     sonic_instance.ingest_all();
     println!("Search index is complete!");
+
     println!("Starting server...");
     rocket::ignite()
         .manage(fdr_cache)

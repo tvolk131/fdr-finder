@@ -16,6 +16,7 @@ pub struct SonicInstance {
     podcast_cache: Arc<FdrCache>,
 }
 
+// TODO - Handle all of the `unwrap` instances in this struct.
 impl SonicInstance {
     pub fn new(address: String, password: String, podcast_cache: Arc<FdrCache>) -> Self {
         Self {
