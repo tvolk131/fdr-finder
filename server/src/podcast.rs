@@ -8,20 +8,30 @@ use std::{
 };
 
 use serde_json::{json, Number, Value};
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 
-#[derive(Hash, Eq, PartialEq, Serialize)]
+#[derive(Clone, Hash, Eq, PartialEq, Serialize)]
 pub struct PodcastTag(String);
 
 impl PodcastTag {
     pub fn new(tag: String) -> Self {
         Self(tag)
     }
+
+    pub fn clone_to_string(&self) -> String {
+        self.0.to_string()
+    }
 }
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct PodcastNumber {
     num: Number,
+}
+
+impl Hash for PodcastNumber {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.to_string().hash(state);
+    }
 }
 
 impl PartialOrd for PodcastNumber {
@@ -52,6 +62,7 @@ impl PodcastNumber {
     }
 }
 
+#[derive(PartialEq, Eq)]
 pub struct Podcast {
     title: String,
     description: String,
@@ -60,6 +71,12 @@ pub struct Podcast {
     podcast_number: PodcastNumber,
     create_time: i64,
     tags: HashSet<PodcastTag>,
+}
+
+impl Hash for Podcast {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.podcast_number.hash(state);
+    }
 }
 
 impl Podcast {

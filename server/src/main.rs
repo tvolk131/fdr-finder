@@ -9,19 +9,29 @@ mod http;
 mod podcast;
 mod sonic;
 
-use crate::podcast::{generate_rss_feed, PodcastNumber};
+use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
 use fdr_cache::FdrCache;
 use rocket::{
     http::{ContentType, RawStr, Status},
     Request, Response, State,
 };
-use serde_json::Value;
+use serde_json::{json, Map, Value};
 use sonic::SonicInstance;
 use std::io::Cursor;
 use std::sync::Arc;
 
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
+
+fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
+    match tags {
+        Some(tags) => tags
+            .split(",")
+            .map(|tag| PodcastTag::new(tag.trim().to_string()))
+            .collect(),
+        None => Vec::new(),
+    }
+}
 
 #[catch(404)]
 fn not_found_handler<'a>(req: &Request) -> Response<'a> {
@@ -95,12 +105,55 @@ fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a>
         .finalize()
 }
 
-#[get("/search/podcasts?<query>")]
+fn search_podcasts<'a, 'b>(
+    query: &Option<&String>,
+    tags: Vec<PodcastTag>,
+    fdr_cache: &'b State<Arc<FdrCache>>,
+    sonic_instance: &'b State<SonicInstance>,
+) -> Result<Vec<&'b Arc<Podcast>>, Response<'a>> {
+    if query.is_none() && tags.is_empty() {
+        return Err(Response::build()
+            .status(Status::BadRequest)
+            .header(ContentType::Plain)
+            .sized_body(Cursor::new(
+                "Request url must contain `query` or `tags` parameter.",
+            ))
+            .finalize());
+    }
+
+    if query.is_some() && !tags.is_empty() {
+        return Err(Response::build()
+            .status(Status::BadRequest)
+            .header(ContentType::Plain)
+            .sized_body(Cursor::new(
+                "Support for simultaneous query AND tag filtering is not yet implemented.",
+            ))
+            .finalize());
+    }
+
+    if query.is_some() {
+        return Ok(sonic_instance.search_by_title(query.unwrap()));
+    } else {
+        return Ok(fdr_cache.get_podcasts_by_tags(tags));
+    }
+}
+
+#[get("/search/podcasts?<query>&<tags>")]
 fn search_podcasts_handler<'a>(
-    query: String,
+    query: Option<String>,
+    tags: Option<String>,
+    fdr_cache: State<Arc<FdrCache>>,
     sonic_instance: State<SonicInstance>,
 ) -> Response<'a> {
-    let podcasts = sonic_instance.search_by_title(&query);
+    let podcasts = match search_podcasts(
+        &query.as_ref(),
+        parse_tag_query_string(tags),
+        &fdr_cache,
+        &sonic_instance,
+    ) {
+        Ok(podcasts) => podcasts,
+        Err(res) => return res,
+    };
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
     Response::build()
@@ -110,18 +163,32 @@ fn search_podcasts_handler<'a>(
         .finalize()
 }
 
-#[get("/search/podcasts/rss?<query>")]
+#[get("/search/podcasts/rss?<query>&<tags>")]
 fn search_podcasts_as_rss_feed_handler<'a>(
-    query: String,
+    query: Option<String>,
+    tags: Option<String>,
+    fdr_cache: State<Arc<FdrCache>>,
     sonic_instance: State<SonicInstance>,
 ) -> Response<'a> {
-    let podcasts = sonic_instance.search_by_title(&query);
+    let podcasts = match search_podcasts(
+        &query.as_ref(),
+        parse_tag_query_string(tags),
+        &fdr_cache,
+        &sonic_instance,
+    ) {
+        Ok(podcasts) => podcasts,
+        Err(res) => return res,
+    };
+    // TODO - Fix RSS feed naming now that we support tag filtering.
     let rss = generate_rss_feed(
         &podcasts,
-        &format!("Freedomain Custom Feed: {}", query),
+        &format!(
+            "Freedomain Custom Feed: {}",
+            query.clone().unwrap_or_default()
+        ),
         &format!(
             "A generated feed containing all Freedomain podcasts about: {}",
-            query
+            query.unwrap_or_default()
         ),
     );
 
@@ -129,6 +196,32 @@ fn search_podcasts_as_rss_feed_handler<'a>(
         .status(Status::Ok)
         .header(ContentType::XML)
         .sized_body(Cursor::new(rss))
+        .finalize()
+}
+
+#[get("/filteredTagsWithCounts?<tags>")]
+fn get_filtered_tags_with_counts_handler<'a>(
+    tags: Option<String>,
+    fdr_cache: State<Arc<FdrCache>>,
+) -> Response<'a> {
+    let parsed_tags = parse_tag_query_string(tags);
+
+    let filtered_tags = fdr_cache.get_filtered_tags_with_podcast_counts(parsed_tags);
+
+    let json_tag_array: Value = filtered_tags
+        .into_iter()
+        .map(|(tag, count)| {
+            let mut obj = Map::new();
+            obj.insert("tag".to_string(), Value::String(tag.clone_to_string()));
+            obj.insert("count".to_string(), json!(count));
+            Value::Object(obj)
+        })
+        .collect();
+
+    Response::build()
+        .status(Status::Ok)
+        .header(ContentType::JSON)
+        .sized_body(Cursor::new(json_tag_array.to_string()))
         .finalize()
 }
 
@@ -161,7 +254,8 @@ async fn main() {
                 get_podcast_handler,
                 get_all_podcasts_handler,
                 search_podcasts_handler,
-                search_podcasts_as_rss_feed_handler
+                search_podcasts_as_rss_feed_handler,
+                get_filtered_tags_with_counts_handler
             ],
         )
         .launch();
