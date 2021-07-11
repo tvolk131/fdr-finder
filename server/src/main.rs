@@ -96,7 +96,10 @@ fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a>
 }
 
 #[get("/search/podcasts?<query>")]
-fn search_podcasts_handler<'a>(query: String, sonic_instance: State<SonicInstance>) -> Response<'a> {
+fn search_podcasts_handler<'a>(
+    query: String,
+    sonic_instance: State<SonicInstance>,
+) -> Response<'a> {
     let podcasts = sonic_instance.search_by_title(&query);
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
