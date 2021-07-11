@@ -13,12 +13,6 @@ use std::hash::{Hash, Hasher};
 #[derive(Clone, Hash, Eq, PartialEq, Serialize)]
 pub struct PodcastTag(String);
 
-impl AsRef<str> for PodcastTag {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
 impl PodcastTag {
     pub fn new(tag: String) -> Self {
         Self(tag)
@@ -29,7 +23,7 @@ impl PodcastTag {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct PodcastNumber {
     num: Number,
 }
@@ -139,10 +133,6 @@ impl Podcast {
 
     pub fn get_title(&self) -> &str {
         &self.title
-    }
-
-    pub fn get_description(&self) -> &str {
-        &self.description
     }
 
     pub fn get_podcast_number(&self) -> &PodcastNumber {
