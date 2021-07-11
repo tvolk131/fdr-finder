@@ -43,10 +43,6 @@ export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {
   return encodeURI(generateUrlWithQueryParams('https://fdr-finder.tommyvolk.com/api/search/podcasts/rss', queryParams));
 }
 
-export const getAllTags = async (): Promise<string[]> => {
-  return (await axios.get('/api/allTags')).data;
-}
-
 export const getFilteredTagsWithCounts = async (tags: string[]): Promise<{tag: string, count: number}[]> => {
   const queryParams: {[key: string]: string} = {};
   if (tags.length) {

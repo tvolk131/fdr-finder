@@ -12,7 +12,11 @@ pub struct FdrCache {
 
 impl FdrCache {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
-        let mut all_podcasts = get_all_podcasts().await?;
+        let mut all_podcasts: Vec<Arc<Podcast>> = get_all_podcasts()
+            .await?
+            .into_iter()
+            .map(Arc::from)
+            .collect();
         all_podcasts.sort_by(|a, b| {
             if a.get_podcast_number() > b.get_podcast_number() {
                 return Ordering::Greater;
@@ -23,10 +27,9 @@ impl FdrCache {
             Ordering::Equal
         });
         all_podcasts.reverse();
-        let all_podcasts_arc: Vec<Arc<Podcast>> = all_podcasts.into_iter().map(Arc::from).collect();
 
         let mut podcasts_by_tag: HashMap<PodcastTag, HashSet<Arc<Podcast>>> = HashMap::new();
-        all_podcasts_arc.iter().for_each(|podcast_arc| {
+        all_podcasts.iter().for_each(|podcast_arc| {
             podcast_arc.get_tags().iter().for_each(|tag| {
                 if !podcasts_by_tag.contains_key(tag) {
                     podcasts_by_tag.insert(tag.clone(), HashSet::new());
@@ -40,11 +43,11 @@ impl FdrCache {
         });
 
         let mut podcasts_by_num = BTreeMap::new();
-        for podcast in &all_podcasts_arc {
+        for podcast in &all_podcasts {
             podcasts_by_num.insert(podcast.get_podcast_number().clone(), podcast.clone());
         }
         Ok(FdrCache {
-            num_sorted_podcast_list: all_podcasts_arc,
+            num_sorted_podcast_list: all_podcasts,
             podcasts_by_num,
             podcasts_by_tag,
         })
@@ -52,10 +55,6 @@ impl FdrCache {
 
     pub fn get_all_podcasts(&self) -> &[Arc<Podcast>] {
         &self.num_sorted_podcast_list
-    }
-
-    pub fn get_all_tags(&self) -> Vec<&PodcastTag> {
-        self.podcasts_by_tag.keys().collect()
     }
 
     // TODO - The `tags` argument can be a reference.
@@ -79,7 +78,7 @@ impl FdrCache {
         tag_counts
     }
 
-    // TODO - Unit test this function. There's some complex logic in it, so it might be buggy.
+    // TODO - Unit test this function and possibly clean it up a bit. There's some complex logic in it, so it might be buggy.
     // TODO - The `tags` argument can be a reference.
     pub fn get_podcasts_by_tags(&self, mut tags: Vec<PodcastTag>) -> Vec<&Arc<Podcast>> {
         if tags.is_empty() {

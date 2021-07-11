@@ -10,7 +10,7 @@ use std::{
 use serde_json::{json, Number, Value};
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize)]
+#[derive(Clone, Hash, Eq, PartialEq, Serialize)]
 pub struct PodcastTag(String);
 
 impl AsRef<str> for PodcastTag {
@@ -22,6 +22,10 @@ impl AsRef<str> for PodcastTag {
 impl PodcastTag {
     pub fn new(tag: String) -> Self {
         Self(tag)
+    }
+
+    pub fn clone_to_string(&self) -> String {
+        self.0.to_string()
     }
 }
 
@@ -64,7 +68,7 @@ impl PodcastNumber {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(PartialEq, Eq)]
 pub struct Podcast {
     title: String,
     description: String,

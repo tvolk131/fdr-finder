@@ -199,22 +199,6 @@ fn search_podcasts_as_rss_feed_handler<'a>(
         .finalize()
 }
 
-#[get("/allTags")]
-fn get_all_tags_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
-    let tags = fdr_cache.get_all_tags();
-    let json_tag_array = Value::Array(
-        tags.iter()
-            .map(|tag| Value::String((*tag).as_ref().to_string()))
-            .collect(),
-    );
-
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json_tag_array.to_string()))
-        .finalize()
-}
-
 #[get("/filteredTagsWithCounts?<tags>")]
 fn get_filtered_tags_with_counts_handler<'a>(
     tags: Option<String>,
@@ -227,13 +211,10 @@ fn get_filtered_tags_with_counts_handler<'a>(
     let json_tag_array: Value = filtered_tags
         .into_iter()
         .map(|(tag, count)| {
-            let mut map = Map::new();
-            map.insert(
-                "tag".to_string(),
-                Value::String((*tag).as_ref().to_string()),
-            );
-            map.insert("count".to_string(), json!(count));
-            Value::Object(map)
+            let mut obj = Map::new();
+            obj.insert("tag".to_string(), Value::String(tag.clone_to_string()));
+            obj.insert("count".to_string(), json!(count));
+            Value::Object(obj)
         })
         .collect();
 
@@ -274,7 +255,6 @@ async fn main() {
                 get_all_podcasts_handler,
                 search_podcasts_handler,
                 search_podcasts_as_rss_feed_handler,
-                get_all_tags_handler,
                 get_filtered_tags_with_counts_handler
             ],
         )
