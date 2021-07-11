@@ -247,10 +247,11 @@ fn get_filtered_tags_with_counts_handler<'a>(
 #[tokio::main]
 async fn main() {
     let env_vars = environment::EnvironmentVariables::new();
+
     println!("Fetching podcasts and building cache...");
     let fdr_cache = Arc::from(FdrCache::new().await.unwrap());
     println!("Podcast cache successfully built!");
-    println!("Connecting to Sonic...");
+
     let sonic_instance = SonicInstance::new(
         env_vars.get_sonic_uri().to_string(),
         env_vars.get_sonic_password().to_string(),
