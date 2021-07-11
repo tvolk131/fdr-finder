@@ -52,6 +52,7 @@ export interface ShowInfo {
   podcastNumber: number
   createTime: Date
   showFormat: ShowFormat
+  tags: string[]
 }
 
 interface ShowCardProps {

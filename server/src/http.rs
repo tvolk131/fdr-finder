@@ -1,4 +1,4 @@
-use crate::podcast::{Podcast, PodcastNumber};
+use crate::podcast::{Podcast, PodcastNumber, PodcastTag};
 use serde::Deserialize;
 use std::{collections::HashMap, error::Error};
 
@@ -13,8 +13,15 @@ struct JsonPodcast {
     description: String,
     title: String,
     urls: HashMap<String, String>,
+    tags: Vec<JsonTag>,
     length: i32,
     num: Option<serde_json::Number>,
+}
+
+#[derive(Deserialize)]
+struct JsonTag {
+    #[serde(rename(deserialize = "tagName"))]
+    tag_name: String,
 }
 
 fn json_podcast_to_podcast(mut json_podcast: JsonPodcast) -> Podcast {
@@ -31,12 +38,17 @@ fn json_podcast_to_podcast(mut json_podcast: JsonPodcast) -> Podcast {
         chrono::DateTime::parse_from_rfc3339(&json_podcast.date)
             .unwrap()
             .timestamp(),
+        json_podcast
+            .tags
+            .into_iter()
+            .map(|tag| PodcastTag::new(tag.tag_name))
+            .collect(),
     )
 }
 
 async fn get_podcasts_page(page_number: i32) -> Result<Vec<Podcast>, Box<dyn Error>> {
     let response_or = reqwest::get(format!(
-        "https://fdrpodcasts.com/api/v2/podcasts/?pageNumber={}",
+        "https://fdrpodcasts.com/api/v2/podcasts/?pageNumber={}&includeTagNames=true",
         page_number
     ))
     .await;
