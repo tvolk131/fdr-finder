@@ -132,8 +132,7 @@ export const SearchPage = (props: SearchPageProps) => {
               visualizationFormat === 'circlePacking' && <ZoomableCirclePacking
                 size={975}
                 data={createTree(podcasts, [
-                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
-                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
             }
@@ -141,8 +140,7 @@ export const SearchPage = (props: SearchPageProps) => {
               visualizationFormat === 'sunburst' && <ZoomableSunburst
                 size={975}
                 data={createTree(podcasts, [
-                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
-                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
             }
@@ -152,8 +150,7 @@ export const SearchPage = (props: SearchPageProps) => {
                 width={975}
                 showValue={false}
                 data={createTree(podcasts, [
-                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`},
-                  {getValue: (podcast) => podcast.createTime.toLocaleString('default', { month: 'long' })}
+                  {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
             }
