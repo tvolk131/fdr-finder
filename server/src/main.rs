@@ -6,6 +6,7 @@ extern crate rocket;
 mod fdr_cache;
 mod http;
 mod podcast;
+mod sonic;
 
 use crate::podcast::{generate_rss_feed, PodcastNumber};
 use fdr_cache::{FdrCache, PodcastQuery};
