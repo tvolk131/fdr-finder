@@ -1,4 +1,4 @@
-import {CircularProgress, Chip, Divider} from '@material-ui/core';
+import {CircularProgress, Chip, Divider, TextField} from '@material-ui/core';
 import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import * as React from 'react';
 import {useState, useEffect} from 'react';
@@ -15,9 +15,16 @@ const useStyles = makeStyles((theme: Theme) => (
     },
     tagChip: {
       margin: theme.spacing(0.5)
+    },
+    tagSearchFieldWrapper: {
+      display: 'block',
+      textAlign: 'center',
+      paddingBottom: theme.spacing(0.5)
     }
   })
 ));
+
+const maxVisibleTags = 50;
 
 interface AdvancedSearchMenuProps {
   searchTags: string[]
@@ -25,6 +32,7 @@ interface AdvancedSearchMenuProps {
 }
 
 const AdvancedSearchMenu = ({searchTags, setSearchTags}: AdvancedSearchMenuProps) => {
+  const [tagFilter, setTagFilter] = useState('');
   const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
 
@@ -34,22 +42,7 @@ const AdvancedSearchMenu = ({searchTags, setSearchTags}: AdvancedSearchMenuProps
     setSearchTags(searchTags);
     setIsLoadingTags(true);
     getFilteredTagsWithCounts(searchTags).then((tagsWithCounts) => {
-      setTagsWithCounts(tagsWithCounts);
-      setIsLoadingTags(false);
-    });
-  }, [searchTags]);
-
-  return (
-    <div>
-      {!!searchTags.length && searchTags.map((tag) => (
-        <Chip
-          onDelete={() => setSearchTags(searchTags.filter((iterTag) => tag !== iterTag))}
-          className={classes.tagChip}
-          label={getTagDisplayText(tag)}
-        />
-      ))}
-      {!!searchTags.length && <Divider className={classes.divider}/>}
-      {isLoadingTags ? <CircularProgress/> : tagsWithCounts.sort((a, b) => {
+      tagsWithCounts.sort((a, b) => {
         if (a.count < b.count) {
           return 1;
         } else if (a.count > b.count) {
@@ -61,13 +54,46 @@ const AdvancedSearchMenu = ({searchTags, setSearchTags}: AdvancedSearchMenuProps
         } else {
           return 0;
         }
-      }).map(({tag, count}) => (
+      });
+      setTagsWithCounts(tagsWithCounts);
+      setIsLoadingTags(false);
+    });
+  }, [searchTags]);
+
+  const getSelectableTagChips = () => {
+    const filteredTags = tagsWithCounts.filter(({tag}) => getTagDisplayText(tag).toLowerCase().includes(tagFilter.toLowerCase()))
+    
+    const tagChips = filteredTags.slice(0, maxVisibleTags).map(({tag, count}) => (
+      <Chip
+        onClick={() => setSearchTags([...searchTags, tag])}
+        className={classes.tagChip}
+        label={`${getTagDisplayText(tag)} (${count})`}
+      />
+    ));
+
+    const nonVisibleTagCount = filteredTags.length - maxVisibleTags;
+
+    if (nonVisibleTagCount > 0) {
+      tagChips.push(<Chip label={`... +${nonVisibleTagCount}`}/>);
+    }
+
+    return tagChips;
+  };
+
+  return (
+    <div>
+      {!!searchTags.length && searchTags.map((tag) => (
         <Chip
-          onClick={() => setSearchTags([...searchTags, tag])}
+          onDelete={() => setSearchTags(searchTags.filter((iterTag) => tag !== iterTag))}
           className={classes.tagChip}
-          label={`${getTagDisplayText(tag)} (${count})`}
+          label={getTagDisplayText(tag)}
         />
       ))}
+      {!!searchTags.length && <Divider className={classes.divider}/>}
+      <div className={classes.tagSearchFieldWrapper}>
+        <TextField value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} label={'Tag Filter'}/>
+      </div>
+      {isLoadingTags ? <CircularProgress/> : getSelectableTagChips()}
     </div>
   );
 };
