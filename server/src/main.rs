@@ -17,6 +17,7 @@ use rocket::{
 };
 use serde_json::{json, Map, Value};
 use sonic::SonicInstance;
+use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
 
@@ -105,36 +106,51 @@ fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a>
         .finalize()
 }
 
+fn get_intersection_of_podcast_lists<'a>(
+    list_one: Vec<&'a Arc<Podcast>>,
+    list_two: Vec<&'a Arc<Podcast>>,
+) -> Vec<&'a Arc<Podcast>> {
+    let podcast_set: HashSet<&'a Arc<Podcast>> = list_one.into_iter().collect();
+    let mut intersecting_podcasts: Vec<&'a Arc<Podcast>> = Vec::new();
+    for podcast in list_two.into_iter() {
+        if podcast_set.contains(&podcast) {
+            intersecting_podcasts.push(podcast);
+        }
+    }
+    return intersecting_podcasts;
+}
+
 fn search_podcasts<'a, 'b>(
-    query: &Option<&String>,
+    query_or: &Option<&String>,
     tags: Vec<PodcastTag>,
     fdr_cache: &'b State<Arc<FdrCache>>,
     sonic_instance: &'b State<SonicInstance>,
 ) -> Result<Vec<&'b Arc<Podcast>>, Response<'a>> {
-    if query.is_none() && tags.is_empty() {
-        return Err(Response::build()
-            .status(Status::BadRequest)
-            .header(ContentType::Plain)
-            .sized_body(Cursor::new(
-                "Request url must contain `query` or `tags` parameter.",
-            ))
-            .finalize());
-    }
-
-    if query.is_some() && !tags.is_empty() {
-        return Err(Response::build()
-            .status(Status::BadRequest)
-            .header(ContentType::Plain)
-            .sized_body(Cursor::new(
-                "Support for simultaneous query AND tag filtering is not yet implemented.",
-            ))
-            .finalize());
-    }
-
-    if query.is_some() {
-        return Ok(sonic_instance.search_by_title(query.unwrap()));
-    } else {
-        return Ok(fdr_cache.get_podcasts_by_tags(tags));
+    match query_or {
+        Some(query) => {
+            let query_results = sonic_instance.search_by_title(query);
+            if tags.is_empty() {
+                Ok(query_results)
+            } else {
+                Ok(get_intersection_of_podcast_lists(
+                    query_results,
+                    fdr_cache.get_podcasts_by_tags(tags),
+                ))
+            }
+        }
+        None => {
+            if tags.is_empty() {
+                Err(Response::build()
+                    .status(Status::BadRequest)
+                    .header(ContentType::Plain)
+                    .sized_body(Cursor::new(
+                        "Request url must contain `query` or `tags` parameter.",
+                    ))
+                    .finalize())
+            } else {
+                Ok(fdr_cache.get_podcasts_by_tags(tags))
+            }
+        }
     }
 }
 
