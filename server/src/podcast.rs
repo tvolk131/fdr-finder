@@ -34,6 +34,10 @@ impl PodcastNumber {
     pub fn new(num: Number) -> Self {
         Self { num }
     }
+
+    pub fn to_string(&self) -> String {
+        self.num.to_string()
+    }
 }
 
 #[derive(Debug)]
