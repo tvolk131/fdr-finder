@@ -1,4 +1,14 @@
-import {IconButton, InputBase, AccordionSummary, Accordion, AccordionDetails, Divider, Chip, CircularProgress, TextField} from '@material-ui/core';
+import {
+  IconButton,
+  InputBase,
+  AccordionSummary,
+  Accordion,
+  AccordionDetails,
+  Divider,
+  Chip,
+  CircularProgress,
+  TextField
+} from '@material-ui/core';
 import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import {Search as SearchIcon, ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@material-ui/icons';
 import * as React from 'react';
@@ -56,7 +66,10 @@ const SearchBar = (props: SearchBarProps) => {
     props.onSearch(forceOverrideSearchText);
     props.setSearchTags(props.searchTags);
     setIsLoadingTags(true);
-    getFilteredTagsWithCounts({query: typeof forceOverrideSearchText === 'string' ? forceOverrideSearchText : props.searchText, tags: props.searchTags}).then((tagsWithCounts) => {
+    getFilteredTagsWithCounts({
+      query: typeof forceOverrideSearchText === 'string' ? forceOverrideSearchText : props.searchText,
+      tags: props.searchTags
+    }).then((tagsWithCounts) => {
       tagsWithCounts.sort((a, b) => {
         if (a.count < b.count) {
           return 1;
@@ -90,8 +103,10 @@ const SearchBar = (props: SearchBarProps) => {
   const classes = useStyles();
 
   const getSelectableTagChips = () => {
-    const filteredTags = tagsWithCounts.filter(({tag}) => getTagDisplayText(tag).toLowerCase().includes(tagFilter.toLowerCase()))
-    
+    const filteredTags = tagsWithCounts.filter(({tag}) => (
+      getTagDisplayText(tag).toLowerCase().includes(tagFilter.toLowerCase())
+    ))
+
     const tagChips = filteredTags.slice(0, maxVisibleTags).map(({tag, count}) => (
       <Chip
         onClick={() => props.setSearchTags([...props.searchTags, tag])}

@@ -226,10 +226,11 @@ fn get_filtered_tags_with_counts_handler<'a>(
 
     let exclusive_podcasts_or = match query {
         Some(query) => Some(sonic_instance.search_by_title(&query).into_iter().collect()),
-        None => None
+        None => None,
     };
 
-    let filtered_tags = fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
+    let filtered_tags =
+        fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
 
     let json_tag_array: Value = filtered_tags
         .into_iter()

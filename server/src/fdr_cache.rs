@@ -67,10 +67,8 @@ impl FdrCache {
         let mut tag_counts = HashMap::new();
         for podcast in tag_filtered_podcasts.iter() {
             let should_increment_included_tags = match &exclusive_podcasts_or {
-                Some(exclusive_podcasts) => {
-                    exclusive_podcasts.contains(podcast)
-                },
-                None => true
+                Some(exclusive_podcasts) => exclusive_podcasts.contains(podcast),
+                None => true,
             };
 
             if should_increment_included_tags {
