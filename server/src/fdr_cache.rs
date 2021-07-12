@@ -60,16 +60,24 @@ impl FdrCache {
     // TODO - The `tags` argument can be a reference.
     pub fn get_filtered_tags_with_podcast_counts(
         &self,
+        exclusive_podcasts_or: Option<HashSet<&Arc<Podcast>>>,
         tags: Vec<PodcastTag>,
     ) -> HashMap<&PodcastTag, i32> {
         let tag_filtered_podcasts = self.get_podcasts_by_tags(tags.clone());
         let mut tag_counts = HashMap::new();
         for podcast in tag_filtered_podcasts.iter() {
-            for tag in podcast.get_tags() {
-                if !tag_counts.contains_key(tag) {
-                    tag_counts.insert(tag, 0);
+            let should_increment_included_tags = match &exclusive_podcasts_or {
+                Some(exclusive_podcasts) => exclusive_podcasts.contains(podcast),
+                None => true,
+            };
+
+            if should_increment_included_tags {
+                for tag in podcast.get_tags() {
+                    if !tag_counts.contains_key(tag) {
+                        tag_counts.insert(tag, 0);
+                    }
+                    *tag_counts.get_mut(tag).unwrap() += 1;
                 }
-                *tag_counts.get_mut(tag).unwrap() += 1;
             }
         }
         for tag in tags.iter() {
