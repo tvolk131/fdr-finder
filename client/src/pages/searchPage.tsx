@@ -108,7 +108,7 @@ export const SearchPage = (props: SearchPageProps) => {
         <div>
           <div className={classes.button}>
             <CopyToClipboard
-              text={getPodcastRssUrl({query: searchTerm})}
+              text={getPodcastRssUrl({query: searchTerm, tags: searchTags})}
               onCopy={() => setShowSnackbar(true)}
             >
               <Button variant={'contained'} startIcon={<RssFeedIcon/>}>
