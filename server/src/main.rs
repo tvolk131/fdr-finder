@@ -27,7 +27,7 @@ const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
 fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
     match tags {
         Some(tags) => tags
-            .split(",")
+            .split(',')
             .map(|tag| PodcastTag::new(tag.trim().to_string()))
             .collect(),
         None => Vec::new(),
@@ -40,8 +40,7 @@ fn not_found_handler<'a>(req: &Request) -> Response<'a> {
         .uri()
         .path()
         .split('/')
-        .filter(|chunk| !chunk.is_empty())
-        .next()
+        .find(|chunk| !chunk.is_empty())
         .unwrap_or_default()
         == "api"
     {
@@ -92,12 +91,7 @@ fn get_podcast_handler<'a>(podcast_num: &RawStr, fdr_cache: State<Arc<FdrCache>>
 #[get("/allPodcasts")]
 fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
     let podcasts = fdr_cache.get_all_podcasts();
-    let json = Value::Array(
-        podcasts
-            .into_iter()
-            .map(|podcast| podcast.to_json())
-            .collect(),
-    );
+    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
     Response::build()
         .status(Status::Ok)
@@ -117,7 +111,7 @@ fn get_intersection_of_podcast_lists<'a>(
             intersecting_podcasts.push(podcast);
         }
     }
-    return intersecting_podcasts;
+    intersecting_podcasts
 }
 
 fn search_podcasts<'a, 'b>(
@@ -224,10 +218,8 @@ fn get_filtered_tags_with_counts_handler<'a>(
 ) -> Response<'a> {
     let parsed_tags = parse_tag_query_string(tags);
 
-    let exclusive_podcasts_or = match query {
-        Some(query) => Some(sonic_instance.search_by_title(&query).into_iter().collect()),
-        None => None,
-    };
+    let exclusive_podcasts_or =
+        query.map(|query| sonic_instance.search_by_title(&query).into_iter().collect());
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
@@ -251,7 +243,7 @@ fn get_filtered_tags_with_counts_handler<'a>(
 
 #[tokio::main]
 async fn main() {
-    let env_vars = environment::EnvironmentVariables::new();
+    let env_vars = environment::EnvironmentVariables::default();
 
     println!("Fetching podcasts and building cache...");
     let fdr_cache = Arc::from(FdrCache::new().await.unwrap());

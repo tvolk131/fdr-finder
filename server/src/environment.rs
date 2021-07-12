@@ -18,8 +18,10 @@ impl EnvironmentVariables {
     pub fn get_sonic_password(&self) -> &str {
         &self.sonic_password
     }
+}
 
-    pub fn new() -> Self {
+impl Default for EnvironmentVariables {
+    fn default() -> Self {
         Self {
             sonic_uri: Self::get_env_var_or_default("SONIC_URI", "127.0.0.1:1491"),
             sonic_password: Self::get_env_var_or_default("SONIC_PASSWORD", "password"),

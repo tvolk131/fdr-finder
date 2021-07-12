@@ -7,8 +7,8 @@ use crate::{
     podcast::{Podcast, PodcastNumber},
 };
 
-const FDR_COLLECTION: &'static str = "fdr";
-const FDR_TITLE_BUCKET: &'static str = "title";
+const FDR_COLLECTION: &str = "fdr";
+const FDR_TITLE_BUCKET: &str = "title";
 
 pub struct SonicInstance {
     address: String,
