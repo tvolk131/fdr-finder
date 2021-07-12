@@ -65,26 +65,25 @@ export const SearchPage = (props: SearchPageProps) => {
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
-  const search = async () => {
+  const search = async (forceOverrideSearchText?: string) => {
     if (!isSearching) {
       const urlParams: {[key: string]: string} = {};
-      urlParams[queryFieldName] = searchTerm;
+      const query = typeof forceOverrideSearchText === 'string' ? forceOverrideSearchText : searchTerm;
+      urlParams[queryFieldName] = query;
       urlParams[tagsFieldName] = searchTags.join(',');
       const newLocation = generateUrlWithQueryParams('/', urlParams);
       if (newLocation !== `${history.location.pathname}${history.location.search}`) {
         history.push(newLocation);
       }
-      setIsSearching(true);
-      setPodcasts(await searchPodcasts({query: searchTerm, tags: searchTags}).finally(() => setIsSearching(false)));
+
+      if (query.length || searchTags.length) {
+        setIsSearching(true);
+        setPodcasts(await searchPodcasts({query, tags: searchTags}).finally(() => setIsSearching(false)));
+      } else {
+        setPodcasts([]);
+      }
     }
   };
-
-  // If a search term was loaded from query parameter, immediately pull the results.
-  useEffect(() => {
-    if (searchTerm.length) {
-      search();
-    }
-  }, []);
 
   useEffect(() => {
     if (searchTerm.length || searchTags.length) {

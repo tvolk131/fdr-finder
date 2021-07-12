@@ -215,14 +215,21 @@ fn search_podcasts_as_rss_feed_handler<'a>(
         .finalize()
 }
 
-#[get("/filteredTagsWithCounts?<tags>")]
+#[get("/filteredTagsWithCounts?<query>&<tags>")]
 fn get_filtered_tags_with_counts_handler<'a>(
+    query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
+    sonic_instance: State<SonicInstance>,
 ) -> Response<'a> {
     let parsed_tags = parse_tag_query_string(tags);
 
-    let filtered_tags = fdr_cache.get_filtered_tags_with_podcast_counts(parsed_tags);
+    let exclusive_podcasts_or = match query {
+        Some(query) => Some(sonic_instance.search_by_title(&query).into_iter().collect()),
+        None => None
+    };
+
+    let filtered_tags = fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
 
     let json_tag_array: Value = filtered_tags
         .into_iter()
