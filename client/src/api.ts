@@ -31,6 +31,11 @@ export const searchPodcasts = async (data: {query?: string, tags?: string[]}): P
   return res.data.map(deserializeShowInfo);
 };
 
+export const searchPodcastsAutocomplete = async (query: string): Promise<string[]> => {
+  const res = await axios.get(generateUrlWithQueryParams('/api/search/podcasts/autocomplete', {query}));
+  return res.data;
+};
+
 export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {
   const queryParams: {[key: string]: string} = {};
   if (data.query && data.query.length) {

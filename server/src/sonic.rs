@@ -41,10 +41,16 @@ impl SonicInstance {
     }
 
     pub fn suggest_by_title(&self, query: &str) -> Vec<String> {
+        let mut query_words: Vec<&str> = query.split(' ').collect();
+        let last_word: &str = query_words.pop().unwrap_or(query);
+        let prefix: String = query_words.join(" ");
         SearchChannel::start(&self.address, &self.password)
             .unwrap()
-            .suggest_with_limit(FDR_COLLECTION, FDR_TITLE_BUCKET, query, 5)
+            .suggest_with_limit(FDR_COLLECTION, FDR_TITLE_BUCKET, last_word, 5)
             .unwrap()
+            .into_iter()
+            .map(|suggestion| format!("{} {}", prefix, suggestion).trim().to_string())
+            .collect()
     }
 
     fn ingest(&self, podcast: &Podcast, ingest_channel: &IngestChannel) {

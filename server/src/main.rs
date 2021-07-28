@@ -173,6 +173,30 @@ fn search_podcasts_handler<'a>(
         .finalize()
 }
 
+#[get("/search/podcasts/autocomplete?<query>")]
+fn search_podcasts_autocomplete_handler<'a>(
+    query: Option<String>,
+    sonic_instance: State<SonicInstance>,
+) -> Response<'a> {
+    let autocomplete_suggestions = match query {
+        Some(query) => sonic_instance.suggest_by_title(&query),
+        None => Vec::new(),
+    };
+
+    let json = Value::Array(
+        autocomplete_suggestions
+            .into_iter()
+            .map(|suggestion| Value::String(suggestion))
+            .collect(),
+    );
+
+    Response::build()
+        .status(Status::Ok)
+        .header(ContentType::JSON)
+        .sized_body(Cursor::new(json.to_string()))
+        .finalize()
+}
+
 #[get("/search/podcasts/rss?<query>&<tags>")]
 fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
@@ -270,6 +294,7 @@ async fn main() {
                 get_podcast_handler,
                 get_all_podcasts_handler,
                 search_podcasts_handler,
+                search_podcasts_autocomplete_handler,
                 search_podcasts_as_rss_feed_handler,
                 get_filtered_tags_with_counts_handler
             ],
