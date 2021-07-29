@@ -4,6 +4,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 use std::{cmp::Ordering, error::Error};
 
+use crate::mock::create_mock_podcast;
+
 pub struct FdrCache {
     num_sorted_podcast_list: Vec<Arc<Podcast>>,
     podcasts_by_num: BTreeMap<PodcastNumber, Arc<Podcast>>,
@@ -11,12 +13,8 @@ pub struct FdrCache {
 }
 
 impl FdrCache {
-    pub async fn new() -> Result<Self, Box<dyn Error>> {
-        let mut all_podcasts: Vec<Arc<Podcast>> = get_all_podcasts()
-            .await?
-            .into_iter()
-            .map(Arc::from)
-            .collect();
+    pub async fn new_with_prod_podcasts() -> Result<Self, Box<dyn Error>> {
+        let mut all_podcasts: Vec<Podcast> = get_all_podcasts().await?.into_iter().collect();
         all_podcasts.sort_by(|a, b| {
             if a.get_podcast_number() > b.get_podcast_number() {
                 return Ordering::Greater;
@@ -28,8 +26,24 @@ impl FdrCache {
         });
         all_podcasts.reverse();
 
+        Ok(Self::new(all_podcasts))
+    }
+
+    pub fn new_with_mock_podcasts() -> Self {
+        let mut podcasts: Vec<Podcast> = Vec::new();
+
+        for i in 1..1000 {
+            podcasts.push(create_mock_podcast(i));
+        }
+
+        Self::new(podcasts)
+    }
+
+    fn new(podcasts: Vec<Podcast>) -> Self {
+        let podcast_arcs: Vec<Arc<Podcast>> = podcasts.into_iter().map(Arc::from).collect();
+
         let mut podcasts_by_tag: HashMap<PodcastTag, HashSet<Arc<Podcast>>> = HashMap::new();
-        all_podcasts.iter().for_each(|podcast_arc| {
+        podcast_arcs.iter().for_each(|podcast_arc| {
             podcast_arc.get_tags().iter().for_each(|tag| {
                 if !podcasts_by_tag.contains_key(tag) {
                     podcasts_by_tag.insert(tag.clone(), HashSet::new());
@@ -43,14 +57,14 @@ impl FdrCache {
         });
 
         let mut podcasts_by_num = BTreeMap::new();
-        for podcast in &all_podcasts {
+        for podcast in &podcast_arcs {
             podcasts_by_num.insert(podcast.get_podcast_number().clone(), podcast.clone());
         }
-        Ok(FdrCache {
-            num_sorted_podcast_list: all_podcasts,
+        Self {
+            num_sorted_podcast_list: podcast_arcs,
             podcasts_by_num,
             podcasts_by_tag,
-        })
+        }
     }
 
     pub fn get_all_podcasts(&self) -> &[Arc<Podcast>] {

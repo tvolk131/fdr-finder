@@ -4,11 +4,17 @@ use std::sync::Arc;
 
 use crate::{
     fdr_cache::FdrCache,
+    mock::create_mock_podcast,
     podcast::{Podcast, PodcastNumber},
 };
 
 const FDR_COLLECTION: &str = "fdr";
 const FDR_TITLE_BUCKET: &str = "title";
+
+pub trait SearchBackend {
+    fn search_by_title(&self, query: &str) -> Vec<&Arc<Podcast>>;
+    fn suggest_by_title(&self, query: &str) -> Vec<String>;
+}
 
 pub struct SonicInstance {
     address: String,
@@ -17,16 +23,8 @@ pub struct SonicInstance {
 }
 
 // TODO - Handle all of the `unwrap` instances in this struct.
-impl SonicInstance {
-    pub fn new(address: String, password: String, podcast_cache: Arc<FdrCache>) -> Self {
-        Self {
-            address,
-            password,
-            podcast_cache,
-        }
-    }
-
-    pub fn search_by_title(&self, query: &str) -> Vec<&Arc<Podcast>> {
+impl SearchBackend for SonicInstance {
+    fn search_by_title(&self, query: &str) -> Vec<&Arc<Podcast>> {
         SearchChannel::start(&self.address, &self.password)
             .unwrap()
             .query(FDR_COLLECTION, FDR_TITLE_BUCKET, query)
@@ -40,7 +38,7 @@ impl SonicInstance {
             .collect()
     }
 
-    pub fn suggest_by_title(&self, query: &str) -> Vec<String> {
+    fn suggest_by_title(&self, query: &str) -> Vec<String> {
         let mut query_words: Vec<&str> = query.split(' ').collect();
         let last_word: &str = query_words.pop().unwrap_or(query);
         let prefix: String = query_words.join(" ");
@@ -51,6 +49,17 @@ impl SonicInstance {
             .into_iter()
             .map(|suggestion| format!("{} {}", prefix, suggestion).trim().to_string())
             .collect()
+    }
+}
+
+// TODO - Handle all of the `unwrap` instances in this struct.
+impl SonicInstance {
+    pub fn new(address: String, password: String, podcast_cache: Arc<FdrCache>) -> Self {
+        Self {
+            address,
+            password,
+            podcast_cache,
+        }
     }
 
     fn ingest(&self, podcast: &Podcast, ingest_channel: &IngestChannel) {
@@ -77,5 +86,34 @@ impl SonicInstance {
             .get_all_podcasts()
             .iter()
             .for_each(|podcast| self.ingest(podcast, &ingest_channel));
+    }
+}
+
+pub struct MockSearchBackend {
+    mock_podcasts: Vec<Arc<Podcast>>,
+}
+
+impl SearchBackend for MockSearchBackend {
+    fn search_by_title(&self, _query: &str) -> Vec<&Arc<Podcast>> {
+        self.mock_podcasts.iter().collect()
+    }
+
+    fn suggest_by_title(&self, _query: &str) -> Vec<String> {
+        let mut suggestions = Vec::new();
+        for i in 1..5 {
+            suggestions.push(format!("Suggestion #{}", i));
+        }
+        suggestions
+    }
+}
+
+impl MockSearchBackend {
+    pub fn new() -> Self {
+        let mut mock_podcasts = Vec::new();
+        for i in 1..20 {
+            mock_podcasts.push(Arc::from(create_mock_podcast(i)));
+        }
+
+        Self { mock_podcasts }
     }
 }
