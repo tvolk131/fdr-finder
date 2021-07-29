@@ -276,7 +276,7 @@ async fn main() {
     match server_mode {
         ServerMode::Prod => {
             println!("Running in production mode.");
-        },
+        }
         ServerMode::Mock => {
             println!("Running in mock mode.");
         }
@@ -304,15 +304,13 @@ async fn main() {
                 env_vars.get_sonic_password().to_string(),
                 fdr_cache.clone(),
             );
-        
+
             println!("Ingesting Sonic search index...");
             sonic_instance.ingest_all();
             println!("Done.");
             Box::from(sonic_instance)
         }
-        ServerMode::Mock => {
-            Box::from(MockSearchBackend::new())
-        }
+        ServerMode::Mock => Box::from(MockSearchBackend::new()),
     };
 
     println!("Starting server...");

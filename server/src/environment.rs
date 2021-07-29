@@ -14,9 +14,9 @@ impl EnvironmentVariables {
 
     fn parse_server_mode_or_panic(raw_server_mode: String) -> ServerMode {
         if raw_server_mode == RAW_PROD_SERVER_MODE {
-            return ServerMode::Prod;
+            ServerMode::Prod
         } else if raw_server_mode == RAW_MOCK_SERVER_MODE {
-            return ServerMode::Mock;
+            ServerMode::Mock
         } else {
             panic!("SERVER_MODE environment variable must be 'prod' or 'mock'!");
         }
@@ -40,7 +40,7 @@ impl Default for EnvironmentVariables {
         Self {
             server_mode: Self::parse_server_mode_or_panic(Self::get_env_var_or_default(
                 "SERVER_MODE",
-                &RAW_PROD_SERVER_MODE,
+                RAW_PROD_SERVER_MODE,
             )),
             sonic_uri: Self::get_env_var_or_default("SONIC_URI", "127.0.0.1:1491"),
             sonic_password: Self::get_env_var_or_default("SONIC_PASSWORD", "password"),
