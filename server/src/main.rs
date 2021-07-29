@@ -6,17 +6,19 @@ extern crate rocket;
 mod environment;
 mod fdr_cache;
 mod http;
+mod mock;
 mod podcast;
 mod sonic;
 
 use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
+use environment::{EnvironmentVariables, ServerMode};
 use fdr_cache::FdrCache;
 use rocket::{
     http::{ContentType, RawStr, Status},
     Request, Response, State,
 };
 use serde_json::{json, Map, Value};
-use sonic::SonicInstance;
+use sonic::{MockSearchBackend, SearchBackend, SonicInstance};
 use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
@@ -118,7 +120,7 @@ fn search_podcasts<'a, 'b>(
     query_or: &Option<&String>,
     tags: Vec<PodcastTag>,
     fdr_cache: &'b State<Arc<FdrCache>>,
-    sonic_instance: &'b State<SonicInstance>,
+    sonic_instance: &'b State<Box<dyn SearchBackend + Send + Sync>>,
 ) -> Result<Vec<&'b Arc<Podcast>>, Response<'a>> {
     match query_or {
         Some(query) => {
@@ -153,7 +155,7 @@ fn search_podcasts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<SonicInstance>,
+    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
 ) -> Response<'a> {
     let podcasts = match search_podcasts(
         &query.as_ref(),
@@ -176,7 +178,7 @@ fn search_podcasts_handler<'a>(
 #[get("/search/podcasts/autocomplete?<query>")]
 fn search_podcasts_autocomplete_handler<'a>(
     query: Option<String>,
-    sonic_instance: State<SonicInstance>,
+    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
 ) -> Response<'a> {
     let autocomplete_suggestions = match query {
         Some(query) => sonic_instance.suggest_by_title(&query),
@@ -202,7 +204,7 @@ fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<SonicInstance>,
+    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
 ) -> Response<'a> {
     let podcasts = match search_podcasts(
         &query.as_ref(),
@@ -238,7 +240,7 @@ fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<SonicInstance>,
+    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
 ) -> Response<'a> {
     let parsed_tags = parse_tag_query_string(tags);
 
@@ -267,26 +269,56 @@ fn get_filtered_tags_with_counts_handler<'a>(
 
 #[tokio::main]
 async fn main() {
-    let env_vars = environment::EnvironmentVariables::default();
+    let env_vars = EnvironmentVariables::default();
 
-    println!("Fetching podcasts and building cache...");
-    let fdr_cache = Arc::from(FdrCache::new().await.unwrap());
-    println!("Podcast cache successfully built!");
+    let server_mode = env_vars.get_server_mode();
 
-    let sonic_instance = SonicInstance::new(
-        env_vars.get_sonic_uri().to_string(),
-        env_vars.get_sonic_password().to_string(),
-        fdr_cache.clone(),
-    );
+    match server_mode {
+        ServerMode::Prod => {
+            println!("Running in production mode.");
+        },
+        ServerMode::Mock => {
+            println!("Running in mock mode.");
+        }
+    }
 
-    println!("Ingesting Sonic search index...");
-    sonic_instance.ingest_all();
-    println!("Search index is complete!");
+    let fdr_cache = Arc::from(match server_mode {
+        ServerMode::Prod => {
+            println!("Fetching podcasts and building cache...");
+            let fdr_cache = FdrCache::new_with_prod_podcasts().await.unwrap();
+            println!("Done.");
+            fdr_cache
+        }
+        ServerMode::Mock => {
+            println!("Generating mock podcasts...");
+            let fdr_cache = FdrCache::new_with_mock_podcasts();
+            println!("Done.");
+            fdr_cache
+        }
+    });
+
+    let search_backend: Box<dyn SearchBackend + Send + Sync> = match server_mode {
+        ServerMode::Prod => {
+            let sonic_instance = SonicInstance::new(
+                env_vars.get_sonic_uri().to_string(),
+                env_vars.get_sonic_password().to_string(),
+                fdr_cache.clone(),
+            );
+        
+            println!("Ingesting Sonic search index...");
+            sonic_instance.ingest_all();
+            println!("Done.");
+            Box::from(sonic_instance)
+        }
+        ServerMode::Mock => {
+            Box::from(MockSearchBackend::new())
+        }
+    };
 
     println!("Starting server...");
     rocket::ignite()
         .manage(fdr_cache)
-        .manage(sonic_instance)
+        .manage(search_backend)
         .register(catchers![not_found_handler])
         .mount(
             "/api",
