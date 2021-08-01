@@ -9,11 +9,12 @@ import {
   CircularProgress,
   TextField
 } from '@material-ui/core';
+import {Autocomplete} from '@material-ui/lab';
 import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import {Search as SearchIcon, ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@material-ui/icons';
 import * as React from 'react';
 import {MouseEvent, useState, useEffect} from 'react';
-import {getFilteredTagsWithCounts} from '../api';
+import {getFilteredTagsWithCounts, searchPodcastsAutocomplete} from '../api';
 import {getTagDisplayText} from '../helper/tagFormatting';
 
 const useStyles = makeStyles((theme: Theme) => (
@@ -23,9 +24,15 @@ const useStyles = makeStyles((theme: Theme) => (
       display: 'flex',
       alignItems: 'center'
     },
-    input: {
+    autocomplete: {
       marginLeft: 8,
       flex: 1
+    },
+    inputBaseRoot: {
+      width: '100%'
+    },
+    inputBaseInput: {
+      padding: '12px 0'
     },
     iconButton: {
       padding: 10
@@ -64,6 +71,7 @@ const SearchBar = (props: SearchBarProps) => {
   const [tagFilter, setTagFilter] = useState('');
   const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
 
   const handleSearch = (forceOverrideSearchText?: string) => {
     props.onSearch(forceOverrideSearchText);
@@ -98,6 +106,12 @@ const SearchBar = (props: SearchBarProps) => {
   };
 
   useEffect(handleSearch, [props.searchTags]);
+
+  useEffect(() => {
+    // TODO - Don't make a new request on every single change.
+    // This causes rendering slowdowns when typing very fast.
+    searchPodcastsAutocomplete(props.searchText).then(setAutocompleteSuggestions);
+  }, [props.searchText]);
 
   const handleMouseDownSearch = (event: MouseEvent) => {
     event.preventDefault();
@@ -138,19 +152,36 @@ const SearchBar = (props: SearchBarProps) => {
             display: 'flex'
           }}
         >
-          <InputBase
-            className={classes.input}
-            placeholder='Search Freedomain Videos'
-            value={props.searchText}
-            onChange={(event) => {
-              props.setSearchText(event.target.value);
-            }}
-            onKeyPress={(event) => {
-              if (event.key === 'Enter') {
-                handleSearchIfSearchTextNotEmpty();
+          <Autocomplete
+            freeSolo
+            options={autocompleteSuggestions}
+            className={classes.autocomplete}
+            onClose={(event, reason) => {
+              if (reason === 'select-option') {
+                props.onSearch();
               }
             }}
-            onSubmit={handleSearchIfSearchTextNotEmpty}
+            inputValue={props.searchText}
+            onInputChange={(event, value, reason) => {
+              if (!(value.length === 0 && reason === 'reset')) {
+                props.setSearchText(value);
+              }
+            }}
+            renderInput={(params: any) => (
+              <div ref={params.InputProps.ref}>
+                <InputBase
+                  classes={{root: classes.inputBaseRoot, input: classes.inputBaseInput}}
+                  placeholder='Search Freedomain Videos'
+                  onKeyPress={(event) => {
+                    if (event.key === 'Enter') {
+                      handleSearchIfSearchTextNotEmpty();
+                    }
+                  }}
+                  onSubmit={handleSearchIfSearchTextNotEmpty}
+                  {...params.inputProps}
+                />
+              </div>
+            )}
           />
           {!!props.searchText.length && (
             <IconButton
