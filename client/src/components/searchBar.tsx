@@ -43,6 +43,9 @@ const useStyles = makeStyles((theme: Theme) => (
     },
     advancedSearchWrapper: {
       width: '100%'
+    },
+    accordionSummaryContent: {
+      margin: '8px 0'
     }
   })
 ));
@@ -126,7 +129,7 @@ const SearchBar = (props: SearchBarProps) => {
 
   return (
     <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon/>} classes={{content: classes.accordionSummaryContent}}>
         <div
           onClick={(event) => event.stopPropagation()}
           onFocus={(event) => event.stopPropagation()}
