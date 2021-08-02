@@ -107,8 +107,8 @@ impl SearchBackend for MockSearchBackend {
     }
 }
 
-impl MockSearchBackend {
-    pub fn new() -> Self {
+impl Default for MockSearchBackend {
+    fn default() -> Self {
         let mut mock_podcasts = Vec::new();
         for i in 1..20 {
             mock_podcasts.push(Arc::from(create_mock_podcast(i)));

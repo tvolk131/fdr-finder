@@ -23,9 +23,16 @@ impl PodcastTag {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+// TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
+#[derive(Clone, Eq)]
 pub struct PodcastNumber {
     num: Number,
+}
+
+impl PartialEq for PodcastNumber {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_string() == other.to_string()
+    }
 }
 
 impl Hash for PodcastNumber {
@@ -56,13 +63,16 @@ impl PodcastNumber {
     pub fn new(num: Number) -> Self {
         Self { num }
     }
+}
 
-    pub fn to_string(&self) -> String {
+impl ToString for PodcastNumber {
+    fn to_string(&self) -> String {
         self.num.to_string()
     }
 }
 
-#[derive(PartialEq, Eq)]
+// TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
+#[derive(Eq)]
 pub struct Podcast {
     title: String,
     description: String,
@@ -71,6 +81,12 @@ pub struct Podcast {
     podcast_number: PodcastNumber,
     create_time: i64,
     tags: HashSet<PodcastTag>,
+}
+
+impl PartialEq for Podcast {
+    fn eq(&self, other: &Self) -> bool {
+        self.podcast_number == other.podcast_number
+    }
 }
 
 impl Hash for Podcast {

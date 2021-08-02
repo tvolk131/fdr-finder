@@ -1,4 +1,3 @@
-#![allow(clippy::all)] // TODO - Remove this line. Rocket expanded macro code currently generates clippy warnings.
 #![feature(decl_macro)]
 #[macro_use]
 extern crate rocket;
@@ -188,7 +187,7 @@ fn search_podcasts_autocomplete_handler<'a>(
     let json = Value::Array(
         autocomplete_suggestions
             .into_iter()
-            .map(|suggestion| Value::String(suggestion))
+            .map(Value::String)
             .collect(),
     );
 
@@ -310,7 +309,7 @@ async fn main() {
             println!("Done.");
             Box::from(sonic_instance)
         }
-        ServerMode::Mock => Box::from(MockSearchBackend::new()),
+        ServerMode::Mock => Box::from(MockSearchBackend::default()),
     };
 
     println!("Starting server...");

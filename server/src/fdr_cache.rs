@@ -146,7 +146,7 @@ impl FdrCache {
             let mut podcasts_to_remove = Vec::new();
             for podcast in podcasts.iter() {
                 if !tag_podcasts.contains(*podcast) {
-                    podcasts_to_remove.push(podcast.clone());
+                    podcasts_to_remove.push((*podcast).clone());
                 }
             }
             for podcast_to_remove in podcasts_to_remove {
