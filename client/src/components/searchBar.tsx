@@ -158,7 +158,7 @@ const SearchBar = (props: SearchBarProps) => {
             className={classes.autocomplete}
             onClose={(event, reason) => {
               if (reason === 'select-option') {
-                props.onSearch();
+                handleSearch();
               }
             }}
             inputValue={props.searchText}
