@@ -1,9 +1,10 @@
-import {Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton} from '@material-ui/core';
+import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton} from '@material-ui/core';
 import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@material-ui/icons';
 import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
 import {useState} from 'react';
 import {useHistory} from 'react-router';
+import {getTagDisplayText} from '../helper/tagFormatting';
 
 const useStyles = makeStyles((theme) => ({
   title: {
@@ -31,6 +32,9 @@ const useStyles = makeStyles((theme) => ({
   },
   descriptionText: {
     whiteSpace: 'pre-wrap'
+  },
+  tagChip: {
+    margin: theme.spacing(0.5)
   }
 }));
 
@@ -97,6 +101,17 @@ const ShowCard = (props: ShowCardProps) => {
       <Collapse in={expanded} timeout='auto' unmountOnExit>
         <CardContent>
           <Typography paragraph className={classes.descriptionText}>{props.show.description}</Typography>
+          {
+            !!props.show.tags.length &&
+              <div>
+                {props.show.tags.map((tag) => (
+                  <Chip
+                    className={classes.tagChip}
+                    label={getTagDisplayText(tag)}
+                  />
+                ))}
+              </div>
+          }
         </CardContent>
       </Collapse>
     </Card>
