@@ -4,7 +4,7 @@ import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
 import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams} from '../api';
-import {Button, CircularProgress, Dialog, DialogActions, DialogTitle, Snackbar} from '@material-ui/core';
+import {Button, CircularProgress, Dialog, DialogActions, DialogTitle, Snackbar, TablePagination} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
 import {useHistory} from 'react-router';
@@ -33,6 +33,13 @@ const useStyles = makeStyles({
   },
   loadingSpinner: {
     padding: '50px'
+  },
+  paginator: {
+    width: 'fit-content',
+    margin: 'auto'
+  },
+  paginatorToolbar: {
+    paddingTop: '10px'
   }
 });
 
@@ -58,6 +65,8 @@ export const SearchPage = (props: SearchPageProps) => {
 
   const [isSearching, setIsSearching] = useState(false);
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
+  const [podcastPage, setPodcastPage] = useState(0);
+  const [podcastsPerPage, setPodcastsPerPage] = useState(100);
   const [searchTerm, setSearchTerm] = useState(query);
   const [searchTags, setSearchTags] = useState<string[]>(tags);
   const [showSnackbar, setShowSnackbar] = useState(false);
@@ -93,6 +102,22 @@ export const SearchPage = (props: SearchPageProps) => {
     }
   }, [searchTags]);
 
+  const paginator = (
+    <TablePagination
+      component={'div'}
+      count={podcasts.length}
+      page={podcastPage}
+      onPageChange={(event, newPage) => setPodcastPage(newPage)}
+      rowsPerPage={podcastsPerPage}
+      onRowsPerPageChange={(event) => {
+        setPodcastsPerPage(parseInt(event.target.value, 10));
+        setPodcastPage(0);
+      }}
+      className={classes.paginator}
+      classes={{toolbar: classes.paginatorToolbar}}
+    />
+  );
+
   return (
     <div className={classes.root}>
       <div className={classes.nested}>
@@ -121,15 +146,17 @@ export const SearchPage = (props: SearchPageProps) => {
               See Visualized Results
             </Button>
           </div>
+          {!!podcasts.length && paginator}
           <div className={classes.nested}>
             {
-              podcasts.map((show) => (
+              podcasts.slice(podcastPage * podcastsPerPage, (podcastPage + 1) * podcastsPerPage).map((show) => (
                 <div className={classes.showCardWrapper}>
                   <ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/>
                 </div>
               ))
             }
           </div>
+          {!!podcasts.length && paginator}
           <Dialog
             onClose={() => setShowVisualizationDialog(false)}
             open={showVisualizationDialog}
