@@ -4,7 +4,18 @@ import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
 import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams} from '../api';
-import {Button, CircularProgress, Dialog, DialogActions, DialogTitle, Snackbar, TablePagination, Select, MenuItem, Typography} from '@material-ui/core';
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogTitle,
+  Snackbar,
+  TablePagination,
+  Select,
+  MenuItem,
+  Typography
+} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
 import {useHistory} from 'react-router';
