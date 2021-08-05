@@ -4,7 +4,7 @@ import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
 import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams} from '../api';
-import {Button, CircularProgress, Dialog, DialogActions, DialogTitle, Snackbar, TablePagination} from '@material-ui/core';
+import {Button, CircularProgress, Dialog, DialogActions, DialogTitle, Snackbar, TablePagination, Select, MenuItem, Typography} from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
 import {useHistory} from 'react-router';
@@ -40,6 +40,13 @@ const useStyles = makeStyles({
   },
   paginatorToolbar: {
     paddingTop: '10px'
+  },
+  sortSelectorText: {
+    display: 'inline',
+    paddingRight: '5px'
+  },
+  sortSelectorWrapper: {
+    paddingTop: '18px'
   }
 });
 
@@ -67,6 +74,7 @@ export const SearchPage = (props: SearchPageProps) => {
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
   const [podcastPage, setPodcastPage] = useState(0);
   const [podcastsPerPage, setPodcastsPerPage] = useState(100);
+  const [podcastSortDirection, setPodcastSortDirection] = useState<'podcastNumber desc' | 'podcastNumber asc'>('podcastNumber desc');
   const [searchTerm, setSearchTerm] = useState(query);
   const [searchTags, setSearchTags] = useState<string[]>(tags);
   const [showSnackbar, setShowSnackbar] = useState(false);
@@ -102,10 +110,22 @@ export const SearchPage = (props: SearchPageProps) => {
     }
   }, [searchTags]);
 
+  useEffect(() => {
+    setPodcastPage(0);
+  }, [podcastSortDirection]);
+
+  const sortedPodcasts = podcasts.sort((podcastA, podcastB) => {
+    if (podcastSortDirection === 'podcastNumber desc') {
+      return podcastB.podcastNumber - podcastA.podcastNumber;
+    } else {
+      return podcastA.podcastNumber - podcastB.podcastNumber;
+    }
+  });
+
   const paginator = (
     <TablePagination
       component={'div'}
-      count={podcasts.length}
+      count={sortedPodcasts.length}
       page={podcastPage}
       onPageChange={(event, newPage) => setPodcastPage(newPage)}
       rowsPerPage={podcastsPerPage}
@@ -146,17 +166,24 @@ export const SearchPage = (props: SearchPageProps) => {
               See Visualized Results
             </Button>
           </div>
-          {!!podcasts.length && paginator}
+          <div className={classes.sortSelectorWrapper}>
+            <Typography className={classes.sortSelectorText}>Sort by</Typography>
+            <Select value={podcastSortDirection} onChange={(e) => setPodcastSortDirection(e.target.value as 'podcastNumber desc' | 'podcastNumber asc')} label={'Filter Podcasts'}>
+              <MenuItem value={'podcastNumber desc'}>Newest</MenuItem>
+              <MenuItem value={'podcastNumber asc'}>Oldest</MenuItem>
+            </Select>
+          </div>
+          {!!sortedPodcasts.length && paginator}
           <div className={classes.nested}>
             {
-              podcasts.slice(podcastPage * podcastsPerPage, (podcastPage + 1) * podcastsPerPage).map((show) => (
+              sortedPodcasts.slice(podcastPage * podcastsPerPage, (podcastPage + 1) * podcastsPerPage).map((show) => (
                 <div className={classes.showCardWrapper}>
                   <ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/>
                 </div>
               ))
             }
           </div>
-          {!!podcasts.length && paginator}
+          {!!sortedPodcasts.length && paginator}
           <Dialog
             onClose={() => setShowVisualizationDialog(false)}
             open={showVisualizationDialog}
@@ -178,7 +205,7 @@ export const SearchPage = (props: SearchPageProps) => {
             {
               visualizationFormat === 'circlePacking' && <ZoomableCirclePacking
                 size={975}
-                data={createTree(podcasts, [
+                data={createTree(sortedPodcasts, [
                   {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
@@ -186,7 +213,7 @@ export const SearchPage = (props: SearchPageProps) => {
             {
               visualizationFormat === 'sunburst' && <ZoomableSunburst
                 size={975}
-                data={createTree(podcasts, [
+                data={createTree(sortedPodcasts, [
                   {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
