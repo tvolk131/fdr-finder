@@ -177,13 +177,15 @@ export const SearchPage = (props: SearchPageProps) => {
               See Visualized Results
             </Button>
           </div>
-          <div className={classes.sortSelectorWrapper}>
-            <Typography className={classes.sortSelectorText}>Sort by</Typography>
-            <Select value={podcastSortDirection} onChange={(e) => setPodcastSortDirection(e.target.value as 'podcastNumber desc' | 'podcastNumber asc')} label={'Filter Podcasts'}>
-              <MenuItem value={'podcastNumber desc'}>Newest</MenuItem>
-              <MenuItem value={'podcastNumber asc'}>Oldest</MenuItem>
-            </Select>
-          </div>
+          {!!sortedPodcasts.length &&
+            <div className={classes.sortSelectorWrapper}>
+              <Typography className={classes.sortSelectorText}>Sort by</Typography>
+              <Select value={podcastSortDirection} onChange={(e) => setPodcastSortDirection(e.target.value as 'podcastNumber desc' | 'podcastNumber asc')} label={'Filter Podcasts'}>
+                <MenuItem value={'podcastNumber desc'}>Newest</MenuItem>
+                <MenuItem value={'podcastNumber asc'}>Oldest</MenuItem>
+              </Select>
+            </div>
+          }
           {!!sortedPodcasts.length && paginator}
           <div className={classes.nested}>
             {
