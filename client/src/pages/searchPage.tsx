@@ -175,7 +175,8 @@ export const SearchPage = (props: SearchPageProps) => {
           setSearchTags={setSearchTags}
         />
       </div>
-      {(showRecentPodcasts ? isLoadingRecentPodcasts : isSearching) ? <CircularProgress className={classes.loadingSpinner} size={100}/> :
+      {(showRecentPodcasts ? isLoadingRecentPodcasts : isSearching) ?
+        <CircularProgress className={classes.loadingSpinner} size={100}/> :
         <div>
           <div className={classes.button}>
             <CopyToClipboard
