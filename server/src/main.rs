@@ -102,7 +102,10 @@ fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a>
 }
 
 #[get("/recentPodcasts?<amount>")]
-fn get_recent_podcasts_handler<'a>(amount: Option<usize>, fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
+fn get_recent_podcasts_handler<'a>(
+    amount: Option<usize>,
+    fdr_cache: State<Arc<FdrCache>>,
+) -> Response<'a> {
     let podcasts = fdr_cache.get_recent_podcasts(amount.unwrap_or(100));
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
