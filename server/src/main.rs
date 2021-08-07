@@ -101,6 +101,18 @@ fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a>
         .finalize()
 }
 
+#[get("/recentPodcasts?<amount>")]
+fn get_recent_podcasts_handler<'a>(amount: Option<usize>, fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
+    let podcasts = fdr_cache.get_recent_podcasts(amount.unwrap_or(100));
+    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
+
+    Response::build()
+        .status(Status::Ok)
+        .header(ContentType::JSON)
+        .sized_body(Cursor::new(json.to_string()))
+        .finalize()
+}
+
 fn get_intersection_of_podcast_lists<'a>(
     list_one: Vec<&'a Arc<Podcast>>,
     list_two: Vec<&'a Arc<Podcast>>,
@@ -322,6 +334,7 @@ async fn main() {
             routes![
                 get_podcast_handler,
                 get_all_podcasts_handler,
+                get_recent_podcasts_handler,
                 search_podcasts_handler,
                 search_podcasts_autocomplete_handler,
                 search_podcasts_as_rss_feed_handler,

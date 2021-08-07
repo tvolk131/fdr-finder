@@ -18,6 +18,10 @@ export const getAllPodcasts = async (): Promise<ShowInfo[]> => {
   return (await axios.get('/api/allPodcasts')).data.map(deserializeShowInfo);
 }
 
+export const getRecentPodcasts = async (amount?: number): Promise<ShowInfo[]> => {
+  return (await axios.get(generateUrlWithQueryParams('/api/recentPodcasts', {amount}))).data.map(deserializeShowInfo);
+}
+
 export const searchPodcasts = async (data: {query?: string, tags?: string[]}): Promise<ShowInfo[]> => {
   const queryParams: {[key: string]: string} = {};
   if (data.query && data.query.length) {
@@ -61,10 +65,11 @@ async (data: {query?: string, tags?: string[]}): Promise<{tag: string, count: nu
   return (await axios.get(generateUrlWithQueryParams('/api/filteredTagsWithCounts', queryParams))).data;
 }
 
-export const generateUrlWithQueryParams = (baseUrl: string, queryParams: {[key: string]: string}) => {
+export const generateUrlWithQueryParams = (baseUrl: string, queryParams: {[key: string]: string | number | undefined}) => {
   let keys = Object.keys(queryParams);
   keys.forEach((key) => {
-    if (!queryParams[key].length) {
+    const value = queryParams[key];
+    if (value === undefined || (typeof value === 'string' && value.length === 0)) {
       delete queryParams[key];
     }
   });

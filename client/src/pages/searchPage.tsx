@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useState, useEffect} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
-import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams} from '../api';
+import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams, getRecentPodcasts} from '../api';
 import {
   Button,
   CircularProgress,
@@ -65,6 +65,7 @@ interface SearchPageProps {
   setPlayingShow(showInfo: ShowInfo): void
 }
 
+// TODO - Cleanup this component. Over time it has become a bit of a convoluted mess of tacked-on functionality.
 export const SearchPage = (props: SearchPageProps) => {
   const classes = useStyles();
   const history = useHistory();
@@ -90,6 +91,10 @@ export const SearchPage = (props: SearchPageProps) => {
   const [searchTags, setSearchTags] = useState<string[]>(tags);
   const [showSnackbar, setShowSnackbar] = useState(false);
 
+  const [showRecentPodcasts, setShowRecentPodcasts] = useState(query.length === 0 && tags.length === 0);
+  const [recentPodcasts, setRecentPodcasts] = useState([] as ShowInfo[]);
+  const [isLoadingRecentPodcasts, setIsLoadingRecentPodcasts] = useState(true);
+
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
@@ -105,13 +110,23 @@ export const SearchPage = (props: SearchPageProps) => {
       }
 
       if (query.length || searchTags.length) {
+        setShowRecentPodcasts(false);
         setIsSearching(true);
         setPodcasts(await searchPodcasts({query, tags: searchTags}).finally(() => setIsSearching(false)));
       } else {
+        setShowRecentPodcasts(true);
         setPodcasts([]);
       }
     }
   };
+
+  useEffect(() => {
+    setIsLoadingRecentPodcasts(true);
+    getRecentPodcasts().then((podcasts) => {
+      setRecentPodcasts(podcasts);
+      setIsLoadingRecentPodcasts(false);
+    });
+  }, []);
 
   useEffect(() => {
     if (searchTerm.length || searchTags.length) {
@@ -125,7 +140,7 @@ export const SearchPage = (props: SearchPageProps) => {
     setPodcastPage(0);
   }, [podcastSortDirection]);
 
-  const sortedPodcasts = podcasts.sort((podcastA, podcastB) => {
+  const sortedPodcasts = (showRecentPodcasts ? recentPodcasts : podcasts).sort((podcastA, podcastB) => {
     if (podcastSortDirection === 'podcastNumber desc') {
       return podcastB.podcastNumber - podcastA.podcastNumber;
     } else {
@@ -160,7 +175,7 @@ export const SearchPage = (props: SearchPageProps) => {
           setSearchTags={setSearchTags}
         />
       </div>
-      {isSearching ? <CircularProgress className={classes.loadingSpinner} size={100}/> :
+      {(showRecentPodcasts ? isLoadingRecentPodcasts : isSearching) ? <CircularProgress className={classes.loadingSpinner} size={100}/> :
         <div>
           <div className={classes.button}>
             <CopyToClipboard
