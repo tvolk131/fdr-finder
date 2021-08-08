@@ -15,6 +15,7 @@ const testAtMultipleResolutions = (testFn: (page: puppeteer.Page) => Promise<voi
       const page = await browser.newPage();
       page.setViewport(resolution);
       await testFn(page);
+      await page.waitForTimeout(1000);
       const image = await page.screenshot();
       expect(image).toMatchImageSnapshot({customSnapshotIdentifier: `${expect.getState().currentTestName}/${name}`});
       await page.close();
@@ -30,5 +31,4 @@ it('displays initial page correctly', testAtMultipleResolutions(async (page) => 
 it('displays tags correctly', testAtMultipleResolutions(async (page) => {
   await page.goto('http://localhost:8000');
   await page.click('div.MuiAccordionSummary-expandIcon span svg');
-  await page.waitForTimeout(500);
 }), 20000);
