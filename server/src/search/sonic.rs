@@ -2,7 +2,7 @@ use serde_json::Number;
 use sonic_channel::*;
 use std::sync::Arc;
 
-use super::SearchBackend;
+use super::{SearchBackend, IngestableBackend};
 use crate::{
     fdr_cache::FdrCache,
     podcast::{Podcast, PodcastNumber},
@@ -44,14 +44,6 @@ impl SonicSearchBackend {
             }
         };
     }
-
-    pub fn ingest_all(&self) {
-        let ingest_channel = IngestChannel::start(&self.address, &self.password).unwrap();
-        self.podcast_cache
-            .get_all_podcasts()
-            .iter()
-            .for_each(|podcast| self.ingest(podcast, &ingest_channel));
-    }
 }
 
 // TODO - Handle all of the `unwrap` instances in this struct.
@@ -81,5 +73,15 @@ impl SearchBackend for SonicSearchBackend {
             .into_iter()
             .map(|suggestion| format!("{} {}", prefix, suggestion).trim().to_string())
             .collect()
+    }
+}
+
+impl IngestableBackend for SonicSearchBackend {
+    fn ingest_all(&self) {
+        let ingest_channel = IngestChannel::start(&self.address, &self.password).unwrap();
+        self.podcast_cache
+            .get_all_podcasts()
+            .iter()
+            .for_each(|podcast| self.ingest(podcast, &ingest_channel));
     }
 }

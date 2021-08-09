@@ -16,7 +16,7 @@ use rocket::{
     http::{ContentType, RawStr, Status},
     Request, Response, State,
 };
-use search::{mock::MockSearchBackend, sonic::SonicSearchBackend, SearchBackend};
+use search::{mock::MockSearchBackend, sonic::SonicSearchBackend, SearchBackend, IngestableBackend};
 use serde_json::{json, Map, Value};
 use std::collections::HashSet;
 use std::io::Cursor;
