@@ -7,7 +7,7 @@ mod fdr_cache;
 mod http;
 mod mock;
 mod podcast;
-mod sonic;
+mod search;
 
 use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
 use environment::{EnvironmentVariables, ServerMode};
@@ -16,8 +16,8 @@ use rocket::{
     http::{ContentType, RawStr, Status},
     Request, Response, State,
 };
+use search::{mock::MockSearchBackend, sonic::SonicSearchBackend, SearchBackend};
 use serde_json::{json, Map, Value};
-use sonic::{MockSearchBackend, SearchBackend, SonicInstance};
 use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
@@ -313,7 +313,7 @@ async fn main() {
 
     let search_backend: Box<dyn SearchBackend + Send + Sync> = match server_mode {
         ServerMode::Prod => {
-            let sonic_instance = SonicInstance::new(
+            let sonic_instance = SonicSearchBackend::new(
                 env_vars.get_sonic_uri().to_string(),
                 env_vars.get_sonic_password().to_string(),
                 fdr_cache.clone(),
