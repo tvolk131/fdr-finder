@@ -1,7 +1,7 @@
 pub struct EnvironmentVariables {
     server_mode: ServerMode,
     meilisearch_host: String,
-    meilisearch_api_key: String
+    meilisearch_api_key: String,
 }
 
 impl EnvironmentVariables {
@@ -42,8 +42,11 @@ impl Default for EnvironmentVariables {
                 "SERVER_MODE",
                 RAW_PROD_SERVER_MODE,
             )),
-            meilisearch_host: Self::get_env_var_or_default("MEILISEARCH_HOST", "http://localhost:7700"),
-            meilisearch_api_key: Self::get_env_var_or_default("MEILISEARCH_API_KEY", "")
+            meilisearch_host: Self::get_env_var_or_default(
+                "MEILISEARCH_HOST",
+                "http://localhost:7700",
+            ),
+            meilisearch_api_key: Self::get_env_var_or_default("MEILISEARCH_API_KEY", ""),
         }
     }
 }

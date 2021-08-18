@@ -133,7 +133,7 @@ async fn search_podcasts<'a, 'b>(
     query_or: &Option<&String>,
     tags: Vec<PodcastTag>,
     fdr_cache: &'b State<'_, FdrCache>,
-    search_backend: &'b State<'_, SearchBackend>
+    search_backend: &'b State<'_, SearchBackend>,
 ) -> Result<Vec<Podcast>, Response<'a>> {
     match query_or {
         Some(query) => {
@@ -168,14 +168,14 @@ fn search_podcasts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<FdrCache>,
-    search_backend: State<SearchBackend>
+    search_backend: State<SearchBackend>,
 ) -> Response<'a> {
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let podcasts = match futures::executor::block_on(search_podcasts(
         &query.as_ref(),
         parse_tag_query_string(tags),
         &fdr_cache,
-        &search_backend
+        &search_backend,
     )) {
         Ok(podcasts) => podcasts,
         Err(res) => return res,
@@ -194,14 +194,14 @@ fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<FdrCache>,
-    search_backend: State<SearchBackend>
+    search_backend: State<SearchBackend>,
 ) -> Response<'a> {
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let podcasts = match futures::executor::block_on(search_podcasts(
         &query.as_ref(),
         parse_tag_query_string(tags),
         &fdr_cache,
-        &search_backend
+        &search_backend,
     )) {
         Ok(podcasts) => podcasts,
         Err(res) => return res,
@@ -231,13 +231,16 @@ fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<FdrCache>,
-    search_backend: State<SearchBackend>
+    search_backend: State<SearchBackend>,
 ) -> Response<'a> {
     let parsed_tags = parse_tag_query_string(tags);
 
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
-    let exclusive_podcasts_or =
-        query.map(|query| futures::executor::block_on(search_backend.search(&query)).into_iter().collect());
+    let exclusive_podcasts_or = query.map(|query| {
+        futures::executor::block_on(search_backend.search(&query))
+            .into_iter()
+            .collect()
+    });
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
@@ -293,11 +296,14 @@ async fn main() {
         ServerMode::Prod => {
             let search_backend = SearchBackend::new_prod(
                 env_vars.get_meilisearch_host().to_string(),
-                env_vars.get_meilisearch_api_key().to_string()
-            ).await;
+                env_vars.get_meilisearch_api_key().to_string(),
+            )
+            .await;
 
             println!("Ingesting search index...");
-            search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts()).await;
+            search_backend
+                .ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts())
+                .await;
             println!("Done.");
             search_backend
         }

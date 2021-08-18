@@ -1,15 +1,15 @@
-use serde::{Serialize, Deserialize};
+use meilisearch_sdk::document::Document;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::{
     ops::Add,
     time::{Duration, SystemTime},
 };
-use meilisearch_sdk::document::Document;
 
 use serde_json::{json, Number, Value};
-use std::hash::{Hash, Hasher};
 use sha2::Digest;
+use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PodcastTag(String);
@@ -173,11 +173,7 @@ impl Podcast {
     }
 }
 
-pub fn generate_rss_feed(
-    podcasts: &[Podcast],
-    feed_title: &str,
-    feed_description: &str,
-) -> String {
+pub fn generate_rss_feed(podcasts: &[Podcast], feed_title: &str, feed_description: &str) -> String {
     let podcasts_xml: Vec<String> = podcasts
         .iter()
         .map(|podcast| format!("<item>{}</item>", podcast.to_rss_xml()))
