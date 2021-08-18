@@ -16,7 +16,7 @@ use rocket::{
     http::{ContentType, RawStr, Status},
     Request, Response, State,
 };
-use search::{mock::MockSearchBackend, sonic::SonicSearchBackend, SearchBackend, IngestableBackend};
+use search::SearchBackend;
 use serde_json::{json, Map, Value};
 use std::collections::HashSet;
 use std::io::Cursor;
@@ -130,15 +130,15 @@ fn get_intersection_of_podcast_lists<'a>(
     intersecting_podcasts
 }
 
-fn search_podcasts<'a, 'b>(
+async fn search_podcasts<'a, 'b>(
     query_or: &Option<&String>,
     tags: Vec<PodcastTag>,
-    fdr_cache: &'b State<Arc<FdrCache>>,
-    sonic_instance: &'b State<Box<dyn SearchBackend + Send + Sync>>,
+    fdr_cache: &'b State<'_, Arc<FdrCache>>,
+    search_backend: &'b State<'_, SearchBackend>,
 ) -> Result<Vec<&'b Arc<Podcast>>, Response<'a>> {
     match query_or {
         Some(query) => {
-            let query_results = sonic_instance.search_by_title(query);
+            let query_results = search_backend.search_by_title(query).await;
             if tags.is_empty() {
                 Ok(query_results)
             } else {
@@ -169,14 +169,15 @@ fn search_podcasts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
+    search_backend: State<SearchBackend>,
 ) -> Response<'a> {
-    let podcasts = match search_podcasts(
+    // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
+    let podcasts = match futures::executor::block_on(search_podcasts(
         &query.as_ref(),
         parse_tag_query_string(tags),
         &fdr_cache,
-        &sonic_instance,
-    ) {
+        &search_backend,
+    )) {
         Ok(podcasts) => podcasts,
         Err(res) => return res,
     };
@@ -192,10 +193,11 @@ fn search_podcasts_handler<'a>(
 #[get("/search/podcasts/autocomplete?<query>")]
 fn search_podcasts_autocomplete_handler<'a>(
     query: Option<String>,
-    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
+    search_backend: State<SearchBackend>,
 ) -> Response<'a> {
     let autocomplete_suggestions = match query {
-        Some(query) => sonic_instance.suggest_by_title(&query),
+        // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
+        Some(query) => futures::executor::block_on(search_backend.suggest_by_title(&query)),
         None => Vec::new(),
     };
 
@@ -218,14 +220,15 @@ fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
+    search_backend: State<SearchBackend>,
 ) -> Response<'a> {
-    let podcasts = match search_podcasts(
+    // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
+    let podcasts = match futures::executor::block_on(search_podcasts(
         &query.as_ref(),
         parse_tag_query_string(tags),
         &fdr_cache,
-        &sonic_instance,
-    ) {
+        &search_backend,
+    )) {
         Ok(podcasts) => podcasts,
         Err(res) => return res,
     };
@@ -254,12 +257,13 @@ fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
+    search_backend: State<SearchBackend>,
 ) -> Response<'a> {
     let parsed_tags = parse_tag_query_string(tags);
 
+    // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let exclusive_podcasts_or =
-        query.map(|query| sonic_instance.search_by_title(&query).into_iter().collect());
+        query.map(|query| futures::executor::block_on(search_backend.search_by_title(&query)).into_iter().collect());
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
@@ -311,20 +315,22 @@ async fn main() {
         }
     });
 
-    let search_backend: Box<dyn SearchBackend + Send + Sync> = match server_mode {
+    let search_backend: SearchBackend = match server_mode {
         ServerMode::Prod => {
-            let sonic_instance = SonicSearchBackend::new(
+            let search_backend = SearchBackend::new_prod(
                 env_vars.get_sonic_uri().to_string(),
                 env_vars.get_sonic_password().to_string(),
-                fdr_cache.clone(),
-            );
+                env_vars.get_meilisearch_host().to_string(),
+                env_vars.get_meilisearch_api_key().to_string(),
+                fdr_cache.clone()
+            ).await;
 
-            println!("Ingesting Sonic search index...");
-            sonic_instance.ingest_all();
+            println!("Ingesting search index...");
+            search_backend.ingest_podcasts(&fdr_cache.clone_all_podcasts()).await;
             println!("Done.");
-            Box::from(sonic_instance)
+            search_backend
         }
-        ServerMode::Mock => Box::from(MockSearchBackend::default()),
+        ServerMode::Mock => SearchBackend::new_mock(),
     };
 
     println!("Starting server...");

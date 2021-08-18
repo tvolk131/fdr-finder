@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -6,11 +6,12 @@ use std::{
     ops::Add,
     time::{Duration, SystemTime},
 };
+use meilisearch_sdk::document::Document;
 
 use serde_json::{json, Number, Value};
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Hash, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PodcastTag(String);
 
 impl PodcastTag {
@@ -24,7 +25,7 @@ impl PodcastTag {
 }
 
 // TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
-#[derive(Clone, Eq)]
+#[derive(Clone, Debug, Eq, Serialize, Deserialize)]
 pub struct PodcastNumber {
     num: Number,
 }
@@ -65,14 +66,14 @@ impl PodcastNumber {
     }
 }
 
-impl ToString for PodcastNumber {
-    fn to_string(&self) -> String {
-        self.num.to_string()
+impl std::fmt::Display for PodcastNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.num.fmt(f)
     }
 }
 
 // TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
-#[derive(Eq)]
+#[derive(Clone, Eq, Debug, Serialize, Deserialize)]
 pub struct Podcast {
     title: String,
     description: String,
@@ -81,6 +82,13 @@ pub struct Podcast {
     podcast_number: PodcastNumber,
     create_time: i64,
     tags: HashSet<PodcastTag>,
+}
+
+impl Document for Podcast {
+    type UIDType = PodcastNumber;
+    fn get_uid(&self) -> &Self::UIDType {
+        &self.podcast_number
+    }
 }
 
 impl PartialEq for Podcast {

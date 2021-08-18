@@ -71,6 +71,15 @@ impl FdrCache {
         &self.num_sorted_podcast_list
     }
 
+    // TODO - See if we can get rid of this method and use get_all_podcasts instead.
+    pub fn clone_all_podcasts(&self) -> Vec<Podcast> {
+        let mut podcasts = Vec::new();
+        for podcast in &self.num_sorted_podcast_list {
+            podcasts.push((**podcast).clone());
+        }
+        podcasts
+    }
+
     pub fn get_recent_podcasts(&self, amount: usize) -> &[Arc<Podcast>] {
         &self.num_sorted_podcast_list[0..amount]
     }
