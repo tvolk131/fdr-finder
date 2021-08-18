@@ -16,7 +16,7 @@ use rocket::{
     http::{ContentType, RawStr, Status},
     Request, Response, State,
 };
-use search::SearchBackend;
+use search::{SearchBackend, SearchBackendType};
 use serde_json::{json, Map, Value};
 use std::collections::HashSet;
 use std::io::Cursor;
@@ -135,10 +135,11 @@ async fn search_podcasts<'a, 'b>(
     tags: Vec<PodcastTag>,
     fdr_cache: &'b State<'_, Arc<FdrCache>>,
     search_backend: &'b State<'_, SearchBackend>,
+    search_backend_type: SearchBackendType
 ) -> Result<Vec<&'b Arc<Podcast>>, Response<'a>> {
     match query_or {
         Some(query) => {
-            let query_results = search_backend.search_by_title(query).await;
+            let query_results = search_backend.search_by_title(query, search_backend_type).await;
             if tags.is_empty() {
                 Ok(query_results)
             } else {
@@ -164,12 +165,13 @@ async fn search_podcasts<'a, 'b>(
     }
 }
 
-#[get("/search/podcasts?<query>&<tags>")]
+#[get("/search/podcasts?<query>&<tags>&<search_backend_type>")]
 fn search_podcasts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
     search_backend: State<SearchBackend>,
+    search_backend_type: Option<SearchBackendType>
 ) -> Response<'a> {
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let podcasts = match futures::executor::block_on(search_podcasts(
@@ -177,6 +179,7 @@ fn search_podcasts_handler<'a>(
         parse_tag_query_string(tags),
         &fdr_cache,
         &search_backend,
+        search_backend_type.unwrap_or_default()
     )) {
         Ok(podcasts) => podcasts,
         Err(res) => return res,
@@ -190,14 +193,15 @@ fn search_podcasts_handler<'a>(
         .finalize()
 }
 
-#[get("/search/podcasts/autocomplete?<query>")]
+#[get("/search/podcasts/autocomplete?<query>&<search_backend_type>")]
 fn search_podcasts_autocomplete_handler<'a>(
     query: Option<String>,
     search_backend: State<SearchBackend>,
+    search_backend_type: Option<SearchBackendType>
 ) -> Response<'a> {
     let autocomplete_suggestions = match query {
         // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
-        Some(query) => futures::executor::block_on(search_backend.suggest_by_title(&query)),
+        Some(query) => futures::executor::block_on(search_backend.suggest_by_title(&query, search_backend_type.unwrap_or_default())),
         None => Vec::new(),
     };
 
@@ -215,12 +219,13 @@ fn search_podcasts_autocomplete_handler<'a>(
         .finalize()
 }
 
-#[get("/search/podcasts/rss?<query>&<tags>")]
+#[get("/search/podcasts/rss?<query>&<tags>&<search_backend_type>")]
 fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
     search_backend: State<SearchBackend>,
+    search_backend_type: Option<SearchBackendType>
 ) -> Response<'a> {
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let podcasts = match futures::executor::block_on(search_podcasts(
@@ -228,6 +233,7 @@ fn search_podcasts_as_rss_feed_handler<'a>(
         parse_tag_query_string(tags),
         &fdr_cache,
         &search_backend,
+        search_backend_type.unwrap_or_default()
     )) {
         Ok(podcasts) => podcasts,
         Err(res) => return res,
@@ -252,18 +258,19 @@ fn search_podcasts_as_rss_feed_handler<'a>(
         .finalize()
 }
 
-#[get("/filteredTagsWithCounts?<query>&<tags>")]
+#[get("/filteredTagsWithCounts?<query>&<tags>&<search_backend_type>")]
 fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     fdr_cache: State<Arc<FdrCache>>,
     search_backend: State<SearchBackend>,
+    search_backend_type: Option<SearchBackendType>
 ) -> Response<'a> {
     let parsed_tags = parse_tag_query_string(tags);
 
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let exclusive_podcasts_or =
-        query.map(|query| futures::executor::block_on(search_backend.search_by_title(&query)).into_iter().collect());
+        query.map(|query| futures::executor::block_on(search_backend.search_by_title(&query, search_backend_type.unwrap_or_default())).into_iter().collect());
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);

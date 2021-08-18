@@ -22,10 +22,6 @@ impl MeilisearchBackend {
         Vec::new()
     }
 
-    pub async fn suggest_by_title(&self, query: &str) -> Vec<String> {
-        Vec::new()
-    }
-
     pub async fn ingest_podcasts(&self, podcasts: &[Podcast]) {
         let podcast_index: Index = Client::new(self.host.clone(), self.api_key.clone()).get_or_create("podcasts").await.unwrap();
         podcast_index.add_documents(podcasts, Some("podcast_number")).await;
