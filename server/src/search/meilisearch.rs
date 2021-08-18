@@ -46,9 +46,8 @@ impl MeilisearchBackend {
             .await
             .unwrap()
             .unwrap();
-        match status {
-            UpdateStatus::Failed { .. } => panic!("Meilisearch ingestion failed: {:?}", status),
-            _ => {}
+        if let UpdateStatus::Failed { .. } = status {
+            panic!("Meilisearch ingestion failed: {:?}", status)
         };
     }
 }

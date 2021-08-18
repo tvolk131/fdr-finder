@@ -115,7 +115,7 @@ fn get_recent_podcasts_handler<'a>(
         .finalize()
 }
 
-fn get_intersection_of_podcast_lists<'a>(
+fn get_intersection_of_podcast_lists(
     list_one: Vec<Podcast>,
     list_two: Vec<Podcast>,
 ) -> Vec<Podcast> {
