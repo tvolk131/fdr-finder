@@ -1,7 +1,6 @@
 use serde::{Serialize, Deserialize};
 use std::cmp::Ordering;
 use std::collections::HashSet;
-use std::sync::Arc;
 use std::{
     ops::Add,
     time::{Duration, SystemTime},
@@ -169,7 +168,7 @@ impl Podcast {
 }
 
 pub fn generate_rss_feed(
-    podcasts: &[&Arc<Podcast>],
+    podcasts: &[Podcast],
     feed_title: &str,
     feed_description: &str,
 ) -> String {

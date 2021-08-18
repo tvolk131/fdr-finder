@@ -16,11 +16,10 @@ use rocket::{
     http::{ContentType, RawStr, Status},
     Request, Response, State,
 };
-use search::{SearchBackend, SearchBackendType};
+use search::SearchBackend;
 use serde_json::{json, Map, Value};
 use std::collections::HashSet;
 use std::io::Cursor;
-use std::sync::Arc;
 
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
@@ -69,7 +68,7 @@ fn not_found_handler<'a>(req: &Request) -> Response<'a> {
 }
 
 #[get("/podcasts/<podcast_num>")]
-fn get_podcast_handler<'a>(podcast_num: &RawStr, fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
+fn get_podcast_handler<'a>(podcast_num: &RawStr, fdr_cache: State<FdrCache>) -> Response<'a> {
     let podcast_or = match podcast_num.parse::<serde_json::Number>() {
         Ok(num) => fdr_cache.get_podcast(&PodcastNumber::new(num)),
         Err(_) => None,
@@ -90,7 +89,7 @@ fn get_podcast_handler<'a>(podcast_num: &RawStr, fdr_cache: State<Arc<FdrCache>>
 }
 
 #[get("/allPodcasts")]
-fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
+fn get_all_podcasts_handler<'a>(fdr_cache: State<FdrCache>) -> Response<'a> {
     let podcasts = fdr_cache.get_all_podcasts();
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
@@ -104,7 +103,7 @@ fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a>
 #[get("/recentPodcasts?<amount>")]
 fn get_recent_podcasts_handler<'a>(
     amount: Option<usize>,
-    fdr_cache: State<Arc<FdrCache>>,
+    fdr_cache: State<FdrCache>,
 ) -> Response<'a> {
     let podcasts = fdr_cache.get_recent_podcasts(amount.unwrap_or(100));
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
@@ -117,11 +116,11 @@ fn get_recent_podcasts_handler<'a>(
 }
 
 fn get_intersection_of_podcast_lists<'a>(
-    list_one: Vec<&'a Arc<Podcast>>,
-    list_two: Vec<&'a Arc<Podcast>>,
-) -> Vec<&'a Arc<Podcast>> {
-    let podcast_set: HashSet<&'a Arc<Podcast>> = list_one.into_iter().collect();
-    let mut intersecting_podcasts: Vec<&'a Arc<Podcast>> = Vec::new();
+    list_one: Vec<Podcast>,
+    list_two: Vec<Podcast>,
+) -> Vec<Podcast> {
+    let podcast_set: HashSet<Podcast> = list_one.into_iter().collect();
+    let mut intersecting_podcasts: Vec<Podcast> = Vec::new();
     for podcast in list_two.into_iter() {
         if podcast_set.contains(&podcast) {
             intersecting_podcasts.push(podcast);
@@ -133,13 +132,12 @@ fn get_intersection_of_podcast_lists<'a>(
 async fn search_podcasts<'a, 'b>(
     query_or: &Option<&String>,
     tags: Vec<PodcastTag>,
-    fdr_cache: &'b State<'_, Arc<FdrCache>>,
-    search_backend: &'b State<'_, SearchBackend>,
-    search_backend_type: SearchBackendType
-) -> Result<Vec<&'b Arc<Podcast>>, Response<'a>> {
+    fdr_cache: &'b State<'_, FdrCache>,
+    search_backend: &'b State<'_, SearchBackend>
+) -> Result<Vec<Podcast>, Response<'a>> {
     match query_or {
         Some(query) => {
-            let query_results = search_backend.search_by_title(query, search_backend_type).await;
+            let query_results = search_backend.search(query).await;
             if tags.is_empty() {
                 Ok(query_results)
             } else {
@@ -165,21 +163,19 @@ async fn search_podcasts<'a, 'b>(
     }
 }
 
-#[get("/search/podcasts?<query>&<tags>&<search_backend_type>")]
+#[get("/search/podcasts?<query>&<tags>")]
 fn search_podcasts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: State<Arc<FdrCache>>,
-    search_backend: State<SearchBackend>,
-    search_backend_type: Option<SearchBackendType>
+    fdr_cache: State<FdrCache>,
+    search_backend: State<SearchBackend>
 ) -> Response<'a> {
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let podcasts = match futures::executor::block_on(search_podcasts(
         &query.as_ref(),
         parse_tag_query_string(tags),
         &fdr_cache,
-        &search_backend,
-        search_backend_type.unwrap_or_default()
+        &search_backend
     )) {
         Ok(podcasts) => podcasts,
         Err(res) => return res,
@@ -193,47 +189,19 @@ fn search_podcasts_handler<'a>(
         .finalize()
 }
 
-#[get("/search/podcasts/autocomplete?<query>&<search_backend_type>")]
-fn search_podcasts_autocomplete_handler<'a>(
-    query: Option<String>,
-    search_backend: State<SearchBackend>,
-    search_backend_type: Option<SearchBackendType>
-) -> Response<'a> {
-    let autocomplete_suggestions = match query {
-        // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
-        Some(query) => futures::executor::block_on(search_backend.suggest_by_title(&query, search_backend_type.unwrap_or_default())),
-        None => Vec::new(),
-    };
-
-    let json = Value::Array(
-        autocomplete_suggestions
-            .into_iter()
-            .map(Value::String)
-            .collect(),
-    );
-
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json.to_string()))
-        .finalize()
-}
-
-#[get("/search/podcasts/rss?<query>&<tags>&<search_backend_type>")]
+#[get("/search/podcasts/rss?<query>&<tags>")]
 fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: State<Arc<FdrCache>>,
-    search_backend: State<SearchBackend>,
-    search_backend_type: Option<SearchBackendType>
+    fdr_cache: State<FdrCache>,
+    search_backend: State<SearchBackend>
 ) -> Response<'a> {
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let podcasts = match futures::executor::block_on(search_podcasts(
         &query.as_ref(),
         parse_tag_query_string(tags),
         &fdr_cache,
-        &search_backend,
-        search_backend_type.unwrap_or_default()
+        &search_backend
     )) {
         Ok(podcasts) => podcasts,
         Err(res) => return res,
@@ -258,19 +226,18 @@ fn search_podcasts_as_rss_feed_handler<'a>(
         .finalize()
 }
 
-#[get("/filteredTagsWithCounts?<query>&<tags>&<search_backend_type>")]
+#[get("/filteredTagsWithCounts?<query>&<tags>")]
 fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: State<Arc<FdrCache>>,
-    search_backend: State<SearchBackend>,
-    search_backend_type: Option<SearchBackendType>
+    fdr_cache: State<FdrCache>,
+    search_backend: State<SearchBackend>
 ) -> Response<'a> {
     let parsed_tags = parse_tag_query_string(tags);
 
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let exclusive_podcasts_or =
-        query.map(|query| futures::executor::block_on(search_backend.search_by_title(&query, search_backend_type.unwrap_or_default())).into_iter().collect());
+        query.map(|query| futures::executor::block_on(search_backend.search(&query)).into_iter().collect());
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
@@ -307,7 +274,7 @@ async fn main() {
         }
     }
 
-    let fdr_cache = Arc::from(match server_mode {
+    let fdr_cache = match server_mode {
         ServerMode::Prod => {
             println!("Fetching podcasts and building cache...");
             let fdr_cache = FdrCache::new_with_prod_podcasts().await.unwrap();
@@ -320,16 +287,13 @@ async fn main() {
             println!("Done.");
             fdr_cache
         }
-    });
+    };
 
     let search_backend: SearchBackend = match server_mode {
         ServerMode::Prod => {
             let search_backend = SearchBackend::new_prod(
-                env_vars.get_sonic_uri().to_string(),
-                env_vars.get_sonic_password().to_string(),
                 env_vars.get_meilisearch_host().to_string(),
-                env_vars.get_meilisearch_api_key().to_string(),
-                fdr_cache.clone()
+                env_vars.get_meilisearch_api_key().to_string()
             ).await;
 
             println!("Ingesting search index...");
@@ -352,7 +316,6 @@ async fn main() {
                 get_all_podcasts_handler,
                 get_recent_podcasts_handler,
                 search_podcasts_handler,
-                search_podcasts_autocomplete_handler,
                 search_podcasts_as_rss_feed_handler,
                 get_filtered_tags_with_counts_handler
             ],
