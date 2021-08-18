@@ -9,6 +9,7 @@ use meilisearch_sdk::document::Document;
 
 use serde_json::{json, Number, Value};
 use std::hash::{Hash, Hasher};
+use sha2::Digest;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PodcastTag(String);
@@ -79,6 +80,7 @@ pub struct Podcast {
     audio_link: String,
     length_in_seconds: i32,
     podcast_number: PodcastNumber,
+    podcast_number_hash: String, // Used as the primary key by Meilisearch, since it contains only alphanumeric characters.
     create_time: i64,
     tags: HashSet<PodcastTag>,
 }
@@ -112,12 +114,16 @@ impl Podcast {
         create_time: i64,
         tags: HashSet<PodcastTag>,
     ) -> Self {
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(podcast_number.to_string());
+        let podcast_number_hash = hex::encode(hasher.finalize());
         Self {
             title,
             description,
             audio_link,
             length_in_seconds,
             podcast_number,
+            podcast_number_hash,
             create_time,
             tags,
         }

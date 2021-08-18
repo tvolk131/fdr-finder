@@ -1,4 +1,4 @@
-use meilisearch_sdk::{client::Client, indexes::Index};
+use meilisearch_sdk::{client::Client, indexes::Index, progress::UpdateStatus};
 use crate::podcast::Podcast;
 
 pub struct MeilisearchBackend {
@@ -25,8 +25,13 @@ impl MeilisearchBackend {
         results.hits.into_iter().map(|result| result.result).collect()
     }
 
-    pub async fn ingest_podcasts(&self, podcasts: &[Podcast]) {
+    pub async fn ingest_podcasts_or_panic(&self, podcasts: &[Podcast]) {
         let podcast_index = self.get_podcast_index().await;
-        podcast_index.add_documents(podcasts, Some("podcast_number")).await.unwrap();
+        let progress = podcast_index.add_documents(podcasts, Some("podcast_number_hash")).await.unwrap();
+        let status = progress.wait_for_pending_update(None, None).await.unwrap().unwrap();
+        match status {
+            UpdateStatus::Failed { .. } => panic!("Meilisearch ingestion failed: {:?}", status),
+            _ => {}
+        };
     }
 }

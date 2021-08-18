@@ -297,7 +297,7 @@ async fn main() {
             ).await;
 
             println!("Ingesting search index...");
-            search_backend.ingest_podcasts(&fdr_cache.clone_all_podcasts()).await;
+            search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts()).await;
             println!("Done.");
             search_backend
         }

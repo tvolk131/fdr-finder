@@ -14,7 +14,7 @@ import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import {Search as SearchIcon, ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@material-ui/icons';
 import * as React from 'react';
 import {MouseEvent, useState, useEffect} from 'react';
-import {getFilteredTagsWithCounts, searchPodcastsAutocomplete} from '../api';
+import {getFilteredTagsWithCounts} from '../api';
 import {getTagDisplayText} from '../helper/tagFormatting';
 
 const useStyles = makeStyles((theme: Theme) => (
@@ -71,7 +71,6 @@ const SearchBar = (props: SearchBarProps) => {
   const [tagFilter, setTagFilter] = useState('');
   const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
-  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
 
   const handleSearch = (forceOverrideSearchText?: string) => {
     props.onSearch(forceOverrideSearchText);
@@ -106,12 +105,6 @@ const SearchBar = (props: SearchBarProps) => {
   };
 
   useEffect(handleSearch, [props.searchTags]);
-
-  useEffect(() => {
-    // TODO - Don't make a new request on every single change.
-    // This causes rendering slowdowns when typing very fast.
-    searchPodcastsAutocomplete(props.searchText).then(setAutocompleteSuggestions);
-  }, [props.searchText]);
 
   const handleMouseDownSearch = (event: MouseEvent) => {
     event.preventDefault();
@@ -154,7 +147,7 @@ const SearchBar = (props: SearchBarProps) => {
         >
           <Autocomplete
             freeSolo
-            options={autocompleteSuggestions}
+            options={[]} // TODO - Re-enable autocomplete suggestions by setting some state here.
             className={classes.autocomplete}
             onClose={(event, reason) => {
               if (reason === 'select-option') {

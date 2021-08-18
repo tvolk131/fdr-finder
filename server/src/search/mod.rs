@@ -27,10 +27,10 @@ impl SearchBackend {
         }
     }
 
-    pub async fn ingest_podcasts(&self, podcasts: &[Podcast]) {
+    pub async fn ingest_podcasts_or_panic(&self, podcasts: &[Podcast]) {
         match &self.meilisearch_backend_or {
             Some(meilisearch_backend) => {
-                meilisearch_backend.ingest_podcasts(podcasts).await;
+                meilisearch_backend.ingest_podcasts_or_panic(podcasts).await;
             },
             None => {}
         };

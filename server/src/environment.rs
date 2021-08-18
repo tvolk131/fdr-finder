@@ -43,7 +43,7 @@ impl Default for EnvironmentVariables {
                 RAW_PROD_SERVER_MODE,
             )),
             meilisearch_host: Self::get_env_var_or_default("MEILISEARCH_HOST", "http://localhost:7700"),
-            meilisearch_api_key: Self::get_env_var_or_default("MEILISEARCH_API_KEY", "masterKey")
+            meilisearch_api_key: Self::get_env_var_or_default("MEILISEARCH_API_KEY", "")
         }
     }
 }
