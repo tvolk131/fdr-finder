@@ -32,8 +32,8 @@ fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
 
 type NotFoundResponse = Result<
     Result<
-        rocket::response::content::Html<&'static [u8]>,
-        rocket::response::content::JavaScript<&'static [u8]>,
+        rocket::response::status::Custom<rocket::response::content::Html<&'static [u8]>>,
+        rocket::response::status::Custom<rocket::response::content::JavaScript<&'static [u8]>>,
     >,
     rocket::response::status::NotFound<String>,
 >;
@@ -60,9 +60,9 @@ fn not_found_handler(req: &Request) -> NotFoundResponse {
         .unwrap_or_else(|| "".into())
         == "bundle.js"
     {
-        Ok(Err(rocket::response::content::JavaScript(JS_BUNDLE_BYTES)))
+        Ok(Err(rocket::response::status::Custom(rocket::http::Status::Ok, rocket::response::content::JavaScript(JS_BUNDLE_BYTES))))
     } else {
-        Ok(Ok(rocket::response::content::Html(HTML_BYTES)))
+        Ok(Ok(rocket::response::status::Custom(rocket::http::Status::Ok, rocket::response::content::Html(HTML_BYTES))))
     }
 }
 
@@ -233,9 +233,8 @@ async fn get_filtered_tags_with_counts_handler<'a>(
     rocket::response::content::Json(json_tag_array.to_string())
 }
 
-// TODO - Remove `block_on` calls in this function, and instead make the function async.
 #[rocket::launch]
-fn rocket() -> _ {
+async fn rocket() -> _ {
     let env_vars = EnvironmentVariables::default();
 
     let server_mode = env_vars.get_server_mode();
@@ -252,8 +251,7 @@ fn rocket() -> _ {
     let fdr_cache = match server_mode {
         ServerMode::Prod => {
             println!("Fetching podcasts and building cache...");
-            let fdr_cache =
-                futures::executor::block_on(FdrCache::new_with_prod_podcasts()).unwrap();
+            let fdr_cache = FdrCache::new_with_prod_podcasts().await.unwrap();
             println!("Done.");
             fdr_cache
         }
@@ -267,15 +265,13 @@ fn rocket() -> _ {
 
     let search_backend: SearchBackend = match server_mode {
         ServerMode::Prod => {
-            let search_backend = futures::executor::block_on(SearchBackend::new_prod(
+            let search_backend = SearchBackend::new_prod(
                 env_vars.get_meilisearch_host().to_string(),
                 env_vars.get_meilisearch_api_key().to_string(),
-            ));
+            ).await;
 
             println!("Ingesting search index...");
-            futures::executor::block_on(
-                search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts()),
-            );
+            search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts());
             println!("Done.");
             search_backend
         }

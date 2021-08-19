@@ -39,15 +39,14 @@ impl MeilisearchBackend {
             .collect()
     }
 
-    pub async fn ingest_podcasts_or_panic(&self, podcasts: &[Podcast]) {
+    // TODO - Remove use of `block_on` here and use async instead.
+    pub fn ingest_podcasts_or_panic(&self, podcasts: &[Podcast]) {
         let podcast_index = self.get_podcast_index();
-        let progress = podcast_index
-            .add_documents(podcasts, Some("podcast_number_hash"))
-            .await
+        let progress = futures::executor::block_on(podcast_index
+            .add_documents(podcasts, Some("podcast_number_hash")))
             .unwrap();
-        let status = progress
-            .wait_for_pending_update(None, None)
-            .await
+        let status = futures::executor::block_on(progress
+            .wait_for_pending_update(None, None))
             .unwrap()
             .unwrap();
         if let UpdateStatus::Failed { .. } = status {
