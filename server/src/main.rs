@@ -60,9 +60,15 @@ fn not_found_handler(req: &Request) -> NotFoundResponse {
         .unwrap_or_else(|| "".into())
         == "bundle.js"
     {
-        Ok(Err(rocket::response::status::Custom(rocket::http::Status::Ok, rocket::response::content::JavaScript(JS_BUNDLE_BYTES))))
+        Ok(Err(rocket::response::status::Custom(
+            rocket::http::Status::Ok,
+            rocket::response::content::JavaScript(JS_BUNDLE_BYTES),
+        )))
     } else {
-        Ok(Ok(rocket::response::status::Custom(rocket::http::Status::Ok, rocket::response::content::Html(HTML_BYTES))))
+        Ok(Ok(rocket::response::status::Custom(
+            rocket::http::Status::Ok,
+            rocket::response::content::Html(HTML_BYTES),
+        )))
     }
 }
 
@@ -268,7 +274,8 @@ async fn rocket() -> _ {
             let search_backend = SearchBackend::new_prod(
                 env_vars.get_meilisearch_host().to_string(),
                 env_vars.get_meilisearch_api_key().to_string(),
-            ).await;
+            )
+            .await;
 
             println!("Ingesting search index...");
             search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts());
