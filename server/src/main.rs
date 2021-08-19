@@ -131,13 +131,15 @@ fn get_intersection_of_podcast_lists(
 
 async fn search_podcasts<'a, 'b>(
     query_or: &Option<&String>,
+    limit_or: Option<usize>,
+    offset: usize,
     tags: Vec<PodcastTag>,
     fdr_cache: &'b State<'_, FdrCache>,
     search_backend: &'b State<'_, SearchBackend>,
 ) -> Result<Vec<Podcast>, Response<'a>> {
     match query_or {
         Some(query) => {
-            let query_results = search_backend.search(query).await;
+            let query_results = search_backend.search(query, limit_or, offset).await;
             if tags.is_empty() {
                 Ok(query_results)
             } else {
@@ -163,9 +165,11 @@ async fn search_podcasts<'a, 'b>(
     }
 }
 
-#[get("/search/podcasts?<query>&<tags>")]
+#[get("/search/podcasts?<query>&<limit>&<offset>&<tags>")]
 fn search_podcasts_handler<'a>(
     query: Option<String>,
+    limit: Option<usize>,
+    offset: Option<usize>,
     tags: Option<String>,
     fdr_cache: State<FdrCache>,
     search_backend: State<SearchBackend>,
@@ -173,6 +177,8 @@ fn search_podcasts_handler<'a>(
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let podcasts = match futures::executor::block_on(search_podcasts(
         &query.as_ref(),
+        limit,
+        offset.unwrap_or(0),
         parse_tag_query_string(tags),
         &fdr_cache,
         &search_backend,
@@ -199,6 +205,8 @@ fn search_podcasts_as_rss_feed_handler<'a>(
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let podcasts = match futures::executor::block_on(search_podcasts(
         &query.as_ref(),
+        None,
+        0,
         parse_tag_query_string(tags),
         &fdr_cache,
         &search_backend,
@@ -237,7 +245,7 @@ fn get_filtered_tags_with_counts_handler<'a>(
 
     // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
     let exclusive_podcasts_or = query.map(|query| {
-        futures::executor::block_on(search_backend.search(&query))
+        futures::executor::block_on(search_backend.search(&query, None, 0))
             .into_iter()
             .collect()
     });

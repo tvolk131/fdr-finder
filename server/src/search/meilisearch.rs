@@ -19,12 +19,13 @@ impl MeilisearchBackend {
             .unwrap()
     }
 
-    pub async fn search(&self, query: &str) -> Vec<Podcast> {
+    pub async fn search(&self, query: &str, limit: usize, offset: usize) -> Vec<Podcast> {
         let podcast_index = self.get_podcast_index().await;
         let results = podcast_index
             .search()
             .with_query(query)
-            .with_limit(99999)
+            .with_offset(offset)
+            .with_limit(limit)
             .execute::<Podcast>()
             .await
             .unwrap();

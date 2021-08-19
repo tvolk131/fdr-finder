@@ -11,7 +11,7 @@ import {
 } from '@material-ui/core';
 import {Autocomplete} from '@material-ui/lab';
 import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
-import {Search as SearchIcon, ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@material-ui/icons';
+import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@material-ui/icons';
 import * as React from 'react';
 import {MouseEvent, useState, useEffect} from 'react';
 import {getFilteredTagsWithCounts} from '../api';
@@ -98,13 +98,7 @@ const SearchBar = (props: SearchBarProps) => {
     });
   }
 
-  const handleSearchIfSearchTextNotEmpty = () => {
-    if (props.searchText.length) {
-      handleSearch();
-    }
-  };
-
-  useEffect(handleSearch, [props.searchTags]);
+  useEffect(handleSearch, [props.searchText, props.searchTags]);
 
   const handleMouseDownSearch = (event: MouseEvent) => {
     event.preventDefault();
@@ -165,12 +159,6 @@ const SearchBar = (props: SearchBarProps) => {
                 <InputBase
                   classes={{root: classes.inputBaseRoot, input: classes.inputBaseInput}}
                   placeholder='Search Freedomain Videos'
-                  onKeyPress={(event) => {
-                    if (event.key === 'Enter') {
-                      handleSearchIfSearchTextNotEmpty();
-                    }
-                  }}
-                  onSubmit={handleSearchIfSearchTextNotEmpty}
                   {...params.inputProps}
                 />
               </div>
@@ -189,13 +177,6 @@ const SearchBar = (props: SearchBarProps) => {
             </IconButton>
           )}
           {!!props.searchText.length && <Divider className={classes.verticalDivider} orientation={'vertical'}/>}
-          <IconButton
-            className={classes.iconButton}
-            onMouseDown={handleMouseDownSearch}
-            onClick={handleSearchIfSearchTextNotEmpty}
-          >
-            <SearchIcon/>
-          </IconButton>
           {!!props.searchTags.length && props.searchTags.map((tag) => (
             <Chip
               onDelete={() => props.setSearchTags(props.searchTags.filter((iterTag) => tag !== iterTag))}

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {ShowFormat, ShowInfo} from './components/showCard';
-import {queryFieldName, tagsFieldName} from './constants';
+import {queryFieldName, limitFieldName, offsetFieldName, tagsFieldName} from './constants';
 
 const deserializeShowInfo = (data: any): ShowInfo => {
   return {
@@ -22,10 +22,16 @@ export const getRecentPodcasts = async (amount?: number): Promise<ShowInfo[]> =>
   return (await axios.get(generateUrlWithQueryParams('/api/recentPodcasts', {amount}))).data.map(deserializeShowInfo);
 }
 
-export const searchPodcasts = async (data: {query?: string, tags?: string[]}): Promise<ShowInfo[]> => {
-  const queryParams: {[key: string]: string} = {};
+export const searchPodcasts = async (data: {query?: string, limit?: number, offset?: number, tags?: string[]}): Promise<ShowInfo[]> => {
+  const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
+  }
+  if (data.limit !== undefined) {
+    queryParams[limitFieldName] = data.limit;
+  }
+  if (data.offset !== undefined) {
+    queryParams[offsetFieldName] = data.offset;
   }
   if (data.tags && data.tags.length) {
     queryParams[tagsFieldName] = data.tags.join(',');
