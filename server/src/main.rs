@@ -30,16 +30,16 @@ fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
     }
 }
 
-#[catch(404)]
-fn not_found_handler(
-    req: &Request,
-) -> Result<
+type NotFoundResponse = Result<
     Result<
         rocket::response::content::Html<&'static [u8]>,
         rocket::response::content::JavaScript<&'static [u8]>,
     >,
     rocket::response::status::NotFound<String>,
-> {
+>;
+
+#[catch(404)]
+fn not_found_handler(req: &Request) -> NotFoundResponse {
     if req
         .uri()
         .path()
@@ -52,7 +52,14 @@ fn not_found_handler(
             "404 - API path '{}' does not exist!",
             req.uri().path()
         )))
-    } else if req.uri().path().split('/').last().unwrap_or_else(|| "".into()) == "bundle.js" {
+    } else if req
+        .uri()
+        .path()
+        .split('/')
+        .last()
+        .unwrap_or_else(|| "".into())
+        == "bundle.js"
+    {
         Ok(Err(rocket::response::content::JavaScript(JS_BUNDLE_BYTES)))
     } else {
         Ok(Ok(rocket::response::content::Html(HTML_BYTES)))
@@ -112,13 +119,13 @@ fn get_intersection_of_podcast_lists(
     intersecting_podcasts
 }
 
-fn search_podcasts<'a, 'b>(
+fn search_podcasts<'a>(
     query_or: &Option<&String>,
     limit_or: Option<usize>,
     offset: usize,
     tags: Vec<PodcastTag>,
-    fdr_cache: &'b State<FdrCache>,
-    search_backend: &'b State<SearchBackend>,
+    fdr_cache: &'a State<FdrCache>,
+    search_backend: &'a State<SearchBackend>,
 ) -> Result<Vec<Podcast>, rocket::response::status::BadRequest<String>> {
     match query_or {
         Some(query) => {
@@ -207,7 +214,8 @@ async fn get_filtered_tags_with_counts_handler<'a>(
 ) -> rocket::response::content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
 
-    let exclusive_podcasts_or = query.map(|query| search_backend.search(&query, None, 0).into_iter().collect());
+    let exclusive_podcasts_or =
+        query.map(|query| search_backend.search(&query, None, 0).into_iter().collect());
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
