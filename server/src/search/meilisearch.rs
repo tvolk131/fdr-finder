@@ -12,23 +12,26 @@ impl MeilisearchBackend {
         Self { host, api_key }
     }
 
-    async fn get_podcast_index(&self) -> Index {
-        Client::new(self.host.clone(), self.api_key.clone())
-            .get_or_create("podcasts")
-            .await
-            .unwrap()
+    // TODO - Remove use of `block_on` here and use async instead.
+    fn get_podcast_index(&self) -> Index {
+        futures::executor::block_on(
+            Client::new(self.host.clone(), self.api_key.clone()).get_or_create("podcasts"),
+        )
+        .unwrap()
     }
 
-    pub async fn search(&self, query: &str, limit: usize, offset: usize) -> Vec<Podcast> {
-        let podcast_index = self.get_podcast_index().await;
-        let results = podcast_index
-            .search()
-            .with_query(query)
-            .with_offset(offset)
-            .with_limit(limit)
-            .execute::<Podcast>()
-            .await
-            .unwrap();
+    // TODO - Remove use of `block_on` here and use async instead.
+    pub fn search(&self, query: &str, limit: usize, offset: usize) -> Vec<Podcast> {
+        let podcast_index = self.get_podcast_index();
+        let results = futures::executor::block_on(
+            podcast_index
+                .search()
+                .with_query(query)
+                .with_offset(offset)
+                .with_limit(limit)
+                .execute::<Podcast>(),
+        )
+        .unwrap();
         results
             .hits
             .into_iter()
@@ -37,7 +40,7 @@ impl MeilisearchBackend {
     }
 
     pub async fn ingest_podcasts_or_panic(&self, podcasts: &[Podcast]) {
-        let podcast_index = self.get_podcast_index().await;
+        let podcast_index = self.get_podcast_index();
         let progress = podcast_index
             .add_documents(podcasts, Some("podcast_number_hash"))
             .await

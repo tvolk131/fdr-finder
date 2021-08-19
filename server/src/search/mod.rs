@@ -22,17 +22,10 @@ impl SearchBackend {
         }
     }
 
-    pub async fn search(
-        &self,
-        query: &str,
-        limit_or: Option<usize>,
-        offset: usize,
-    ) -> Vec<Podcast> {
+    pub fn search(&self, query: &str, limit_or: Option<usize>, offset: usize) -> Vec<Podcast> {
         match &self.meilisearch_backend_or {
             Some(meilisearch_backend) => {
-                meilisearch_backend
-                    .search(query, limit_or.unwrap_or(99999999), offset)
-                    .await
+                meilisearch_backend.search(query, limit_or.unwrap_or(99999999), offset)
             }
             None => mock::generate_mock_search_results(),
         }

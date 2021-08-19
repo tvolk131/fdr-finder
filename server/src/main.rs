@@ -12,14 +12,10 @@ mod search;
 use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
 use environment::{EnvironmentVariables, ServerMode};
 use fdr_cache::FdrCache;
-use rocket::{
-    http::{ContentType, RawStr, Status},
-    Request, Response, State,
-};
+use rocket::{Request, State};
 use search::SearchBackend;
 use serde_json::{json, Map, Value};
 use std::collections::HashSet;
-use std::io::Cursor;
 
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
@@ -35,84 +31,71 @@ fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
 }
 
 #[catch(404)]
-fn not_found_handler<'a>(req: &Request) -> Response<'a> {
+fn not_found_handler(
+    req: &Request,
+) -> Result<
+    Result<
+        rocket::response::content::Html<&'static [u8]>,
+        rocket::response::content::JavaScript<&'static [u8]>,
+    >,
+    rocket::response::status::NotFound<String>,
+> {
     if req
         .uri()
         .path()
         .split('/')
         .find(|chunk| !chunk.is_empty())
-        .unwrap_or_default()
+        .unwrap_or_else(|| "".into())
         == "api"
     {
-        return Response::build()
-            .status(Status::NotFound)
-            .header(ContentType::Plain)
-            .sized_body(Cursor::new(format!(
-                "404 - API path '{}' does not exist!",
-                req.uri().path()
-            )))
-            .finalize();
-    } else if req.uri().path().split('/').last().unwrap_or_default() == "bundle.js" {
-        return Response::build()
-            .status(Status::Ok)
-            .header(ContentType::JavaScript)
-            .sized_body(Cursor::new(JS_BUNDLE_BYTES))
-            .finalize();
+        Err(rocket::response::status::NotFound(format!(
+            "404 - API path '{}' does not exist!",
+            req.uri().path()
+        )))
+    } else if req.uri().path().split('/').last().unwrap_or_else(|| "".into()) == "bundle.js" {
+        Ok(Err(rocket::response::content::JavaScript(JS_BUNDLE_BYTES)))
     } else {
-        return Response::build()
-            .status(Status::Ok)
-            .header(ContentType::HTML)
-            .sized_body(Cursor::new(HTML_BYTES))
-            .finalize();
+        Ok(Ok(rocket::response::content::Html(HTML_BYTES)))
     }
 }
 
 #[get("/podcasts/<podcast_num>")]
-fn get_podcast_handler<'a>(podcast_num: &RawStr, fdr_cache: State<FdrCache>) -> Response<'a> {
+fn get_podcast_handler(
+    podcast_num: String,
+    fdr_cache: &State<FdrCache>,
+) -> Result<rocket::response::content::Json<String>, rocket::response::status::NotFound<String>> {
     let podcast_or = match podcast_num.parse::<serde_json::Number>() {
         Ok(num) => fdr_cache.get_podcast(&PodcastNumber::new(num)),
         Err(_) => None,
     };
 
-    return match podcast_or {
-        Some(podcast) => Response::build()
-            .status(Status::Ok)
-            .header(ContentType::JSON)
-            .sized_body(Cursor::new(podcast.to_json().to_string()))
-            .finalize(),
-        None => Response::build()
-            .status(Status::NotFound)
-            .header(ContentType::HTML)
-            .sized_body(Cursor::new("Podcast does not exist"))
-            .finalize(),
-    };
+    match podcast_or {
+        Some(podcast) => Ok(rocket::response::content::Json(
+            podcast.to_json().to_string(),
+        )),
+        None => Err(rocket::response::status::NotFound(
+            "Podcast does not exist".to_string(),
+        )),
+    }
 }
 
 #[get("/allPodcasts")]
-fn get_all_podcasts_handler<'a>(fdr_cache: State<FdrCache>) -> Response<'a> {
+fn get_all_podcasts_handler(
+    fdr_cache: &State<FdrCache>,
+) -> rocket::response::content::Json<String> {
     let podcasts = fdr_cache.get_all_podcasts();
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
-
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json.to_string()))
-        .finalize()
+    rocket::response::content::Json(json.to_string())
 }
 
 #[get("/recentPodcasts?<amount>")]
-fn get_recent_podcasts_handler<'a>(
+fn get_recent_podcasts_handler(
     amount: Option<usize>,
-    fdr_cache: State<FdrCache>,
-) -> Response<'a> {
+    fdr_cache: &State<FdrCache>,
+) -> rocket::response::content::Json<String> {
     let podcasts = fdr_cache.get_recent_podcasts(amount.unwrap_or(100));
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
-
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json.to_string()))
-        .finalize()
+    rocket::response::content::Json(json.to_string())
 }
 
 fn get_intersection_of_podcast_lists(
@@ -129,17 +112,17 @@ fn get_intersection_of_podcast_lists(
     intersecting_podcasts
 }
 
-async fn search_podcasts<'a, 'b>(
+fn search_podcasts<'a, 'b>(
     query_or: &Option<&String>,
     limit_or: Option<usize>,
     offset: usize,
     tags: Vec<PodcastTag>,
-    fdr_cache: &'b State<'_, FdrCache>,
-    search_backend: &'b State<'_, SearchBackend>,
-) -> Result<Vec<Podcast>, Response<'a>> {
+    fdr_cache: &'b State<FdrCache>,
+    search_backend: &'b State<SearchBackend>,
+) -> Result<Vec<Podcast>, rocket::response::status::BadRequest<String>> {
     match query_or {
         Some(query) => {
-            let query_results = search_backend.search(query, limit_or, offset).await;
+            let query_results = search_backend.search(query, limit_or, offset);
             if tags.is_empty() {
                 Ok(query_results)
             } else {
@@ -151,13 +134,9 @@ async fn search_podcasts<'a, 'b>(
         }
         None => {
             if tags.is_empty() {
-                Err(Response::build()
-                    .status(Status::BadRequest)
-                    .header(ContentType::Plain)
-                    .sized_body(Cursor::new(
-                        "Request url must contain `query` or `tags` parameter.",
-                    ))
-                    .finalize())
+                Err(rocket::response::status::BadRequest(Some(
+                    "Request url must contain `query` or `tags` parameter.".to_string(),
+                )))
             } else {
                 Ok(fdr_cache.get_podcasts_by_tags(tags))
             }
@@ -166,54 +145,43 @@ async fn search_podcasts<'a, 'b>(
 }
 
 #[get("/search/podcasts?<query>&<limit>&<offset>&<tags>")]
-fn search_podcasts_handler<'a>(
+async fn search_podcasts_handler<'a>(
     query: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
     tags: Option<String>,
-    fdr_cache: State<FdrCache>,
-    search_backend: State<SearchBackend>,
-) -> Response<'a> {
-    // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
-    let podcasts = match futures::executor::block_on(search_podcasts(
+    fdr_cache: &State<FdrCache>,
+    search_backend: &State<SearchBackend>,
+) -> Result<rocket::response::content::Json<String>, rocket::response::status::BadRequest<String>> {
+    let podcasts = search_podcasts(
         &query.as_ref(),
         limit,
         offset.unwrap_or(0),
         parse_tag_query_string(tags),
-        &fdr_cache,
-        &search_backend,
-    )) {
-        Ok(podcasts) => podcasts,
-        Err(res) => return res,
-    };
+        fdr_cache,
+        search_backend,
+    )?;
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json.to_string()))
-        .finalize()
+    Ok(rocket::response::content::Json(json.to_string()))
 }
 
 #[get("/search/podcasts/rss?<query>&<tags>")]
-fn search_podcasts_as_rss_feed_handler<'a>(
+async fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: State<FdrCache>,
-    search_backend: State<SearchBackend>,
-) -> Response<'a> {
-    // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
-    let podcasts = match futures::executor::block_on(search_podcasts(
+    fdr_cache: &State<FdrCache>,
+    search_backend: &State<SearchBackend>,
+) -> Result<rocket::response::content::Xml<String>, rocket::response::status::BadRequest<String>> {
+    let podcasts = search_podcasts(
         &query.as_ref(),
         None,
         0,
         parse_tag_query_string(tags),
-        &fdr_cache,
-        &search_backend,
-    )) {
-        Ok(podcasts) => podcasts,
-        Err(res) => return res,
-    };
+        fdr_cache,
+        search_backend,
+    )?;
+
     // TODO - Fix RSS feed naming now that we support tag filtering.
     let rss = generate_rss_feed(
         &podcasts,
@@ -227,28 +195,19 @@ fn search_podcasts_as_rss_feed_handler<'a>(
         ),
     );
 
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::XML)
-        .sized_body(Cursor::new(rss))
-        .finalize()
+    Ok(rocket::response::content::Xml(rss))
 }
 
 #[get("/filteredTagsWithCounts?<query>&<tags>")]
-fn get_filtered_tags_with_counts_handler<'a>(
+async fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: State<FdrCache>,
-    search_backend: State<SearchBackend>,
-) -> Response<'a> {
+    fdr_cache: &State<FdrCache>,
+    search_backend: &State<SearchBackend>,
+) -> rocket::response::content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
 
-    // TODO - Don't block on futures. Find a way to make the Rocket handler async instead.
-    let exclusive_podcasts_or = query.map(|query| {
-        futures::executor::block_on(search_backend.search(&query, None, 0))
-            .into_iter()
-            .collect()
-    });
+    let exclusive_podcasts_or = query.map(|query| search_backend.search(&query, None, 0).into_iter().collect());
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
@@ -263,15 +222,12 @@ fn get_filtered_tags_with_counts_handler<'a>(
         })
         .collect();
 
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json_tag_array.to_string()))
-        .finalize()
+    rocket::response::content::Json(json_tag_array.to_string())
 }
 
-#[tokio::main]
-async fn main() {
+// TODO - Remove `block_on` calls in this function, and instead make the function async.
+#[rocket::launch]
+fn rocket() -> _ {
     let env_vars = EnvironmentVariables::default();
 
     let server_mode = env_vars.get_server_mode();
@@ -288,7 +244,8 @@ async fn main() {
     let fdr_cache = match server_mode {
         ServerMode::Prod => {
             println!("Fetching podcasts and building cache...");
-            let fdr_cache = FdrCache::new_with_prod_podcasts().await.unwrap();
+            let fdr_cache =
+                futures::executor::block_on(FdrCache::new_with_prod_podcasts()).unwrap();
             println!("Done.");
             fdr_cache
         }
@@ -302,16 +259,15 @@ async fn main() {
 
     let search_backend: SearchBackend = match server_mode {
         ServerMode::Prod => {
-            let search_backend = SearchBackend::new_prod(
+            let search_backend = futures::executor::block_on(SearchBackend::new_prod(
                 env_vars.get_meilisearch_host().to_string(),
                 env_vars.get_meilisearch_api_key().to_string(),
-            )
-            .await;
+            ));
 
             println!("Ingesting search index...");
-            search_backend
-                .ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts())
-                .await;
+            futures::executor::block_on(
+                search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts()),
+            );
             println!("Done.");
             search_backend
         }
@@ -319,10 +275,10 @@ async fn main() {
     };
 
     println!("Starting server...");
-    rocket::ignite()
+    rocket::build()
         .manage(fdr_cache)
         .manage(search_backend)
-        .register(catchers![not_found_handler])
+        .register("/", catchers![not_found_handler])
         .mount(
             "/api",
             routes![
@@ -334,5 +290,4 @@ async fn main() {
                 get_filtered_tags_with_counts_handler
             ],
         )
-        .launch();
 }

@@ -160,10 +160,6 @@ impl Podcast {
         )
     }
 
-    pub fn get_title(&self) -> &str {
-        &self.title
-    }
-
     pub fn get_podcast_number(&self) -> &PodcastNumber {
         &self.podcast_number
     }
