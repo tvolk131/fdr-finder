@@ -1,5 +1,5 @@
 use meilisearch_sdk::document::Document;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer, Deserializer};
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::{
@@ -25,9 +25,25 @@ impl PodcastTag {
 }
 
 // TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
-#[derive(Clone, Debug, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq)]
 pub struct PodcastNumber {
     num: Number,
+}
+
+// We're manually implementing Serialize so that a podcast number
+// is serialized to a number rather than an object containing a number value.
+impl Serialize for PodcastNumber {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        self.num.serialize(serializer)
+    }
+}
+
+// We're manually implementing Deserialize so that a podcast number
+// is deserialized from a number rather than an object containing a number value.
+impl<'de> Deserialize<'de> for PodcastNumber {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        Ok(PodcastNumber::new(Number::deserialize(deserializer)?))
+    }
 }
 
 impl PartialEq for PodcastNumber {
@@ -49,6 +65,7 @@ impl PartialOrd for PodcastNumber {
 }
 
 impl Ord for PodcastNumber {
+    // TODO - I believe this behavior is undefined if either of the numbers is NOT representable as an f64. Let's handle this case.
     fn cmp(&self, other: &Self) -> Ordering {
         if self.num.as_f64() > other.num.as_f64() {
             return Ordering::Greater;
