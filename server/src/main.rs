@@ -12,10 +12,10 @@ mod search;
 use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
 use environment::{EnvironmentVariables, ServerMode};
 use fdr_cache::FdrCache;
+use rocket::response::{content, status};
 use rocket::{Request, State};
 use search::SearchBackend;
 use serde_json::{json, Map, Value};
-use rocket::response::{content, status};
 
 const FAVICON_BYTES: &[u8] = include_bytes!("../../client/out/favicon.ico");
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
@@ -33,9 +33,7 @@ fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
 
 enum NotFoundResponse {
     Html(status::Custom<content::Html<&'static [u8]>>),
-    JavaScript(
-        status::Custom<content::JavaScript<&'static [u8]>>,
-    ),
+    JavaScript(status::Custom<content::JavaScript<&'static [u8]>>),
     Favicon(Box<status::Custom<content::Custom<&'static [u8]>>>),
     NotFound(status::NotFound<String>),
 }
@@ -102,19 +100,13 @@ fn get_podcast_handler(
     };
 
     match podcast_or {
-        Some(podcast) => Ok(content::Json(
-            podcast.to_json().to_string(),
-        )),
-        None => Err(status::NotFound(
-            "Podcast does not exist".to_string(),
-        )),
+        Some(podcast) => Ok(content::Json(podcast.to_json().to_string())),
+        None => Err(status::NotFound("Podcast does not exist".to_string())),
     }
 }
 
 #[get("/allPodcasts")]
-fn get_all_podcasts_handler(
-    fdr_cache: &State<FdrCache>,
-) -> content::Json<String> {
+fn get_all_podcasts_handler(fdr_cache: &State<FdrCache>) -> content::Json<String> {
     let podcasts = fdr_cache.get_all_podcasts();
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
     content::Json(json.to_string())
