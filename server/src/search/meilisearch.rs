@@ -1,7 +1,7 @@
+use crate::mock::create_mock_podcast;
 use crate::podcast::{Podcast, PodcastTag};
 use meilisearch_sdk::{client::Client, indexes::Index, progress::UpdateStatus};
 use serde::Serialize;
-use crate::mock::create_mock_podcast;
 
 pub struct MeilisearchBackend {
     podcast_index: Index,
@@ -67,7 +67,7 @@ impl MeilisearchBackend {
                 .collect(),
             total_hits: results.nb_hits,
             total_hits_is_approximate: !results.exhaustive_nb_hits,
-            processing_time_ms: results.processing_time_ms
+            processing_time_ms: results.processing_time_ms,
         }
     }
 
@@ -94,7 +94,7 @@ pub struct SearchResult {
     hits: Vec<Podcast>,
     total_hits: usize,
     total_hits_is_approximate: bool,
-    processing_time_ms: usize
+    processing_time_ms: usize,
 }
 
 impl SearchResult {
@@ -117,6 +117,6 @@ pub fn generate_mock_search_results() -> SearchResult {
         hits: mock_podcasts,
         total_hits,
         total_hits_is_approximate: false,
-        processing_time_ms: 1234
+        processing_time_ms: 1234,
     }
 }
