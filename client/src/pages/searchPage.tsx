@@ -126,10 +126,10 @@ export const SearchPage = (props: SearchPageProps) => {
           limit: podcastsPerPage,
           offset: 0,
           tags
-        }).then((podcasts) => ({
+        }).then((searchResult) => ({
           isLoadingPodcasts: false,
           isLoadingTagsWithCounts: undefined,
-          podcasts,
+          podcasts: searchResult.hits,
           tagsWithCounts: undefined
         })),
         getFilteredTagsWithCounts({query, tags})
@@ -209,7 +209,7 @@ export const SearchPage = (props: SearchPageProps) => {
   const paginator = (
     <TablePagination
       component={'div'}
-      count={sortedPodcasts.length}
+      count={sortedPodcasts.length} // TODO - Change this.
       page={podcastPage}
       onPageChange={(event, newPage) => setPodcastPage(newPage)}
       rowsPerPage={podcastsPerPage}

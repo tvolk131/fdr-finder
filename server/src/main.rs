@@ -100,7 +100,7 @@ fn get_podcast_handler(
     };
 
     match podcast_or {
-        Some(podcast) => Ok(content::Json(podcast.to_json().to_string())),
+        Some(podcast) => Ok(content::Json(json!(podcast).to_string())),
         None => Err(status::NotFound("Podcast does not exist".to_string())),
     }
 }
@@ -111,7 +111,7 @@ fn get_recent_podcasts_handler(
     fdr_cache: &State<FdrCache>,
 ) -> content::Json<String> {
     let podcasts = fdr_cache.get_recent_podcasts(amount.unwrap_or(100));
-    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
+    let json = Value::Array(podcasts.iter().map(|podcast| json!(podcast)).collect());
     content::Json(json.to_string())
 }
 
@@ -123,7 +123,7 @@ async fn search_podcasts_handler<'a>(
     tags: Option<String>,
     search_backend: &State<SearchBackend>,
 ) -> Result<content::Json<String>, status::BadRequest<String>> {
-    let podcasts = search_backend
+    let search_result = search_backend
         .search(
             &query,
             &parse_tag_query_string(tags),
@@ -131,9 +131,8 @@ async fn search_podcasts_handler<'a>(
             offset.unwrap_or(0),
         )
         .await;
-    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
-    Ok(content::Json(json.to_string()))
+    Ok(content::Json(json!(search_result).to_string()))
 }
 
 #[get("/search/podcasts/rss?<query>&<tags>")]
@@ -142,13 +141,13 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
     tags: Option<String>,
     search_backend: &State<SearchBackend>,
 ) -> Result<content::Xml<String>, status::BadRequest<String>> {
-    let podcasts = search_backend
+    let search_result = search_backend
         .search(&query, &parse_tag_query_string(tags), None, 0)
         .await;
 
     // TODO - Fix RSS feed naming now that we support tag filtering.
     let rss = generate_rss_feed(
-        &podcasts,
+        &search_result.get_hits(),
         &format!(
             "Freedomain Custom Feed: {}",
             query.clone().unwrap_or_default()
@@ -176,6 +175,7 @@ async fn get_filtered_tags_with_counts_handler<'a>(
             search_backend
                 .search(&query, &parsed_tags, None, 0)
                 .await
+                .take_hits()
                 .into_iter()
                 .collect(),
         ),

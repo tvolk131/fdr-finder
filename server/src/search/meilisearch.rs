@@ -1,5 +1,7 @@
 use crate::podcast::{Podcast, PodcastTag};
 use meilisearch_sdk::{client::Client, indexes::Index, progress::UpdateStatus};
+use serde::Serialize;
+use crate::mock::create_mock_podcast;
 
 pub struct MeilisearchBackend {
     podcast_index: Index,
@@ -24,7 +26,7 @@ impl MeilisearchBackend {
         tags: &[PodcastTag],
         limit: usize,
         offset: usize,
-    ) -> Vec<Podcast> {
+    ) -> SearchResult {
         // These three lines are pretty weird and gross, but `with_facet_filters` specifically
         // accepts &[&[&str]] so we need to create the facet strings and immediately borrow them.
         let tag_facet_strings: Vec<String> = tags
@@ -56,17 +58,23 @@ impl MeilisearchBackend {
         search_request.with_offset(offset).with_limit(limit);
 
         let results = search_request.execute::<Podcast>().await.unwrap();
-        results
-            .hits
-            .into_iter()
-            .map(|result| result.result)
-            .collect()
+
+        SearchResult {
+            hits: results
+                .hits
+                .into_iter()
+                .map(|result| result.result)
+                .collect(),
+            total_hits: results.nb_hits,
+            total_hits_is_approximate: !results.exhaustive_nb_hits,
+            processing_time_ms: results.processing_time_ms
+        }
     }
 
     pub async fn ingest_podcasts_or_panic(&self, podcasts: &[Podcast]) {
         let progress = self
             .podcast_index
-            .add_documents(podcasts, Some("podcast_number_hash"))
+            .add_documents(podcasts, Some("podcastNumberHash"))
             .await
             .unwrap();
         let status = progress
@@ -77,5 +85,38 @@ impl MeilisearchBackend {
         if let UpdateStatus::Failed { .. } = status {
             panic!("Meilisearch ingestion failed: {:?}", status)
         };
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchResult {
+    hits: Vec<Podcast>,
+    total_hits: usize,
+    total_hits_is_approximate: bool,
+    processing_time_ms: usize
+}
+
+impl SearchResult {
+    pub fn get_hits(&self) -> &[Podcast] {
+        &self.hits
+    }
+
+    pub fn take_hits(self) -> Vec<Podcast> {
+        self.hits
+    }
+}
+
+pub fn generate_mock_search_results() -> SearchResult {
+    let mut mock_podcasts = Vec::new();
+    for i in 1..20 {
+        mock_podcasts.push(create_mock_podcast(i));
+    }
+    let total_hits = mock_podcasts.len();
+    SearchResult {
+        hits: mock_podcasts,
+        total_hits,
+        total_hits_is_approximate: false,
+        processing_time_ms: 1234
     }
 }

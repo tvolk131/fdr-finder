@@ -96,6 +96,7 @@ impl std::fmt::Display for PodcastNumber {
 
 // TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
 #[derive(Clone, Eq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Podcast {
     title: String,
     description: String,
@@ -149,18 +150,6 @@ impl Podcast {
             create_time,
             tags,
         }
-    }
-
-    pub fn to_json(&self) -> Value {
-        json!({
-            "title": self.title,
-            "description": self.description,
-            "audioLink": self.audio_link,
-            "lengthInSeconds": self.length_in_seconds,
-            "podcastNumber": self.podcast_number.num,
-            "createTime": self.create_time,
-            "tags": self.tags.iter().collect::<Vec<&PodcastTag>>()
-        })
     }
 
     fn to_rss_xml(&self) -> String {

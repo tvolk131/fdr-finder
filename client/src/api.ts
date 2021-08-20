@@ -18,8 +18,15 @@ export const getRecentPodcasts = async (amount?: number): Promise<ShowInfo[]> =>
   return (await axios.get(generateUrlWithQueryParams('/api/recentPodcasts', {amount}))).data.map(deserializeShowInfo);
 }
 
+interface SearchResult {
+  hits: ShowInfo[],
+  totalHits: number,
+  totalHitsIsApproximate: boolean,
+  processingTimeMs: number
+}
+
 export const searchPodcasts =
-async (data: {query?: string, limit?: number, offset?: number, tags?: string[]}): Promise<ShowInfo[]> => {
+async (data: {query?: string, limit?: number, offset?: number, tags?: string[]}): Promise<SearchResult> => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
@@ -35,7 +42,7 @@ async (data: {query?: string, limit?: number, offset?: number, tags?: string[]})
   }
 
   const res = await axios.get(generateUrlWithQueryParams('/api/search/podcasts', queryParams));
-  return res.data.map(deserializeShowInfo);
+  return {...res.data, hits: res.data.hits.map(deserializeShowInfo)};
 };
 
 export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {
