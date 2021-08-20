@@ -1,7 +1,7 @@
 pub struct EnvironmentVariables {
     server_mode: ServerMode,
-    sonic_uri: String,
-    sonic_password: String,
+    meilisearch_host: String,
+    meilisearch_api_key: String,
 }
 
 impl EnvironmentVariables {
@@ -26,12 +26,12 @@ impl EnvironmentVariables {
         self.server_mode
     }
 
-    pub fn get_sonic_uri(&self) -> &str {
-        &self.sonic_uri
+    pub fn get_meilisearch_host(&self) -> &str {
+        &self.meilisearch_host
     }
 
-    pub fn get_sonic_password(&self) -> &str {
-        &self.sonic_password
+    pub fn get_meilisearch_api_key(&self) -> &str {
+        &self.meilisearch_api_key
     }
 }
 
@@ -42,8 +42,11 @@ impl Default for EnvironmentVariables {
                 "SERVER_MODE",
                 RAW_PROD_SERVER_MODE,
             )),
-            sonic_uri: Self::get_env_var_or_default("SONIC_URI", "127.0.0.1:1491"),
-            sonic_password: Self::get_env_var_or_default("SONIC_PASSWORD", "password"),
+            meilisearch_host: Self::get_env_var_or_default(
+                "MEILISEARCH_HOST",
+                "http://localhost:7700",
+            ),
+            meilisearch_api_key: Self::get_env_var_or_default("MEILISEARCH_API_KEY", ""),
         }
     }
 }

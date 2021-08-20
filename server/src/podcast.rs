@@ -1,16 +1,17 @@
-use serde::Serialize;
+use meilisearch_sdk::document::Document;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::collections::HashSet;
-use std::sync::Arc;
 use std::{
     ops::Add,
     time::{Duration, SystemTime},
 };
 
-use serde_json::{json, Number, Value};
+use serde_json::Number;
+use sha2::Digest;
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Hash, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PodcastTag(String);
 
 impl PodcastTag {
@@ -23,10 +24,31 @@ impl PodcastTag {
     }
 }
 
-// TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
-#[derive(Clone, Eq)]
+#[derive(Clone, Debug, Eq)]
 pub struct PodcastNumber {
     num: Number,
+}
+
+// We're manually implementing Serialize so that a podcast number
+// is serialized to a number rather than an object containing a number value.
+impl Serialize for PodcastNumber {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.num.serialize(serializer)
+    }
+}
+
+// We're manually implementing Deserialize so that a podcast number
+// is deserialized from a number rather than an object containing a number value.
+impl<'de> Deserialize<'de> for PodcastNumber {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(PodcastNumber::new(Number::deserialize(deserializer)?))
+    }
 }
 
 impl PartialEq for PodcastNumber {
@@ -48,6 +70,7 @@ impl PartialOrd for PodcastNumber {
 }
 
 impl Ord for PodcastNumber {
+    // TODO - I believe this behavior is undefined if either of the numbers is NOT representable as an f64. Let's handle this case.
     fn cmp(&self, other: &Self) -> Ordering {
         if self.num.as_f64() > other.num.as_f64() {
             return Ordering::Greater;
@@ -65,22 +88,31 @@ impl PodcastNumber {
     }
 }
 
-impl ToString for PodcastNumber {
-    fn to_string(&self) -> String {
-        self.num.to_string()
+impl std::fmt::Display for PodcastNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.num.fmt(f)
     }
 }
 
 // TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
-#[derive(Eq)]
+#[derive(Clone, Eq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Podcast {
     title: String,
     description: String,
     audio_link: String,
     length_in_seconds: i32,
     podcast_number: PodcastNumber,
+    podcast_number_hash: String, // Used as the primary key by Meilisearch, since it contains only alphanumeric characters.
     create_time: i64,
     tags: HashSet<PodcastTag>,
+}
+
+impl Document for Podcast {
+    type UIDType = PodcastNumber;
+    fn get_uid(&self) -> &Self::UIDType {
+        &self.podcast_number
+    }
 }
 
 impl PartialEq for Podcast {
@@ -105,27 +137,19 @@ impl Podcast {
         create_time: i64,
         tags: HashSet<PodcastTag>,
     ) -> Self {
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(podcast_number.to_string());
+        let podcast_number_hash = hex::encode(hasher.finalize());
         Self {
             title,
             description,
             audio_link,
             length_in_seconds,
             podcast_number,
+            podcast_number_hash,
             create_time,
             tags,
         }
-    }
-
-    pub fn to_json(&self) -> Value {
-        json!({
-            "title": self.title,
-            "description": self.description,
-            "audioLink": self.audio_link,
-            "lengthInSeconds": self.length_in_seconds,
-            "podcastNumber": self.podcast_number.num,
-            "createTime": self.create_time,
-            "tags": self.tags.iter().collect::<Vec<&PodcastTag>>()
-        })
     }
 
     fn to_rss_xml(&self) -> String {
@@ -147,10 +171,6 @@ impl Podcast {
         )
     }
 
-    pub fn get_title(&self) -> &str {
-        &self.title
-    }
-
     pub fn get_podcast_number(&self) -> &PodcastNumber {
         &self.podcast_number
     }
@@ -160,11 +180,7 @@ impl Podcast {
     }
 }
 
-pub fn generate_rss_feed(
-    podcasts: &[&Arc<Podcast>],
-    feed_title: &str,
-    feed_description: &str,
-) -> String {
+pub fn generate_rss_feed(podcasts: &[Podcast], feed_title: &str, feed_description: &str) -> String {
     let podcasts_xml: Vec<String> = podcasts
         .iter()
         .map(|podcast| format!("<item>{}</item>", podcast.to_rss_xml()))

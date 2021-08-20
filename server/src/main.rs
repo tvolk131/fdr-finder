@@ -7,21 +7,17 @@ mod fdr_cache;
 mod http;
 mod mock;
 mod podcast;
-mod sonic;
+mod search;
 
-use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
+use crate::podcast::{generate_rss_feed, PodcastNumber, PodcastTag};
 use environment::{EnvironmentVariables, ServerMode};
 use fdr_cache::FdrCache;
-use rocket::{
-    http::{ContentType, RawStr, Status},
-    Request, Response, State,
-};
+use rocket::response::{content, status};
+use rocket::{Request, State};
+use search::SearchBackend;
 use serde_json::{json, Map, Value};
-use sonic::{MockSearchBackend, SearchBackend, SonicInstance};
-use std::collections::HashSet;
-use std::io::Cursor;
-use std::sync::Arc;
 
+const FAVICON_BYTES: &[u8] = include_bytes!("../../client/out/favicon.ico");
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
 
@@ -35,203 +31,113 @@ fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
     }
 }
 
+enum NotFoundResponse {
+    Html(status::Custom<content::Html<&'static [u8]>>),
+    JavaScript(status::Custom<content::JavaScript<&'static [u8]>>),
+    Favicon(Box<status::Custom<content::Custom<&'static [u8]>>>),
+    NotFound(status::NotFound<String>),
+}
+
+impl<'r> rocket::response::Responder<'r, 'static> for NotFoundResponse {
+    fn respond_to(
+        self,
+        request: &'r Request<'_>,
+    ) -> Result<rocket::response::Response<'static>, rocket::http::Status> {
+        match self {
+            NotFoundResponse::Html(html) => html.respond_to(request),
+            NotFoundResponse::JavaScript(javascript) => javascript.respond_to(request),
+            NotFoundResponse::Favicon(favicon) => favicon.respond_to(request),
+            NotFoundResponse::NotFound(not_found) => not_found.respond_to(request),
+        }
+    }
+}
+
 #[catch(404)]
-fn not_found_handler<'a>(req: &Request) -> Response<'a> {
+fn not_found_handler(req: &Request) -> NotFoundResponse {
+    let last_chunk = match req.uri().path().split('/').last() {
+        Some(raw_str) => raw_str.as_str().to_string(),
+        None => "".to_string(),
+    };
+
     if req
         .uri()
         .path()
         .split('/')
         .find(|chunk| !chunk.is_empty())
-        .unwrap_or_default()
+        .unwrap_or_else(|| "".into())
         == "api"
     {
-        return Response::build()
-            .status(Status::NotFound)
-            .header(ContentType::Plain)
-            .sized_body(Cursor::new(format!(
-                "404 - API path '{}' does not exist!",
-                req.uri().path()
-            )))
-            .finalize();
-    } else if req.uri().path().split('/').last().unwrap_or_default() == "bundle.js" {
-        return Response::build()
-            .status(Status::Ok)
-            .header(ContentType::JavaScript)
-            .sized_body(Cursor::new(JS_BUNDLE_BYTES))
-            .finalize();
+        NotFoundResponse::NotFound(status::NotFound(format!(
+            "404 - API path '{}' does not exist!",
+            req.uri().path()
+        )))
+    } else if last_chunk == "bundle.js" {
+        NotFoundResponse::JavaScript(status::Custom(
+            rocket::http::Status::Ok,
+            content::JavaScript(JS_BUNDLE_BYTES),
+        ))
+    } else if last_chunk == "favicon.ico" {
+        NotFoundResponse::Favicon(Box::from(status::Custom(
+            rocket::http::Status::Ok,
+            content::Custom(rocket::http::ContentType::Icon, FAVICON_BYTES),
+        )))
     } else {
-        return Response::build()
-            .status(Status::Ok)
-            .header(ContentType::HTML)
-            .sized_body(Cursor::new(HTML_BYTES))
-            .finalize();
+        NotFoundResponse::Html(status::Custom(
+            rocket::http::Status::Ok,
+            content::Html(HTML_BYTES),
+        ))
     }
 }
 
 #[get("/podcasts/<podcast_num>")]
-fn get_podcast_handler<'a>(podcast_num: &RawStr, fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
+fn get_podcast_handler(
+    podcast_num: String,
+    fdr_cache: &State<FdrCache>,
+) -> Result<content::Json<String>, status::NotFound<String>> {
     let podcast_or = match podcast_num.parse::<serde_json::Number>() {
         Ok(num) => fdr_cache.get_podcast(&PodcastNumber::new(num)),
         Err(_) => None,
     };
 
-    return match podcast_or {
-        Some(podcast) => Response::build()
-            .status(Status::Ok)
-            .header(ContentType::JSON)
-            .sized_body(Cursor::new(podcast.to_json().to_string()))
-            .finalize(),
-        None => Response::build()
-            .status(Status::NotFound)
-            .header(ContentType::HTML)
-            .sized_body(Cursor::new("Podcast does not exist"))
-            .finalize(),
-    };
-}
-
-#[get("/allPodcasts")]
-fn get_all_podcasts_handler<'a>(fdr_cache: State<Arc<FdrCache>>) -> Response<'a> {
-    let podcasts = fdr_cache.get_all_podcasts();
-    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
-
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json.to_string()))
-        .finalize()
-}
-
-#[get("/recentPodcasts?<amount>")]
-fn get_recent_podcasts_handler<'a>(
-    amount: Option<usize>,
-    fdr_cache: State<Arc<FdrCache>>,
-) -> Response<'a> {
-    let podcasts = fdr_cache.get_recent_podcasts(amount.unwrap_or(100));
-    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
-
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json.to_string()))
-        .finalize()
-}
-
-fn get_intersection_of_podcast_lists<'a>(
-    list_one: Vec<&'a Arc<Podcast>>,
-    list_two: Vec<&'a Arc<Podcast>>,
-) -> Vec<&'a Arc<Podcast>> {
-    let podcast_set: HashSet<&'a Arc<Podcast>> = list_one.into_iter().collect();
-    let mut intersecting_podcasts: Vec<&'a Arc<Podcast>> = Vec::new();
-    for podcast in list_two.into_iter() {
-        if podcast_set.contains(&podcast) {
-            intersecting_podcasts.push(podcast);
-        }
-    }
-    intersecting_podcasts
-}
-
-fn search_podcasts<'a, 'b>(
-    query_or: &Option<&String>,
-    tags: Vec<PodcastTag>,
-    fdr_cache: &'b State<Arc<FdrCache>>,
-    sonic_instance: &'b State<Box<dyn SearchBackend + Send + Sync>>,
-) -> Result<Vec<&'b Arc<Podcast>>, Response<'a>> {
-    match query_or {
-        Some(query) => {
-            let query_results = sonic_instance.search_by_title(query);
-            if tags.is_empty() {
-                Ok(query_results)
-            } else {
-                Ok(get_intersection_of_podcast_lists(
-                    query_results,
-                    fdr_cache.get_podcasts_by_tags(tags),
-                ))
-            }
-        }
-        None => {
-            if tags.is_empty() {
-                Err(Response::build()
-                    .status(Status::BadRequest)
-                    .header(ContentType::Plain)
-                    .sized_body(Cursor::new(
-                        "Request url must contain `query` or `tags` parameter.",
-                    ))
-                    .finalize())
-            } else {
-                Ok(fdr_cache.get_podcasts_by_tags(tags))
-            }
-        }
+    match podcast_or {
+        Some(podcast) => Ok(content::Json(json!(podcast).to_string())),
+        None => Err(status::NotFound("Podcast does not exist".to_string())),
     }
 }
 
-#[get("/search/podcasts?<query>&<tags>")]
-fn search_podcasts_handler<'a>(
+#[get("/search/podcasts?<query>&<limit>&<offset>&<tags>")]
+async fn search_podcasts_handler<'a>(
     query: Option<String>,
+    limit: Option<usize>,
+    offset: Option<usize>,
     tags: Option<String>,
-    fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
-) -> Response<'a> {
-    let podcasts = match search_podcasts(
-        &query.as_ref(),
-        parse_tag_query_string(tags),
-        &fdr_cache,
-        &sonic_instance,
-    ) {
-        Ok(podcasts) => podcasts,
-        Err(res) => return res,
-    };
-    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
+    search_backend: &State<SearchBackend>,
+) -> Result<content::Json<String>, status::BadRequest<String>> {
+    let search_result = search_backend
+        .search(
+            &query,
+            &parse_tag_query_string(tags),
+            limit,
+            offset.unwrap_or(0),
+        )
+        .await;
 
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json.to_string()))
-        .finalize()
-}
-
-#[get("/search/podcasts/autocomplete?<query>")]
-fn search_podcasts_autocomplete_handler<'a>(
-    query: Option<String>,
-    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
-) -> Response<'a> {
-    let autocomplete_suggestions = match query {
-        Some(query) => sonic_instance.suggest_by_title(&query),
-        None => Vec::new(),
-    };
-
-    let json = Value::Array(
-        autocomplete_suggestions
-            .into_iter()
-            .map(Value::String)
-            .collect(),
-    );
-
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json.to_string()))
-        .finalize()
+    Ok(content::Json(json!(search_result).to_string()))
 }
 
 #[get("/search/podcasts/rss?<query>&<tags>")]
-fn search_podcasts_as_rss_feed_handler<'a>(
+async fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
-) -> Response<'a> {
-    let podcasts = match search_podcasts(
-        &query.as_ref(),
-        parse_tag_query_string(tags),
-        &fdr_cache,
-        &sonic_instance,
-    ) {
-        Ok(podcasts) => podcasts,
-        Err(res) => return res,
-    };
+    search_backend: &State<SearchBackend>,
+) -> Result<content::Xml<String>, status::BadRequest<String>> {
+    let search_result = search_backend
+        .search(&query, &parse_tag_query_string(tags), None, 0)
+        .await;
+
     // TODO - Fix RSS feed naming now that we support tag filtering.
     let rss = generate_rss_feed(
-        &podcasts,
+        search_result.get_hits(),
         &format!(
             "Freedomain Custom Feed: {}",
             query.clone().unwrap_or_default()
@@ -242,24 +148,29 @@ fn search_podcasts_as_rss_feed_handler<'a>(
         ),
     );
 
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::XML)
-        .sized_body(Cursor::new(rss))
-        .finalize()
+    Ok(content::Xml(rss))
 }
 
 #[get("/filteredTagsWithCounts?<query>&<tags>")]
-fn get_filtered_tags_with_counts_handler<'a>(
+async fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: State<Arc<FdrCache>>,
-    sonic_instance: State<Box<dyn SearchBackend + Send + Sync>>,
-) -> Response<'a> {
+    fdr_cache: &State<FdrCache>,
+    search_backend: &State<SearchBackend>,
+) -> content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
 
-    let exclusive_podcasts_or =
-        query.map(|query| sonic_instance.search_by_title(&query).into_iter().collect());
+    let exclusive_podcasts_or = match query {
+        Some(_) => Some(
+            search_backend
+                .search(&query, &parsed_tags, None, 0)
+                .await
+                .take_hits()
+                .into_iter()
+                .collect(),
+        ),
+        None => None,
+    };
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
@@ -274,15 +185,11 @@ fn get_filtered_tags_with_counts_handler<'a>(
         })
         .collect();
 
-    Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(Cursor::new(json_tag_array.to_string()))
-        .finalize()
+    content::Json(json_tag_array.to_string())
 }
 
-#[tokio::main]
-async fn main() {
+#[rocket::launch]
+async fn rocket() -> _ {
     let env_vars = EnvironmentVariables::default();
 
     let server_mode = env_vars.get_server_mode();
@@ -296,7 +203,7 @@ async fn main() {
         }
     }
 
-    let fdr_cache = Arc::from(match server_mode {
+    let fdr_cache = match server_mode {
         ServerMode::Prod => {
             println!("Fetching podcasts and building cache...");
             let fdr_cache = FdrCache::new_with_prod_podcasts().await.unwrap();
@@ -309,40 +216,38 @@ async fn main() {
             println!("Done.");
             fdr_cache
         }
-    });
+    };
 
-    let search_backend: Box<dyn SearchBackend + Send + Sync> = match server_mode {
+    let search_backend: SearchBackend = match server_mode {
         ServerMode::Prod => {
-            let sonic_instance = SonicInstance::new(
-                env_vars.get_sonic_uri().to_string(),
-                env_vars.get_sonic_password().to_string(),
-                fdr_cache.clone(),
-            );
+            let search_backend = SearchBackend::new_prod(
+                env_vars.get_meilisearch_host().to_string(),
+                env_vars.get_meilisearch_api_key().to_string(),
+            )
+            .await;
 
-            println!("Ingesting Sonic search index...");
-            sonic_instance.ingest_all();
+            println!("Ingesting search index...");
+            search_backend
+                .ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts())
+                .await;
             println!("Done.");
-            Box::from(sonic_instance)
+            search_backend
         }
-        ServerMode::Mock => Box::from(MockSearchBackend::default()),
+        ServerMode::Mock => SearchBackend::new_mock(),
     };
 
     println!("Starting server...");
-    rocket::ignite()
+    rocket::build()
         .manage(fdr_cache)
         .manage(search_backend)
-        .register(catchers![not_found_handler])
+        .register("/", catchers![not_found_handler])
         .mount(
             "/api",
             routes![
                 get_podcast_handler,
-                get_all_podcasts_handler,
-                get_recent_podcasts_handler,
                 search_podcasts_handler,
-                search_podcasts_autocomplete_handler,
                 search_podcasts_as_rss_feed_handler,
                 get_filtered_tags_with_counts_handler
             ],
         )
-        .launch();
 }

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {ShowFormat, ShowInfo} from './components/showCard';
-import {queryFieldName, tagsFieldName} from './constants';
+import {queryFieldName, limitFieldName, offsetFieldName, tagsFieldName} from './constants';
 
 const deserializeShowInfo = (data: any): ShowInfo => {
   return {
@@ -14,30 +14,31 @@ export const getPodcast = async (podcastNum: number): Promise<ShowInfo> => {
   return deserializeShowInfo((await axios.get(`/api/podcasts/${podcastNum}`)).data);
 };
 
-export const getAllPodcasts = async (): Promise<ShowInfo[]> => {
-  return (await axios.get('/api/allPodcasts')).data.map(deserializeShowInfo);
+interface SearchResult {
+  hits: ShowInfo[],
+  totalHits: number,
+  totalHitsIsApproximate: boolean,
+  processingTimeMs: number
 }
 
-export const getRecentPodcasts = async (amount?: number): Promise<ShowInfo[]> => {
-  return (await axios.get(generateUrlWithQueryParams('/api/recentPodcasts', {amount}))).data.map(deserializeShowInfo);
-}
-
-export const searchPodcasts = async (data: {query?: string, tags?: string[]}): Promise<ShowInfo[]> => {
-  const queryParams: {[key: string]: string} = {};
+export const searchPodcasts =
+async (data: {query?: string, limit?: number, offset?: number, tags?: string[]}): Promise<SearchResult> => {
+  const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
+  }
+  if (data.limit !== undefined) {
+    queryParams[limitFieldName] = data.limit;
+  }
+  if (data.offset !== undefined) {
+    queryParams[offsetFieldName] = data.offset;
   }
   if (data.tags && data.tags.length) {
     queryParams[tagsFieldName] = data.tags.join(',');
   }
 
   const res = await axios.get(generateUrlWithQueryParams('/api/search/podcasts', queryParams));
-  return res.data.map(deserializeShowInfo);
-};
-
-export const searchPodcastsAutocomplete = async (query: string): Promise<string[]> => {
-  const res = await axios.get(generateUrlWithQueryParams('/api/search/podcasts/autocomplete', {query}));
-  return res.data;
+  return {...res.data, hits: res.data.hits.map(deserializeShowInfo)};
 };
 
 export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {

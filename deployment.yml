@@ -18,10 +18,10 @@ spec:
         ports:
         - containerPort: 80
         env:
-        - name: SONIC_URI
-          value: "<SONIC_URI>"
-        - name: SONIC_PASSWORD
-          value: "<SONIC_PASSWORD>"
+        - name: MEILISEARCH_HOST
+          value: "<MEILISEARCH_HOST>"
+        - name: MEILISEARCH_API_KEY
+          value: "<MEILISEARCH_API_KEY>"
 ---
 apiVersion: v1
 kind: Service

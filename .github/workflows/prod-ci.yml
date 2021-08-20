@@ -50,21 +50,17 @@ jobs:
       - name: Log in to DigitalOcean Container Registry with short-lived credentials
         run: doctl registry login --expiry-seconds 1200
 
-      # TODO - Remove this step. It is here only for logging purposes.
-      - name: List DigitalOcean certificates
-        run: doctl compute certificate list
-
       - name: Push image to DigitalOcean Container Registry
         run: docker push registry.digitalocean.com/cards/fdr-finder:$(echo $GITHUB_SHA | head -c7)
 
       - name: Update deployment file
         run: |
           TAG=$(echo $GITHUB_SHA | head -c7) && sed -i 's|<IMAGE>|registry.digitalocean.com/cards/fdr-finder:'${TAG}'|' $GITHUB_WORKSPACE/deployment.yml
-          sed -i 's|<SONIC_URI>|'${SONIC_URI}'|' $GITHUB_WORKSPACE/deployment.yml
-          sed -i 's|<SONIC_PASSWORD>|'${SONIC_PASSWORD}'|' $GITHUB_WORKSPACE/deployment.yml
+          sed -i 's|<MEILISEARCH_HOST>|'${MEILISEARCH_HOST}'|' $GITHUB_WORKSPACE/deployment.yml
+          sed -i 's|<MEILISEARCH_API_KEY>|'${MEILISEARCH_API_KEY}'|' $GITHUB_WORKSPACE/deployment.yml
         env:
-          SONIC_URI: ${{ secrets.SONIC_URI }}
-          SONIC_PASSWORD: ${{ secrets.SONIC_PASSWORD }}
+          MEILISEARCH_HOST: ${{ secrets.MEILISEARCH_HOST }}
+          MEILISEARCH_API_KEY: ${{ secrets.MEILISEARCH_API_KEY }}
 
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 cards
