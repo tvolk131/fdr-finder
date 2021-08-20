@@ -1,4 +1,4 @@
-FROM node:16.6.0 AS client-base
+FROM node:16.7.0 AS client-base
 COPY ./ ./app
 WORKDIR /app
 RUN cd client && npm ci && npm run build-prod
@@ -8,7 +8,8 @@ COPY --from=client-base ./app ./app
 WORKDIR /app
 RUN cd server && rustup default nightly && cargo build --release && mkdir -p /build-out && cp target/release/fdr-show-indexer-server /build-out/
 
-FROM debian:10-slim
+# TODO - Revert base image back to debian:10-slim. I changed it because the Meilisearch client requires libssl.
+FROM ubuntu:21.10
 COPY --from=server-base /build-out/fdr-show-indexer-server /
 ENV ROCKET_PORT=80
 EXPOSE 80
