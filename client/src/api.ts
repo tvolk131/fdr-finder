@@ -14,10 +14,6 @@ export const getPodcast = async (podcastNum: number): Promise<ShowInfo> => {
   return deserializeShowInfo((await axios.get(`/api/podcasts/${podcastNum}`)).data);
 };
 
-export const getRecentPodcasts = async (amount?: number): Promise<ShowInfo[]> => {
-  return (await axios.get(generateUrlWithQueryParams('/api/recentPodcasts', {amount}))).data.map(deserializeShowInfo);
-}
-
 interface SearchResult {
   hits: ShowInfo[],
   totalHits: number,

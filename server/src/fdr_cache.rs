@@ -73,10 +73,6 @@ impl FdrCache {
         podcasts
     }
 
-    pub fn get_recent_podcasts(&self, amount: usize) -> &[Podcast] {
-        &self.num_sorted_podcast_list[0..amount]
-    }
-
     // TODO - The `tags` argument can be a reference.
     pub fn get_filtered_tags_with_podcast_counts(
         &self,

@@ -105,16 +105,6 @@ fn get_podcast_handler(
     }
 }
 
-#[get("/recentPodcasts?<amount>")]
-fn get_recent_podcasts_handler(
-    amount: Option<usize>,
-    fdr_cache: &State<FdrCache>,
-) -> content::Json<String> {
-    let podcasts = fdr_cache.get_recent_podcasts(amount.unwrap_or(100));
-    let json = Value::Array(podcasts.iter().map(|podcast| json!(podcast)).collect());
-    content::Json(json.to_string())
-}
-
 #[get("/search/podcasts?<query>&<limit>&<offset>&<tags>")]
 async fn search_podcasts_handler<'a>(
     query: Option<String>,
@@ -255,7 +245,6 @@ async fn rocket() -> _ {
             "/api",
             routes![
                 get_podcast_handler,
-                get_recent_podcasts_handler,
                 search_podcasts_handler,
                 search_podcasts_as_rss_feed_handler,
                 get_filtered_tags_with_counts_handler
