@@ -33,32 +33,33 @@ fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
 
 enum NotFoundResponse {
     Html(rocket::response::status::Custom<rocket::response::content::Html<&'static [u8]>>),
-    JavaScript(rocket::response::status::Custom<rocket::response::content::JavaScript<&'static [u8]>>),
+    JavaScript(
+        rocket::response::status::Custom<rocket::response::content::JavaScript<&'static [u8]>>,
+    ),
     Favicon(rocket::response::status::Custom<rocket::response::content::Custom<&'static [u8]>>),
-    NotFound(rocket::response::status::NotFound<String>)
+    NotFound(rocket::response::status::NotFound<String>),
 }
 
 impl<'r> rocket::response::Responder<'r, 'static> for NotFoundResponse {
-    fn respond_to(self, request: &'r Request<'_>) -> Result<rocket::response::Response<'static>, rocket::http::Status> {
+    fn respond_to(
+        self,
+        request: &'r Request<'_>,
+    ) -> Result<rocket::response::Response<'static>, rocket::http::Status> {
         match self {
             NotFoundResponse::Html(html) => html.respond_to(request),
             NotFoundResponse::JavaScript(javascript) => javascript.respond_to(request),
             NotFoundResponse::Favicon(favicon) => favicon.respond_to(request),
-            NotFoundResponse::NotFound(not_found) => not_found.respond_to(request)
+            NotFoundResponse::NotFound(not_found) => not_found.respond_to(request),
         }
     }
 }
 
 #[catch(404)]
 fn not_found_handler(req: &Request) -> NotFoundResponse {
-    let last_chunk = match req
-        .uri()
-        .path()
-        .split('/')
-        .last() {
-            Some(raw_str) => raw_str.as_str().to_string(),
-            None => "".to_string()
-        };
+    let last_chunk = match req.uri().path().split('/').last() {
+        Some(raw_str) => raw_str.as_str().to_string(),
+        None => "".to_string(),
+    };
 
     if req
         .uri()
@@ -129,20 +130,6 @@ fn get_recent_podcasts_handler(
     rocket::response::content::Json(json.to_string())
 }
 
-fn get_intersection_of_podcast_lists(
-    list_one: Vec<Podcast>,
-    list_two: Vec<Podcast>,
-) -> Vec<Podcast> {
-    let podcast_set: HashSet<Podcast> = list_one.into_iter().collect();
-    let mut intersecting_podcasts: Vec<Podcast> = Vec::new();
-    for podcast in list_two.into_iter() {
-        if podcast_set.contains(&podcast) {
-            intersecting_podcasts.push(podcast);
-        }
-    }
-    intersecting_podcasts
-}
-
 async fn search_podcasts<'a>(
     query_or: &Option<&String>,
     limit_or: Option<usize>,
@@ -152,17 +139,7 @@ async fn search_podcasts<'a>(
     search_backend: &'a State<SearchBackend>,
 ) -> Result<Vec<Podcast>, rocket::response::status::BadRequest<String>> {
     match query_or {
-        Some(query) => {
-            let query_results = search_backend.search(query, limit_or, offset).await;
-            if tags.is_empty() {
-                Ok(query_results)
-            } else {
-                Ok(get_intersection_of_podcast_lists(
-                    query_results,
-                    fdr_cache.get_podcasts_by_tags(tags),
-                ))
-            }
-        }
+        Some(query) => Ok(search_backend.search(query, &tags, limit_or, offset).await),
         None => {
             if tags.is_empty() {
                 Err(rocket::response::status::BadRequest(Some(
@@ -191,7 +168,8 @@ async fn search_podcasts_handler<'a>(
         parse_tag_query_string(tags),
         fdr_cache,
         search_backend,
-    ).await?;
+    )
+    .await?;
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
     Ok(rocket::response::content::Json(json.to_string()))
@@ -211,7 +189,8 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
         parse_tag_query_string(tags),
         fdr_cache,
         search_backend,
-    ).await?;
+    )
+    .await?;
 
     // TODO - Fix RSS feed naming now that we support tag filtering.
     let rss = generate_rss_feed(
@@ -239,8 +218,14 @@ async fn get_filtered_tags_with_counts_handler<'a>(
     let parsed_tags = parse_tag_query_string(tags);
 
     let exclusive_podcasts_or = match query {
-        Some(query) => Some(search_backend.search(&query, None, 0).await.into_iter().collect()),
-        None => None
+        Some(query) => Some(
+            search_backend
+                .search(&query, &parsed_tags, None, 0)
+                .await
+                .into_iter()
+                .collect(),
+        ),
+        None => None,
     };
 
     let filtered_tags =
@@ -298,7 +283,9 @@ async fn rocket() -> _ {
             .await;
 
             println!("Ingesting search index...");
-            search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts()).await;
+            search_backend
+                .ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts())
+                .await;
             println!("Done.");
             search_backend
         }
