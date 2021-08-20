@@ -112,7 +112,7 @@ impl FdrCache {
 
     // TODO - Unit test this function and possibly clean it up a bit. There's some complex logic in it, so it might be buggy.
     // TODO - The `tags` argument can be a reference.
-    pub fn get_podcasts_by_tags(&self, mut tags: Vec<PodcastTag>) -> Vec<Podcast> {
+    fn get_podcasts_by_tags(&self, mut tags: Vec<PodcastTag>) -> Vec<Podcast> {
         if tags.is_empty() {
             let mut all_podcasts = Vec::new();
             for podcast in self.num_sorted_podcast_list.iter() {

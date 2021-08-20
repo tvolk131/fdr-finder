@@ -47,13 +47,13 @@ impl MeilisearchBackend {
         }
 
         match query_or {
-            Some(query) => { search_request.with_query(query); },
+            Some(query) => {
+                search_request.with_query(query);
+            }
             None => {}
         };
 
-        search_request
-            .with_offset(offset)
-            .with_limit(limit);
+        search_request.with_offset(offset).with_limit(limit);
 
         let results = search_request.execute::<Podcast>().await.unwrap();
         results
