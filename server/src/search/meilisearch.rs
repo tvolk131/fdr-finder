@@ -5,7 +5,6 @@ pub struct MeilisearchBackend {
     podcast_index: Index,
 }
 
-// TODO - Implement the methods below.
 impl MeilisearchBackend {
     pub async fn new(host: String, api_key: String) -> Self {
         let podcast_index = Client::new(host, api_key)
@@ -26,7 +25,8 @@ impl MeilisearchBackend {
         limit: usize,
         offset: usize,
     ) -> Vec<Podcast> {
-        // These three lines are pretty weird and gross, but `with_facet_filters` specifically accepts &[&[&str]] so we need to create the facet strings and then borrow them.
+        // These three lines are pretty weird and gross, but `with_facet_filters` specifically
+        // accepts &[&[&str]] so we need to create the facet strings and immediately borrow them.
         let tag_facet_strings: Vec<String> = tags
             .iter()
             .map(|tag| format!("tags:{}", tag.clone_to_string()))
