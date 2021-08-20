@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
-import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams, getRecentPodcasts, getFilteredTagsWithCounts} from '../api';
+import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams, getFilteredTagsWithCounts} from '../api';
 import {
   Button,
   CircularProgress,
@@ -11,9 +11,6 @@ import {
   DialogActions,
   DialogTitle,
   Snackbar,
-  TablePagination,
-  Select,
-  MenuItem,
   Typography
 } from '@material-ui/core';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
@@ -26,6 +23,8 @@ import {ZoomableSunburst} from '../components/zoomableSunburst';
 import {createTree} from '../helper';
 import {queryFieldName, tagsFieldName} from '../constants';
 import {BehaviorSubject, map, switchMap, distinctUntilChanged, merge, of} from 'rxjs';
+
+const podcastSearchHitLimit = 100;
 
 const useStyles = makeStyles({
   root: {
@@ -43,22 +42,11 @@ const useStyles = makeStyles({
   button: {
     padding: '10px 0 0 0'
   },
+  searchInfo: {
+    padding: '10px 0 0 0'
+  },
   loadingSpinner: {
     padding: '50px'
-  },
-  paginator: {
-    width: 'fit-content',
-    margin: 'auto'
-  },
-  paginatorToolbar: {
-    paddingTop: '10px'
-  },
-  sortSelectorText: {
-    display: 'inline',
-    paddingRight: '5px'
-  },
-  sortSelectorWrapper: {
-    paddingTop: '18px'
   }
 });
 
@@ -85,16 +73,11 @@ export const SearchPage = (props: SearchPageProps) => {
 
   const [isSearching, setIsSearching] = useState(false);
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
-  const [podcastPage, setPodcastPage] = useState(0);
-  const [podcastsPerPage, setPodcastsPerPage] = useState(100);
-  const [podcastSortDirection, setPodcastSortDirection] = useState<'podcastNumber desc' | 'podcastNumber asc'>('podcastNumber desc');
+  const [totalPodcastSearchResults, setTotalPodcastSearchResults] = useState(0);
+  const [podcastSearchTime, setPodcastSearchTime] = useState(0);
   const [searchTerm, setSearchTerm] = useState(query);
   const [searchTags, setSearchTags] = useState<string[]>(tags);
   const [showSnackbar, setShowSnackbar] = useState(false);
-
-  const [showRecentPodcasts, setShowRecentPodcasts] = useState(query.length === 0 && tags.length === 0);
-  const [recentPodcasts, setRecentPodcasts] = useState([] as ShowInfo[]);
-  const [isLoadingRecentPodcasts, setIsLoadingRecentPodcasts] = useState(true);
 
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
@@ -105,12 +88,6 @@ export const SearchPage = (props: SearchPageProps) => {
   const subject = useRef(new BehaviorSubject({query: '', tags: [] as string[]}));
 
   useEffect(() => {
-    setIsLoadingRecentPodcasts(true);
-    getRecentPodcasts().then((podcasts) => {
-      setRecentPodcasts(podcasts);
-      setIsLoadingRecentPodcasts(false);
-    });
-
     const observable = subject.current.pipe(
       map(({query, tags}) => ({query: query.trim(), tags})),
       distinctUntilChanged(),
@@ -119,18 +96,22 @@ export const SearchPage = (props: SearchPageProps) => {
           isLoadingPodcasts: true,
           isLoadingTagsWithCounts: true,
           podcasts: undefined,
-          tagsWithCounts: undefined
+          tagsWithCounts: undefined,
+          totalPodcastSearchResults: undefined,
+          podcastSearchTime: undefined
         }),
         searchPodcasts({
           query,
-          limit: podcastsPerPage,
+          limit: podcastSearchHitLimit,
           offset: 0,
           tags
         }).then((searchResult) => ({
           isLoadingPodcasts: false,
           isLoadingTagsWithCounts: undefined,
           podcasts: searchResult.hits,
-          tagsWithCounts: undefined
+          tagsWithCounts: undefined,
+          totalPodcastSearchResults: searchResult.totalHits,
+          podcastSearchTime: searchResult.processingTimeMs
         })),
         getFilteredTagsWithCounts({query, tags})
           .then((tagsWithCounts) => {
@@ -151,11 +132,13 @@ export const SearchPage = (props: SearchPageProps) => {
               isLoadingPodcasts: undefined,
               isLoadingTagsWithCounts: false,
               podcasts: undefined,
-              tagsWithCounts
+              tagsWithCounts,
+              totalPodcastSearchResults: undefined,
+              podcastSearchTime: undefined
             };
           })
       ))
-    ).subscribe(({isLoadingPodcasts, isLoadingTagsWithCounts, podcasts, tagsWithCounts}) => {
+    ).subscribe(({isLoadingPodcasts, isLoadingTagsWithCounts, podcasts, tagsWithCounts, totalPodcastSearchResults, podcastSearchTime}) => {
       if (isLoadingPodcasts !== undefined) {
         setIsSearching(isLoadingPodcasts);
       }
@@ -167,6 +150,12 @@ export const SearchPage = (props: SearchPageProps) => {
       }
       if (tagsWithCounts != undefined) {
         setTagsWithCounts(tagsWithCounts);
+      }
+      if (totalPodcastSearchResults != undefined) {
+        setTotalPodcastSearchResults(totalPodcastSearchResults);
+      }
+      if (podcastSearchTime != undefined) {
+        setPodcastSearchTime(podcastSearchTime);
       }
     });
 
@@ -185,42 +174,8 @@ export const SearchPage = (props: SearchPageProps) => {
       history.push(newLocation);
     }
 
-    if (searchTerm.length || searchTags.length) {
-      setShowRecentPodcasts(false);
-    } else {
-      setShowRecentPodcasts(true);
-    }
-
     subject.current.next({query: searchTerm, tags: searchTags});
   }, [searchTerm, searchTags]);
-
-  useEffect(() => {
-    setPodcastPage(0);
-  }, [podcastSortDirection]);
-
-  const sortedPodcasts = (showRecentPodcasts ? recentPodcasts : podcasts).sort((podcastA, podcastB) => {
-    if (podcastSortDirection === 'podcastNumber desc') {
-      return podcastB.podcastNumber - podcastA.podcastNumber;
-    } else {
-      return podcastA.podcastNumber - podcastB.podcastNumber;
-    }
-  });
-
-  const paginator = (
-    <TablePagination
-      component={'div'}
-      count={sortedPodcasts.length} // TODO - Change this.
-      page={podcastPage}
-      onPageChange={(event, newPage) => setPodcastPage(newPage)}
-      rowsPerPage={podcastsPerPage}
-      onRowsPerPageChange={(event) => {
-        setPodcastsPerPage(parseInt(event.target.value, 10));
-        setPodcastPage(0);
-      }}
-      className={classes.paginator}
-      classes={{toolbar: classes.paginatorToolbar}}
-    />
-  );
 
   return (
     <div className={classes.root}>
@@ -234,7 +189,7 @@ export const SearchPage = (props: SearchPageProps) => {
           isLoadingTagsWithCounts={isLoadingTagsWithCounts}
         />
       </div>
-      {(showRecentPodcasts ? isLoadingRecentPodcasts : isSearching) ?
+      {isSearching ?
         <CircularProgress className={classes.loadingSpinner} size={100}/> :
         <div>
           <div className={classes.button}>
@@ -252,26 +207,16 @@ export const SearchPage = (props: SearchPageProps) => {
               See Visualized Results
             </Button>
           </div>
-          {!!sortedPodcasts.length &&
-            <div className={classes.sortSelectorWrapper}>
-              <Typography className={classes.sortSelectorText}>Sort by</Typography>
-              <Select value={podcastSortDirection} onChange={(e) => setPodcastSortDirection(e.target.value as 'podcastNumber desc' | 'podcastNumber asc')} label={'Filter Podcasts'}>
-                <MenuItem value={'podcastNumber desc'}>Newest</MenuItem>
-                <MenuItem value={'podcastNumber asc'}>Oldest</MenuItem>
-              </Select>
-            </div>
-          }
-          {!!sortedPodcasts.length && paginator}
+          {!!podcasts.length && <Typography className={classes.searchInfo}>{`Showing ${podcasts.length} of ${totalPodcastSearchResults} results (${podcastSearchTime}ms)`}</Typography>}
           <div className={classes.nested}>
             {
-              sortedPodcasts.slice(podcastPage * podcastsPerPage, (podcastPage + 1) * podcastsPerPage).map((show) => (
+              podcasts.map((show) => (
                 <div className={classes.showCardWrapper}>
                   <ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/>
                 </div>
               ))
             }
           </div>
-          {!!sortedPodcasts.length && paginator}
           <Dialog
             onClose={() => setShowVisualizationDialog(false)}
             open={showVisualizationDialog}
@@ -293,7 +238,7 @@ export const SearchPage = (props: SearchPageProps) => {
             {
               visualizationFormat === 'circlePacking' && <ZoomableCirclePacking
                 size={975}
-                data={createTree(sortedPodcasts, [
+                data={createTree(podcasts, [
                   {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
@@ -301,7 +246,7 @@ export const SearchPage = (props: SearchPageProps) => {
             {
               visualizationFormat === 'sunburst' && <ZoomableSunburst
                 size={975}
-                data={createTree(sortedPodcasts, [
+                data={createTree(podcasts, [
                   {getValue: (podcast) => `${podcast.createTime.getUTCFullYear()}`}
                 ])}
               />
