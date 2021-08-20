@@ -1,6 +1,6 @@
 import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
 import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams, getRecentPodcasts} from '../api';
@@ -25,6 +25,7 @@ import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
 import {ZoomableSunburst} from '../components/zoomableSunburst';
 import {createTree} from '../helper';
 import {queryFieldName, tagsFieldName} from '../constants';
+import {BehaviorSubject, map, switchMap, distinctUntilChanged, merge, of} from 'rxjs';
 
 const useStyles = makeStyles({
   root: {
@@ -98,32 +99,7 @@ export const SearchPage = (props: SearchPageProps) => {
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
-  const search = async (forceOverrideSearchText?: string) => {
-    if (!isSearching) {
-      const urlParams: {[key: string]: string} = {};
-      const query = typeof forceOverrideSearchText === 'string' ? forceOverrideSearchText : searchTerm;
-      urlParams[queryFieldName] = query;
-      urlParams[tagsFieldName] = searchTags.join(',');
-      const newLocation = generateUrlWithQueryParams('/', urlParams);
-      if (newLocation !== `${history.location.pathname}${history.location.search}`) {
-        history.push(newLocation);
-      }
-
-      if (query.length || searchTags.length) {
-        setShowRecentPodcasts(false);
-        setIsSearching(true);
-        setPodcasts(await searchPodcasts({
-          query,
-          limit: podcastsPerPage,
-          offset: 0,
-          tags: searchTags
-        }).finally(() => setIsSearching(false)));
-      } else {
-        setShowRecentPodcasts(true);
-        setPodcasts([]);
-      }
-    }
-  };
+  const subject = useRef(new BehaviorSubject({query: '', tags: [] as string[]}));
 
   useEffect(() => {
     setIsLoadingRecentPodcasts(true);
@@ -131,15 +107,49 @@ export const SearchPage = (props: SearchPageProps) => {
       setRecentPodcasts(podcasts);
       setIsLoadingRecentPodcasts(false);
     });
+
+    const observable = subject.current.pipe(
+      map(({query, tags}) => ({query: query.trim(), tags})),
+      distinctUntilChanged(),
+      switchMap(({query, tags}) => merge(
+        of({isLoading: true, podcasts: undefined}),
+        searchPodcasts({
+          query,
+          limit: podcastsPerPage,
+          offset: 0,
+          tags
+        }).then((podcasts) => ({isLoading: false, podcasts}))
+      ))
+    ).subscribe(({isLoading, podcasts}) => {
+      setIsSearching(isLoading);
+      if (podcasts) {
+        setPodcasts(podcasts);
+      }
+    });
+
+    return () => {
+      observable.unsubscribe();
+      subject.current.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (searchTerm.length || searchTags.length) {
-      search();
-    } else {
-      setPodcasts([]);
+    const urlParams: {[key: string]: string} = {};
+    urlParams[queryFieldName] = searchTerm;
+    urlParams[tagsFieldName] = searchTags.join(',');
+    const newLocation = generateUrlWithQueryParams('/', urlParams);
+    if (newLocation !== `${history.location.pathname}${history.location.search}`) {
+      history.push(newLocation);
     }
-  }, [searchTags]);
+
+    if (searchTerm.length || searchTags.length) {
+      setShowRecentPodcasts(false);
+    } else {
+      setShowRecentPodcasts(true);
+    }
+
+    subject.current.next({query: searchTerm, tags: searchTags});
+  }, [searchTerm, searchTags]);
 
   useEffect(() => {
     setPodcastPage(0);
@@ -173,7 +183,6 @@ export const SearchPage = (props: SearchPageProps) => {
     <div className={classes.root}>
       <div className={classes.nested}>
         <SearchBar
-          onSearch={search}
           searchText={searchTerm}
           setSearchText={setSearchTerm}
           searchTags={searchTags}

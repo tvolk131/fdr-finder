@@ -60,7 +60,6 @@ const useStyles = makeStyles((theme: Theme) => (
 const maxVisibleTags = 50;
 
 interface SearchBarProps {
-  onSearch: (forceOverrideSearchText?: string) => void
   searchText: string
   setSearchText: (query: string) => void
   searchTags: string[]
@@ -72,12 +71,10 @@ const SearchBar = (props: SearchBarProps) => {
   const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
 
-  const handleSearch = (forceOverrideSearchText?: string) => {
-    props.onSearch(forceOverrideSearchText);
-    props.setSearchTags(props.searchTags);
+  const loadTagsWithCounts = () => {
     setIsLoadingTags(true);
     getFilteredTagsWithCounts({
-      query: typeof forceOverrideSearchText === 'string' ? forceOverrideSearchText : props.searchText,
+      query: props.searchText,
       tags: props.searchTags
     }).then((tagsWithCounts) => {
       tagsWithCounts.sort((a, b) => {
@@ -98,7 +95,7 @@ const SearchBar = (props: SearchBarProps) => {
     });
   }
 
-  useEffect(handleSearch, [props.searchText, props.searchTags]);
+  useEffect(loadTagsWithCounts, [props.searchText, props.searchTags]);
 
   const handleMouseDownSearch = (event: MouseEvent) => {
     event.preventDefault();
@@ -143,11 +140,6 @@ const SearchBar = (props: SearchBarProps) => {
             freeSolo
             options={[]} // TODO - Re-enable autocomplete suggestions by setting some state here.
             className={classes.autocomplete}
-            onClose={(event, reason) => {
-              if (reason === 'select-option') {
-                handleSearch();
-              }
-            }}
             inputValue={props.searchText}
             onInputChange={(event, value, reason) => {
               if (!(value.length === 0 && reason === 'reset')) {
@@ -170,7 +162,6 @@ const SearchBar = (props: SearchBarProps) => {
               onMouseDown={handleMouseDownSearch}
               onClick={() => {
                 props.setSearchText('');
-                handleSearch('');
               }}
             >
               <CloseIcon/>
