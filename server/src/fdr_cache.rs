@@ -64,10 +64,6 @@ impl FdrCache {
         }
     }
 
-    pub fn get_all_podcasts(&self) -> &[Podcast] {
-        &self.num_sorted_podcast_list
-    }
-
     // TODO - See if we can get rid of this method and use get_all_podcasts instead.
     pub fn clone_all_podcasts(&self) -> Vec<Podcast> {
         let mut podcasts = Vec::new();

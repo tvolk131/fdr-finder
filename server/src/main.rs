@@ -105,13 +105,6 @@ fn get_podcast_handler(
     }
 }
 
-#[get("/allPodcasts")]
-fn get_all_podcasts_handler(fdr_cache: &State<FdrCache>) -> content::Json<String> {
-    let podcasts = fdr_cache.get_all_podcasts();
-    let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
-    content::Json(json.to_string())
-}
-
 #[get("/recentPodcasts?<amount>")]
 fn get_recent_podcasts_handler(
     amount: Option<usize>,
@@ -262,7 +255,6 @@ async fn rocket() -> _ {
             "/api",
             routes![
                 get_podcast_handler,
-                get_all_podcasts_handler,
                 get_recent_podcasts_handler,
                 search_podcasts_handler,
                 search_podcasts_as_rss_feed_handler,
