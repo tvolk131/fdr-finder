@@ -24,7 +24,7 @@ impl SearchBackend {
 
     pub async fn search(
         &self,
-        query: &str,
+        query_or: &Option<String>,
         tags: &[PodcastTag],
         limit_or: Option<usize>,
         offset: usize,
@@ -32,7 +32,7 @@ impl SearchBackend {
         match &self.meilisearch_backend_or {
             Some(meilisearch_backend) => {
                 meilisearch_backend
-                    .search(query, tags, limit_or.unwrap_or(99999999), offset)
+                    .search(query_or, tags, limit_or.unwrap_or(99999999), offset)
                     .await
             }
             None => mock::generate_mock_search_results(),

@@ -9,7 +9,7 @@ mod mock;
 mod podcast;
 mod search;
 
-use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
+use crate::podcast::{generate_rss_feed, PodcastNumber, PodcastTag};
 use environment::{EnvironmentVariables, ServerMode};
 use fdr_cache::FdrCache;
 use rocket::response::{content, status};
@@ -122,46 +122,21 @@ fn get_recent_podcasts_handler(
     content::Json(json.to_string())
 }
 
-async fn search_podcasts<'a>(
-    query_or: &Option<&String>,
-    limit_or: Option<usize>,
-    offset: usize,
-    tags: Vec<PodcastTag>,
-    fdr_cache: &'a State<FdrCache>,
-    search_backend: &'a State<SearchBackend>,
-) -> Result<Vec<Podcast>, status::BadRequest<String>> {
-    match query_or {
-        Some(query) => Ok(search_backend.search(query, &tags, limit_or, offset).await),
-        None => {
-            if tags.is_empty() {
-                Err(status::BadRequest(Some(
-                    "Request url must contain `query` or `tags` parameter.".to_string(),
-                )))
-            } else {
-                Ok(fdr_cache.get_podcasts_by_tags(tags))
-            }
-        }
-    }
-}
-
 #[get("/search/podcasts?<query>&<limit>&<offset>&<tags>")]
 async fn search_podcasts_handler<'a>(
     query: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
     tags: Option<String>,
-    fdr_cache: &State<FdrCache>,
     search_backend: &State<SearchBackend>,
 ) -> Result<content::Json<String>, status::BadRequest<String>> {
-    let podcasts = search_podcasts(
-        &query.as_ref(),
+    let podcasts = search_backend.search(
+        &query,
+        &parse_tag_query_string(tags),
         limit,
         offset.unwrap_or(0),
-        parse_tag_query_string(tags),
-        fdr_cache,
-        search_backend,
     )
-    .await?;
+    .await;
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
     Ok(content::Json(json.to_string()))
@@ -171,18 +146,15 @@ async fn search_podcasts_handler<'a>(
 async fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: &State<FdrCache>,
     search_backend: &State<SearchBackend>,
 ) -> Result<content::Xml<String>, status::BadRequest<String>> {
-    let podcasts = search_podcasts(
-        &query.as_ref(),
+    let podcasts = search_backend.search(
+        &query,
+        &parse_tag_query_string(tags),
         None,
         0,
-        parse_tag_query_string(tags),
-        fdr_cache,
-        search_backend,
     )
-    .await?;
+    .await;
 
     // TODO - Fix RSS feed naming now that we support tag filtering.
     let rss = generate_rss_feed(
@@ -210,7 +182,7 @@ async fn get_filtered_tags_with_counts_handler<'a>(
     let parsed_tags = parse_tag_query_string(tags);
 
     let exclusive_podcasts_or = match query {
-        Some(query) => Some(
+        Some(_) => Some(
             search_backend
                 .search(&query, &parsed_tags, None, 0)
                 .await

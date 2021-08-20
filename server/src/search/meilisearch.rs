@@ -21,7 +21,7 @@ impl MeilisearchBackend {
 
     pub async fn search(
         &self,
-        query: &str,
+        query_or: &Option<String>,
         tags: &[PodcastTag],
         limit: usize,
         offset: usize,
@@ -46,8 +46,12 @@ impl MeilisearchBackend {
             search_request.with_facet_filters(tag_facet_strings_search_arg.as_slice());
         }
 
+        match query_or {
+            Some(query) => { search_request.with_query(query); },
+            None => {}
+        };
+
         search_request
-            .with_query(query)
             .with_offset(offset)
             .with_limit(limit);
 
