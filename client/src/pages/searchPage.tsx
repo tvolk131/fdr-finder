@@ -112,7 +112,12 @@ export const SearchPage = (props: SearchPageProps) => {
       if (query.length || searchTags.length) {
         setShowRecentPodcasts(false);
         setIsSearching(true);
-        setPodcasts(await searchPodcasts({query, limit: podcastsPerPage, offset: 0, tags: searchTags}).finally(() => setIsSearching(false)));
+        setPodcasts(await searchPodcasts({
+          query,
+          limit: podcastsPerPage,
+          offset: 0,
+          tags: searchTags
+        }).finally(() => setIsSearching(false)));
       } else {
         setShowRecentPodcasts(true);
         setPodcasts([]);

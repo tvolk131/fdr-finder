@@ -22,7 +22,8 @@ export const getRecentPodcasts = async (amount?: number): Promise<ShowInfo[]> =>
   return (await axios.get(generateUrlWithQueryParams('/api/recentPodcasts', {amount}))).data.map(deserializeShowInfo);
 }
 
-export const searchPodcasts = async (data: {query?: string, limit?: number, offset?: number, tags?: string[]}): Promise<ShowInfo[]> => {
+export const searchPodcasts =
+async (data: {query?: string, limit?: number, offset?: number, tags?: string[]}): Promise<ShowInfo[]> => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
