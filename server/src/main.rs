@@ -17,6 +17,7 @@ use search::SearchBackend;
 use serde_json::{json, Map, Value};
 use std::collections::HashSet;
 
+const FAVICON_BYTES: &[u8] = include_bytes!("../../client/out/favicon.ico");
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
 const JS_BUNDLE_BYTES: &[u8] = include_bytes!("../../client/out/bundle.js");
 
@@ -30,16 +31,35 @@ fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
     }
 }
 
-type NotFoundResponse = Result<
-    Result<
-        rocket::response::status::Custom<rocket::response::content::Html<&'static [u8]>>,
-        rocket::response::status::Custom<rocket::response::content::JavaScript<&'static [u8]>>,
-    >,
-    rocket::response::status::NotFound<String>,
->;
+enum NotFoundResponse {
+    Html(rocket::response::status::Custom<rocket::response::content::Html<&'static [u8]>>),
+    JavaScript(rocket::response::status::Custom<rocket::response::content::JavaScript<&'static [u8]>>),
+    Favicon(rocket::response::status::Custom<rocket::response::content::Custom<&'static [u8]>>),
+    NotFound(rocket::response::status::NotFound<String>)
+}
+
+impl<'r> rocket::response::Responder<'r, 'static> for NotFoundResponse {
+    fn respond_to(self, request: &'r Request<'_>) -> Result<rocket::response::Response<'static>, rocket::http::Status> {
+        match self {
+            NotFoundResponse::Html(html) => html.respond_to(request),
+            NotFoundResponse::JavaScript(javascript) => javascript.respond_to(request),
+            NotFoundResponse::Favicon(favicon) => favicon.respond_to(request),
+            NotFoundResponse::NotFound(not_found) => not_found.respond_to(request)
+        }
+    }
+}
 
 #[catch(404)]
 fn not_found_handler(req: &Request) -> NotFoundResponse {
+    let last_chunk = match req
+        .uri()
+        .path()
+        .split('/')
+        .last() {
+            Some(raw_str) => raw_str.as_str().to_string(),
+            None => "".to_string()
+        };
+
     if req
         .uri()
         .path()
@@ -48,27 +68,25 @@ fn not_found_handler(req: &Request) -> NotFoundResponse {
         .unwrap_or_else(|| "".into())
         == "api"
     {
-        Err(rocket::response::status::NotFound(format!(
+        NotFoundResponse::NotFound(rocket::response::status::NotFound(format!(
             "404 - API path '{}' does not exist!",
             req.uri().path()
         )))
-    } else if req
-        .uri()
-        .path()
-        .split('/')
-        .last()
-        .unwrap_or_else(|| "".into())
-        == "bundle.js"
-    {
-        Ok(Err(rocket::response::status::Custom(
+    } else if last_chunk == "bundle.js" {
+        NotFoundResponse::JavaScript(rocket::response::status::Custom(
             rocket::http::Status::Ok,
             rocket::response::content::JavaScript(JS_BUNDLE_BYTES),
-        )))
+        ))
+    } else if last_chunk == "favicon.ico" {
+        NotFoundResponse::Favicon(rocket::response::status::Custom(
+            rocket::http::Status::Ok,
+            rocket::response::content::Custom(rocket::http::ContentType::Icon, FAVICON_BYTES),
+        ))
     } else {
-        Ok(Ok(rocket::response::status::Custom(
+        NotFoundResponse::Html(rocket::response::status::Custom(
             rocket::http::Status::Ok,
             rocket::response::content::Html(HTML_BYTES),
-        )))
+        ))
     }
 }
 
