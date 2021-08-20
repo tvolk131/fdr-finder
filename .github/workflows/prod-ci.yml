@@ -50,10 +50,6 @@ jobs:
       - name: Log in to DigitalOcean Container Registry with short-lived credentials
         run: doctl registry login --expiry-seconds 1200
 
-      # TODO - Remove this step. It is here only for logging purposes.
-      - name: List DigitalOcean certificates
-        run: doctl compute certificate list
-
       - name: Push image to DigitalOcean Container Registry
         run: docker push registry.digitalocean.com/cards/fdr-finder:$(echo $GITHUB_SHA | head -c7)
 
