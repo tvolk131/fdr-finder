@@ -1,7 +1,14 @@
-use crate::podcast::{Podcast, PodcastTag};
+use crate::{podcast::{Podcast, PodcastTag}, mock::create_mock_podcast};
 
 mod meilisearch;
-mod mock;
+
+fn generate_mock_search_results() -> Vec<Podcast> {
+    let mut mock_podcasts = Vec::new();
+    for i in 1..20 {
+        mock_podcasts.push(create_mock_podcast(i));
+    }
+    mock_podcasts
+}
 
 pub struct SearchBackend {
     meilisearch_backend_or: Option<meilisearch::MeilisearchBackend>, // Only `None` if running in mock mode.
@@ -35,7 +42,7 @@ impl SearchBackend {
                     .search(query_or, tags, limit_or.unwrap_or(99999999), offset)
                     .await
             }
-            None => mock::generate_mock_search_results(),
+            None => generate_mock_search_results(),
         }
     }
 
