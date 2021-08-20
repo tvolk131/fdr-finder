@@ -13,8 +13,7 @@ import {Autocomplete} from '@material-ui/lab';
 import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@material-ui/icons';
 import * as React from 'react';
-import {MouseEvent, useState, useEffect} from 'react';
-import {getFilteredTagsWithCounts} from '../api';
+import {MouseEvent, useState} from 'react';
 import {getTagDisplayText} from '../helper/tagFormatting';
 
 const useStyles = makeStyles((theme: Theme) => (
@@ -64,38 +63,12 @@ interface SearchBarProps {
   setSearchText: (query: string) => void
   searchTags: string[]
   setSearchTags: (tags: string[]) => void
+  tagsWithCounts: {tag: string, count: number}[]
+  isLoadingTagsWithCounts: boolean
 }
 
 const SearchBar = (props: SearchBarProps) => {
   const [tagFilter, setTagFilter] = useState('');
-  const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
-  const [isLoadingTags, setIsLoadingTags] = useState(false);
-
-  const loadTagsWithCounts = () => {
-    setIsLoadingTags(true);
-    getFilteredTagsWithCounts({
-      query: props.searchText,
-      tags: props.searchTags
-    }).then((tagsWithCounts) => {
-      tagsWithCounts.sort((a, b) => {
-        if (a.count < b.count) {
-          return 1;
-        } else if (a.count > b.count) {
-          return -1;
-        } else if (a.tag > b.tag) {
-          return 1;
-        } else if (a.tag < b.tag) {
-          return -1;
-        } else {
-          return 0;
-        }
-      });
-      setTagsWithCounts(tagsWithCounts);
-      setIsLoadingTags(false);
-    });
-  }
-
-  useEffect(loadTagsWithCounts, [props.searchText, props.searchTags]);
 
   const handleMouseDownSearch = (event: MouseEvent) => {
     event.preventDefault();
@@ -104,7 +77,7 @@ const SearchBar = (props: SearchBarProps) => {
   const classes = useStyles();
 
   const getSelectableTagChips = () => {
-    const filteredTags = tagsWithCounts.filter(({tag}) => (
+    const filteredTags = props.tagsWithCounts.filter(({tag}) => (
       getTagDisplayText(tag).toLowerCase().includes(tagFilter.toLowerCase())
     ))
 
@@ -183,7 +156,7 @@ const SearchBar = (props: SearchBarProps) => {
           <div className={classes.tagSearchFieldWrapper}>
             <TextField value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} label={'Tag Filter'}/>
           </div>
-          {isLoadingTags ? <CircularProgress/> : getSelectableTagChips()}
+          {props.isLoadingTagsWithCounts ? <CircularProgress/> : getSelectableTagChips()}
         </div>
       </AccordionDetails>
     </Accordion>

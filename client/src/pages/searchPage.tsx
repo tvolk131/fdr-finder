@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
 import SearchBar from '../components/searchBar';
 import ShowCard, {ShowInfo} from '../components/showCard';
-import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams, getRecentPodcasts} from '../api';
+import {getPodcastRssUrl, searchPodcasts, generateUrlWithQueryParams, getRecentPodcasts, getFilteredTagsWithCounts} from '../api';
 import {
   Button,
   CircularProgress,
@@ -99,6 +99,9 @@ export const SearchPage = (props: SearchPageProps) => {
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
+  const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
+  const [isLoadingTagsWithCounts, setIsLoadingTagsWithCounts] = useState(false);
+
   const subject = useRef(new BehaviorSubject({query: '', tags: [] as string[]}));
 
   useEffect(() => {
@@ -112,18 +115,58 @@ export const SearchPage = (props: SearchPageProps) => {
       map(({query, tags}) => ({query: query.trim(), tags})),
       distinctUntilChanged(),
       switchMap(({query, tags}) => merge(
-        of({isLoading: true, podcasts: undefined}),
+        of({
+          isLoadingPodcasts: true,
+          isLoadingTagsWithCounts: true,
+          podcasts: undefined,
+          tagsWithCounts: undefined
+        }),
         searchPodcasts({
           query,
           limit: podcastsPerPage,
           offset: 0,
           tags
-        }).then((podcasts) => ({isLoading: false, podcasts}))
+        }).then((podcasts) => ({
+          isLoadingPodcasts: false,
+          isLoadingTagsWithCounts: undefined,
+          podcasts,
+          tagsWithCounts: undefined
+        })),
+        getFilteredTagsWithCounts({query, tags})
+          .then((tagsWithCounts) => {
+            tagsWithCounts.sort((a, b) => {
+              if (a.count < b.count) {
+                return 1;
+              } else if (a.count > b.count) {
+                return -1;
+              } else if (a.tag > b.tag) {
+                return 1;
+              } else if (a.tag < b.tag) {
+                return -1;
+              } else {
+                return 0;
+              }
+            });
+            return {
+              isLoadingPodcasts: undefined,
+              isLoadingTagsWithCounts: false,
+              podcasts: undefined,
+              tagsWithCounts
+            };
+          })
       ))
-    ).subscribe(({isLoading, podcasts}) => {
-      setIsSearching(isLoading);
-      if (podcasts) {
+    ).subscribe(({isLoadingPodcasts, isLoadingTagsWithCounts, podcasts, tagsWithCounts}) => {
+      if (isLoadingPodcasts !== undefined) {
+        setIsSearching(isLoadingPodcasts);
+      }
+      if (isLoadingTagsWithCounts !== undefined) {
+        setIsLoadingTagsWithCounts(isLoadingTagsWithCounts);
+      }
+      if (podcasts != undefined) {
         setPodcasts(podcasts);
+      }
+      if (tagsWithCounts != undefined) {
+        setTagsWithCounts(tagsWithCounts);
       }
     });
 
@@ -187,6 +230,8 @@ export const SearchPage = (props: SearchPageProps) => {
           setSearchText={setSearchTerm}
           searchTags={searchTags}
           setSearchTags={setSearchTags}
+          tagsWithCounts={tagsWithCounts}
+          isLoadingTagsWithCounts={isLoadingTagsWithCounts}
         />
       </div>
       {(showRecentPodcasts ? isLoadingRecentPodcasts : isSearching) ?
