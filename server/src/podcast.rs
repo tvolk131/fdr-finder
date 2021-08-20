@@ -24,7 +24,6 @@ impl PodcastTag {
     }
 }
 
-// TODO - Replace the tags HashSet with a Vec so that we can derive PartialEq and Hash.
 #[derive(Clone, Debug, Eq)]
 pub struct PodcastNumber {
     num: Number,
