@@ -125,7 +125,7 @@ fn get_intersection_of_podcast_lists(
     intersecting_podcasts
 }
 
-fn search_podcasts<'a>(
+async fn search_podcasts<'a>(
     query_or: &Option<&String>,
     limit_or: Option<usize>,
     offset: usize,
@@ -135,7 +135,7 @@ fn search_podcasts<'a>(
 ) -> Result<Vec<Podcast>, rocket::response::status::BadRequest<String>> {
     match query_or {
         Some(query) => {
-            let query_results = search_backend.search(query, limit_or, offset);
+            let query_results = search_backend.search(query, limit_or, offset).await;
             if tags.is_empty() {
                 Ok(query_results)
             } else {
@@ -173,7 +173,7 @@ async fn search_podcasts_handler<'a>(
         parse_tag_query_string(tags),
         fdr_cache,
         search_backend,
-    )?;
+    ).await?;
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
     Ok(rocket::response::content::Json(json.to_string()))
@@ -193,7 +193,7 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
         parse_tag_query_string(tags),
         fdr_cache,
         search_backend,
-    )?;
+    ).await?;
 
     // TODO - Fix RSS feed naming now that we support tag filtering.
     let rss = generate_rss_feed(
@@ -220,8 +220,10 @@ async fn get_filtered_tags_with_counts_handler<'a>(
 ) -> rocket::response::content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
 
-    let exclusive_podcasts_or =
-        query.map(|query| search_backend.search(&query, None, 0).into_iter().collect());
+    let exclusive_podcasts_or = match query {
+        Some(query) => Some(search_backend.search(&query, None, 0).await.into_iter().collect()),
+        None => None
+    };
 
     let filtered_tags =
         fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
@@ -278,7 +280,7 @@ async fn rocket() -> _ {
             .await;
 
             println!("Ingesting search index...");
-            search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts());
+            search_backend.ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts()).await;
             println!("Done.");
             search_backend
         }
