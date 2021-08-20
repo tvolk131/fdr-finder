@@ -15,7 +15,7 @@ use fdr_cache::FdrCache;
 use rocket::{Request, State};
 use search::SearchBackend;
 use serde_json::{json, Map, Value};
-use std::collections::HashSet;
+use rocket::response::{content, status};
 
 const FAVICON_BYTES: &[u8] = include_bytes!("../../client/out/favicon.ico");
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
@@ -32,12 +32,12 @@ fn parse_tag_query_string(tags: Option<String>) -> Vec<PodcastTag> {
 }
 
 enum NotFoundResponse {
-    Html(rocket::response::status::Custom<rocket::response::content::Html<&'static [u8]>>),
+    Html(status::Custom<content::Html<&'static [u8]>>),
     JavaScript(
-        rocket::response::status::Custom<rocket::response::content::JavaScript<&'static [u8]>>,
+        status::Custom<content::JavaScript<&'static [u8]>>,
     ),
-    Favicon(rocket::response::status::Custom<rocket::response::content::Custom<&'static [u8]>>),
-    NotFound(rocket::response::status::NotFound<String>),
+    Favicon(Box<status::Custom<content::Custom<&'static [u8]>>>),
+    NotFound(status::NotFound<String>),
 }
 
 impl<'r> rocket::response::Responder<'r, 'static> for NotFoundResponse {
@@ -69,24 +69,24 @@ fn not_found_handler(req: &Request) -> NotFoundResponse {
         .unwrap_or_else(|| "".into())
         == "api"
     {
-        NotFoundResponse::NotFound(rocket::response::status::NotFound(format!(
+        NotFoundResponse::NotFound(status::NotFound(format!(
             "404 - API path '{}' does not exist!",
             req.uri().path()
         )))
     } else if last_chunk == "bundle.js" {
-        NotFoundResponse::JavaScript(rocket::response::status::Custom(
+        NotFoundResponse::JavaScript(status::Custom(
             rocket::http::Status::Ok,
-            rocket::response::content::JavaScript(JS_BUNDLE_BYTES),
+            content::JavaScript(JS_BUNDLE_BYTES),
         ))
     } else if last_chunk == "favicon.ico" {
-        NotFoundResponse::Favicon(rocket::response::status::Custom(
+        NotFoundResponse::Favicon(Box::from(status::Custom(
             rocket::http::Status::Ok,
-            rocket::response::content::Custom(rocket::http::ContentType::Icon, FAVICON_BYTES),
-        ))
+            content::Custom(rocket::http::ContentType::Icon, FAVICON_BYTES),
+        )))
     } else {
-        NotFoundResponse::Html(rocket::response::status::Custom(
+        NotFoundResponse::Html(status::Custom(
             rocket::http::Status::Ok,
-            rocket::response::content::Html(HTML_BYTES),
+            content::Html(HTML_BYTES),
         ))
     }
 }
@@ -95,17 +95,17 @@ fn not_found_handler(req: &Request) -> NotFoundResponse {
 fn get_podcast_handler(
     podcast_num: String,
     fdr_cache: &State<FdrCache>,
-) -> Result<rocket::response::content::Json<String>, rocket::response::status::NotFound<String>> {
+) -> Result<content::Json<String>, status::NotFound<String>> {
     let podcast_or = match podcast_num.parse::<serde_json::Number>() {
         Ok(num) => fdr_cache.get_podcast(&PodcastNumber::new(num)),
         Err(_) => None,
     };
 
     match podcast_or {
-        Some(podcast) => Ok(rocket::response::content::Json(
+        Some(podcast) => Ok(content::Json(
             podcast.to_json().to_string(),
         )),
-        None => Err(rocket::response::status::NotFound(
+        None => Err(status::NotFound(
             "Podcast does not exist".to_string(),
         )),
     }
@@ -114,20 +114,20 @@ fn get_podcast_handler(
 #[get("/allPodcasts")]
 fn get_all_podcasts_handler(
     fdr_cache: &State<FdrCache>,
-) -> rocket::response::content::Json<String> {
+) -> content::Json<String> {
     let podcasts = fdr_cache.get_all_podcasts();
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
-    rocket::response::content::Json(json.to_string())
+    content::Json(json.to_string())
 }
 
 #[get("/recentPodcasts?<amount>")]
 fn get_recent_podcasts_handler(
     amount: Option<usize>,
     fdr_cache: &State<FdrCache>,
-) -> rocket::response::content::Json<String> {
+) -> content::Json<String> {
     let podcasts = fdr_cache.get_recent_podcasts(amount.unwrap_or(100));
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
-    rocket::response::content::Json(json.to_string())
+    content::Json(json.to_string())
 }
 
 async fn search_podcasts<'a>(
@@ -137,12 +137,12 @@ async fn search_podcasts<'a>(
     tags: Vec<PodcastTag>,
     fdr_cache: &'a State<FdrCache>,
     search_backend: &'a State<SearchBackend>,
-) -> Result<Vec<Podcast>, rocket::response::status::BadRequest<String>> {
+) -> Result<Vec<Podcast>, status::BadRequest<String>> {
     match query_or {
         Some(query) => Ok(search_backend.search(query, &tags, limit_or, offset).await),
         None => {
             if tags.is_empty() {
-                Err(rocket::response::status::BadRequest(Some(
+                Err(status::BadRequest(Some(
                     "Request url must contain `query` or `tags` parameter.".to_string(),
                 )))
             } else {
@@ -160,7 +160,7 @@ async fn search_podcasts_handler<'a>(
     tags: Option<String>,
     fdr_cache: &State<FdrCache>,
     search_backend: &State<SearchBackend>,
-) -> Result<rocket::response::content::Json<String>, rocket::response::status::BadRequest<String>> {
+) -> Result<content::Json<String>, status::BadRequest<String>> {
     let podcasts = search_podcasts(
         &query.as_ref(),
         limit,
@@ -172,7 +172,7 @@ async fn search_podcasts_handler<'a>(
     .await?;
     let json = Value::Array(podcasts.iter().map(|podcast| podcast.to_json()).collect());
 
-    Ok(rocket::response::content::Json(json.to_string()))
+    Ok(content::Json(json.to_string()))
 }
 
 #[get("/search/podcasts/rss?<query>&<tags>")]
@@ -181,7 +181,7 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
     tags: Option<String>,
     fdr_cache: &State<FdrCache>,
     search_backend: &State<SearchBackend>,
-) -> Result<rocket::response::content::Xml<String>, rocket::response::status::BadRequest<String>> {
+) -> Result<content::Xml<String>, status::BadRequest<String>> {
     let podcasts = search_podcasts(
         &query.as_ref(),
         None,
@@ -205,7 +205,7 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
         ),
     );
 
-    Ok(rocket::response::content::Xml(rss))
+    Ok(content::Xml(rss))
 }
 
 #[get("/filteredTagsWithCounts?<query>&<tags>")]
@@ -214,7 +214,7 @@ async fn get_filtered_tags_with_counts_handler<'a>(
     tags: Option<String>,
     fdr_cache: &State<FdrCache>,
     search_backend: &State<SearchBackend>,
-) -> rocket::response::content::Json<String> {
+) -> content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
 
     let exclusive_podcasts_or = match query {
@@ -241,7 +241,7 @@ async fn get_filtered_tags_with_counts_handler<'a>(
         })
         .collect();
 
-    rocket::response::content::Json(json_tag_array.to_string())
+    content::Json(json_tag_array.to_string())
 }
 
 #[rocket::launch]

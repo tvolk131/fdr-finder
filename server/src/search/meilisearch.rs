@@ -42,7 +42,7 @@ impl MeilisearchBackend {
 
         let mut search_request = self.podcast_index.search();
 
-        if tag_facet_strings_search_arg.len() > 0 {
+        if !tag_facet_strings_search_arg.is_empty() {
             search_request.with_facet_filters(tag_facet_strings_search_arg.as_slice());
         }
 
