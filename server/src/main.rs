@@ -137,7 +137,7 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
 
     // TODO - Fix RSS feed naming now that we support tag filtering.
     let rss = generate_rss_feed(
-        &search_result.get_hits(),
+        search_result.get_hits(),
         &format!(
             "Freedomain Custom Feed: {}",
             query.clone().unwrap_or_default()

@@ -138,23 +138,30 @@ export const SearchPage = (props: SearchPageProps) => {
             };
           })
       ))
-    ).subscribe(({isLoadingPodcasts, isLoadingTagsWithCounts, podcasts, tagsWithCounts, totalPodcastSearchResults, podcastSearchTime}) => {
+    ).subscribe(({
+      isLoadingPodcasts,
+      isLoadingTagsWithCounts,
+      podcasts,
+      tagsWithCounts,
+      totalPodcastSearchResults,
+      podcastSearchTime
+    }) => {
       if (isLoadingPodcasts !== undefined) {
         setIsSearching(isLoadingPodcasts);
       }
       if (isLoadingTagsWithCounts !== undefined) {
         setIsLoadingTagsWithCounts(isLoadingTagsWithCounts);
       }
-      if (podcasts != undefined) {
+      if (podcasts !== undefined) {
         setPodcasts(podcasts);
       }
-      if (tagsWithCounts != undefined) {
+      if (tagsWithCounts !== undefined) {
         setTagsWithCounts(tagsWithCounts);
       }
-      if (totalPodcastSearchResults != undefined) {
+      if (totalPodcastSearchResults !== undefined) {
         setTotalPodcastSearchResults(totalPodcastSearchResults);
       }
-      if (podcastSearchTime != undefined) {
+      if (podcastSearchTime !== undefined) {
         setPodcastSearchTime(podcastSearchTime);
       }
     });
