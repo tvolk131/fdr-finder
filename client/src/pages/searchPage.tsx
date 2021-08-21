@@ -16,6 +16,7 @@ import {
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
 import {useHistory} from 'react-router';
+import {History} from 'history';
 import * as qs from 'qs';
 import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
@@ -50,40 +51,51 @@ const useStyles = makeStyles({
   }
 });
 
-interface SearchPageProps {
-  setPlayingShow(showInfo: ShowInfo): void
-}
-
-// TODO - Cleanup this component. Over time it has become a bit of a convoluted mess of tacked-on functionality.
-export const SearchPage = (props: SearchPageProps) => {
-  const classes = useStyles();
-  const history = useHistory();
-
+const getQueryFromQueryParam = (history: History<unknown>) => {
   const params = qs.parse(history.location.search.replace('?', ''));
   let query = params[queryFieldName];
-  let tags = params[tagsFieldName];
   if (typeof query !== 'string') {
     query = '';
   }
+
+  return query;
+};
+
+const getTagsFromQueryParam = (history: History<unknown>) => {
+  const params = qs.parse(history.location.search.replace('?', ''));
+  let tags = params[tagsFieldName];
   if (typeof tags === 'string') {
     tags = tags.split(',');
   } else {
     tags = ([] as string[]);
   }
 
-  const [isSearching, setIsSearching] = useState(false);
+  return tags;
+};
+
+interface SearchPageProps {
+  setPlayingShow(showInfo: ShowInfo): void
+}
+
+export const SearchPage = (props: SearchPageProps) => {
+  const classes = useStyles();
+  const history = useHistory();
+
+  const [searchTerm, setSearchTerm] = useState(getQueryFromQueryParam(history));
+  const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(history));
+
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
+  const [isLoadingPodcasts, setIsLoadingPodcasts] = useState(false);
   const [totalPodcastSearchResults, setTotalPodcastSearchResults] = useState(0);
   const [podcastSearchTime, setPodcastSearchTime] = useState(0);
-  const [searchTerm, setSearchTerm] = useState(query);
-  const [searchTags, setSearchTags] = useState<string[]>(tags);
-  const [showSnackbar, setShowSnackbar] = useState(false);
+
+  const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
+  const [isLoadingTagsWithCounts, setIsLoadingTagsWithCounts] = useState(false);
 
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
-  const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
-  const [isLoadingTagsWithCounts, setIsLoadingTagsWithCounts] = useState(false);
+  const [showSnackbar, setShowSnackbar] = useState(false);
 
   const subject = useRef(new BehaviorSubject({query: '', tags: [] as string[]}));
 
@@ -147,7 +159,7 @@ export const SearchPage = (props: SearchPageProps) => {
       podcastSearchTime
     }) => {
       if (isLoadingPodcasts !== undefined) {
-        setIsSearching(isLoadingPodcasts);
+        setIsLoadingPodcasts(isLoadingPodcasts);
       }
       if (isLoadingTagsWithCounts !== undefined) {
         setIsLoadingTagsWithCounts(isLoadingTagsWithCounts);
@@ -173,10 +185,10 @@ export const SearchPage = (props: SearchPageProps) => {
   }, []);
 
   useEffect(() => {
-    const urlParams: {[key: string]: string} = {};
-    urlParams[queryFieldName] = searchTerm;
-    urlParams[tagsFieldName] = searchTags.join(',');
-    const newLocation = generateUrlWithQueryParams('/', urlParams);
+    const newLocation = generateUrlWithQueryParams('/', {
+      [queryFieldName]: searchTerm,
+      [tagsFieldName]: searchTags.join(',')
+    });
     if (newLocation !== `${history.location.pathname}${history.location.search}`) {
       history.push(newLocation);
     }
@@ -196,7 +208,7 @@ export const SearchPage = (props: SearchPageProps) => {
           isLoadingTagsWithCounts={isLoadingTagsWithCounts}
         />
       </div>
-      {isSearching ?
+      {isLoadingPodcasts ?
         <CircularProgress className={classes.loadingSpinner} size={100}/> :
         <div>
           <div className={classes.button}>
