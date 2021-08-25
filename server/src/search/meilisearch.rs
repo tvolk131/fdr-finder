@@ -9,10 +9,9 @@ pub struct MeilisearchBackend {
 
 impl MeilisearchBackend {
     pub async fn new(host: String, api_key: String) -> Self {
-        let podcast_index = Client::new(host, api_key)
-            .get_or_create("podcasts")
-            .await
-            .unwrap();
+        let client = Client::new(host, api_key);
+        client.delete_index("podcasts").await.unwrap();
+        let podcast_index = client.get_or_create("podcasts").await.unwrap();
         podcast_index
             .set_attributes_for_faceting(["tags"])
             .await
@@ -71,10 +70,14 @@ impl MeilisearchBackend {
         }
     }
 
-    pub async fn ingest_podcasts_or_panic(&self, podcasts: &[Podcast]) {
+    pub async fn ingest_podcasts_or_panic(&self, podcasts: impl Iterator<Item = &Podcast>) {
+        let mut cloned_podcasts: Vec<Podcast> = podcasts.map(|podcast| podcast.clone()).collect();
+        // Since the first items that are indexed have highest priority, reversing
+        // the order ensures that the latest podcasts are returned first.
+        cloned_podcasts.reverse();
         let progress = self
             .podcast_index
-            .add_documents(podcasts, Some("podcastNumberHash"))
+            .add_documents(&cloned_podcasts, Some("podcastNumberHash"))
             .await
             .unwrap();
         let status = progress

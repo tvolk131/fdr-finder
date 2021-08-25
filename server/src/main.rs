@@ -239,7 +239,7 @@ async fn rocket() -> _ {
 
             println!("Ingesting search index...");
             search_backend
-                .ingest_podcasts_or_panic(&fdr_cache.clone_all_podcasts())
+                .ingest_podcasts_or_panic(fdr_cache.iter())
                 .await;
             println!("Done.");
             search_backend
