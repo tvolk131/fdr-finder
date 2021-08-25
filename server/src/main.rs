@@ -9,13 +9,14 @@ mod mock;
 mod podcast;
 mod search;
 
-use crate::podcast::{generate_rss_feed, PodcastNumber, PodcastTag};
+use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
 use environment::{EnvironmentVariables, ServerMode};
 use fdr_cache::FdrCache;
 use rocket::response::{content, status};
 use rocket::{Request, State};
 use search::SearchBackend;
 use serde_json::{json, Map, Value};
+use std::collections::HashMap;
 
 const FAVICON_BYTES: &[u8] = include_bytes!("../../client/out/favicon.ico");
 const HTML_BYTES: &[u8] = include_bytes!("../../client/out/index.html");
@@ -155,27 +156,37 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
 async fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    fdr_cache: &State<FdrCache>,
     search_backend: &State<SearchBackend>,
 ) -> content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
 
-    let exclusive_podcasts_or = match query {
-        Some(_) => Some(
-            search_backend
-                .search(&query, &parsed_tags, None, 0)
-                .await
-                .take_hits()
-                .into_iter()
-                .collect(),
-        ),
-        None => None,
-    };
+    let podcasts: Vec<Podcast> = search_backend
+        .search(&query, &parsed_tags, None, 0)
+        .await
+        .take_hits()
+        .into_iter()
+        .collect();
 
-    let filtered_tags =
-        fdr_cache.get_filtered_tags_with_podcast_counts(exclusive_podcasts_or, parsed_tags);
+    let mut counts_by_tag = HashMap::new();
+    for podcast in &podcasts {
+        for tag in podcast.get_tags() {
+            match counts_by_tag.get_mut(tag) {
+                Some(count) => {
+                    *count += 1;
+                }
+                None => {
+                    counts_by_tag.insert(tag.clone(), 1);
+                }
+            };
+        }
+    }
 
-    let json_tag_array: Value = filtered_tags
+    // Delete tags that have already been selected.
+    for tag in &parsed_tags {
+        counts_by_tag.remove(tag);
+    }
+
+    let json_tag_array: Value = counts_by_tag
         .into_iter()
         .map(|(tag, count)| {
             let mut obj = Map::new();
