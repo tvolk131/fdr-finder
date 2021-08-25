@@ -71,7 +71,7 @@ impl MeilisearchBackend {
     }
 
     pub async fn ingest_podcasts_or_panic(&self, podcasts: impl Iterator<Item = &Podcast>) {
-        let mut cloned_podcasts: Vec<Podcast> = podcasts.map(|podcast| podcast.clone()).collect();
+        let mut cloned_podcasts: Vec<Podcast> = podcasts.cloned().collect();
         // Since the first items that are indexed have highest priority, reversing
         // the order ensures that the latest podcasts are returned first.
         cloned_podcasts.reverse();
