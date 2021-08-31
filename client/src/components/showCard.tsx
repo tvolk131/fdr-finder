@@ -38,16 +38,6 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export enum ShowFormat {
-  Interview,
-  Presentation,
-  CallIn,
-  Roundtable,
-  SoloPodcast,
-  Livestream,
-  Unspecified // TODO - Remove this variant.
-}
-
 export interface ShowInfo {
   title: string
   description: string
@@ -55,7 +45,6 @@ export interface ShowInfo {
   lengthInSeconds: number
   podcastNumber: number
   createTime: Date
-  showFormat: ShowFormat
   tags: string[]
 }
 

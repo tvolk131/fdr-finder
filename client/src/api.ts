@@ -1,12 +1,11 @@
 import axios from 'axios';
-import {ShowFormat, ShowInfo} from './components/showCard';
+import {ShowInfo} from './components/showCard';
 import {queryFieldName, limitFieldName, offsetFieldName, tagsFieldName} from './constants';
 
 const deserializeShowInfo = (data: any): ShowInfo => {
   return {
     ...data,
-    createTime: new Date(data.createTime * 1000),
-    showFormat: ShowFormat.Unspecified
+    createTime: new Date(data.createTime * 1000)
   };
 };
 

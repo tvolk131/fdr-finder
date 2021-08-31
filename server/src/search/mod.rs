@@ -40,7 +40,7 @@ impl SearchBackend {
         }
     }
 
-    pub async fn ingest_podcasts_or_panic(&self, podcasts: &[Podcast]) {
+    pub async fn ingest_podcasts_or_panic(&self, podcasts: impl Iterator<Item = &Podcast>) {
         match &self.meilisearch_backend_or {
             Some(meilisearch_backend) => {
                 meilisearch_backend.ingest_podcasts_or_panic(podcasts).await;
