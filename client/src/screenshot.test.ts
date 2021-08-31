@@ -24,13 +24,15 @@ const testAtMultipleResolutions = (testFn: (page: puppeteer.Page) => Promise<voi
   };
 };
 
-it('displays initial page correctly', testAtMultipleResolutions(async (page) => {
+it('displays search page correctly', testAtMultipleResolutions(async (page) => {
   await page.goto('http://localhost:8000');
 }), 20000);
 
-it('displays tags correctly', testAtMultipleResolutions(async (page) => {
+it('displays search page tags correctly', testAtMultipleResolutions(async (page) => {
   await page.goto('http://localhost:8000');
   await page.click('div.MuiAccordionSummary-expandIcon span svg');
 }), 20000);
 
-// TODO - Add screenshot test that verifies podcast page.
+it('displays podcast page correctly', testAtMultipleResolutions(async (page) => {
+  await page.goto('http://localhost:8000/podcasts/1');
+}), 20000);
