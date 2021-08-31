@@ -1,20 +1,30 @@
-import {CircularProgress, Typography} from '@material-ui/core';
+import {CircularProgress, Typography, IconButton} from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 import {useParams} from 'react-router';
 import {getPodcast} from '../api';
-import ShowCard, {ShowInfo} from '../components/showCard';
+import {ShowInfo} from '../components/showCard';
+import {PlayArrow as PlayArrowIcon} from '@material-ui/icons';
 
 const useStyles = makeStyles({
   root: {
     margin: '10px',
-    textAlign: 'center'
   },
   cardWrapper: {
     maxWidth: '800px',
     margin: 'auto',
     textAlign: 'initial'
+  },
+  title: {
+    display: 'inline-flex',
+  },
+  podcastNumber: {
+    paddingRight: '8px'
+  },
+  description: {
+    paddingTop: '8px',
+    whiteSpace: 'pre-wrap'
   },
   loadingSpinner: {
     padding: '50px'
@@ -50,11 +60,26 @@ export const PodcastPage = (props: PodcastPageProps) => {
       </Typography>
     );
   } else {
-    // TODO - Display show info without using ShowCard. I only did this because it
-    // was quick and easy, but we should display show info in a custom way here.
     innerContent = (
       <div className={classes.cardWrapper}>
-        <ShowCard show={podcast} onPlay={() => props.setPlayingShow(podcast)}/>
+        <div className={classes.title}>
+          <Typography
+            className={classes.podcastNumber}
+            variant='h4'
+            color='textSecondary'
+          >
+            {podcast.podcastNumber}
+          </Typography>
+          <Typography variant='h4'>
+            {podcast.title}
+          </Typography>
+        </div>
+        <IconButton onClick={() => props.setPlayingShow(podcast)}>
+          <PlayArrowIcon/>
+        </IconButton>
+        <Typography className={classes.description}>
+          {podcast.description}
+        </Typography>
       </div>
     );
   }
