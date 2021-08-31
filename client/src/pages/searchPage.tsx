@@ -75,6 +75,7 @@ const getTagsFromQueryParam = (history: History<unknown>) => {
 
 interface SearchPageProps {
   setPlayingShow(showInfo: ShowInfo): void
+  showSnackbarMessage(message: string): void
 }
 
 export const SearchPage = (props: SearchPageProps) => {
@@ -94,8 +95,6 @@ export const SearchPage = (props: SearchPageProps) => {
 
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
-
-  const [showSnackbar, setShowSnackbar] = useState(false);
 
   const subject = useRef(new BehaviorSubject({query: '', tags: [] as string[]}));
 
@@ -214,7 +213,7 @@ export const SearchPage = (props: SearchPageProps) => {
           <div className={classes.button}>
             <CopyToClipboard
               text={getPodcastRssUrl({query: searchTerm, tags: searchTags})}
-              onCopy={() => setShowSnackbar(true)}
+              onCopy={() => props.showSnackbarMessage('Link copied!')}
             >
               <Button variant={'contained'} startIcon={<RssFeedIcon/>}>
                 Copy Search-Filtered RSS Feed
@@ -283,20 +282,6 @@ export const SearchPage = (props: SearchPageProps) => {
           </Dialog>
         </div>
       }
-      <Snackbar
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left'
-        }}
-        open={showSnackbar}
-        autoHideDuration={6000}
-        onClose={(event, reason) => {
-          if (reason !== 'clickaway') {
-            setShowSnackbar(false);
-          }
-        }}
-        message={'Link copied!'}
-      />
     </div>
   );
 };

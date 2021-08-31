@@ -15,6 +15,7 @@ import {NotFoundPage} from './pages/notFoundPage';
 import {PodcastPage} from './pages/podcastPage';
 import {AudioPlayer} from './components/audioPlayer';
 import {ShowInfo} from './components/showCard';
+import {Snackbar} from '@material-ui/core';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -34,6 +35,13 @@ const SubApp = () => {
   const classes = useStyles();
 
   const [playingShow, setPlayingShow] = useState<ShowInfo>();
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const showSnackbarMessage = (message: string) => {
+    setShowSnackbar(true);
+    setSnackbarMessage(message);
+  };
 
   return (
     <div className={classes.root}>
@@ -44,7 +52,7 @@ const SubApp = () => {
         <BrowserRouter>
           <Switch>
             <Route exact path='/'>
-              <SearchPage setPlayingShow={setPlayingShow}/>
+              <SearchPage setPlayingShow={setPlayingShow} showSnackbarMessage={showSnackbarMessage}/>
             </Route>
             <Route exact path='/podcasts/:podcastNum'>
               <PodcastPage setPlayingShow={setPlayingShow}/>
@@ -55,7 +63,21 @@ const SubApp = () => {
           </Switch>
         </BrowserRouter>
       </div>
-      <AudioPlayer showInfo={playingShow} autoPlay={true}/>
+      <AudioPlayer showInfo={playingShow} autoPlay={true} showSnackbarMessage={showSnackbarMessage}/>
+      <Snackbar
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left'
+        }}
+        open={showSnackbar}
+        autoHideDuration={6000}
+        onClose={(event, reason) => {
+          if (reason !== 'clickaway') {
+            setShowSnackbar(false);
+          }
+        }}
+        message={snackbarMessage}
+      />
     </div>
   );
 };
