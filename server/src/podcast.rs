@@ -167,7 +167,7 @@ impl Podcast {
                     .mime_type("audio/mpeg")
                     .length(format!("{}", self.length_in_seconds))
                     .build()
-                    .unwrap()
+                    .unwrap(),
             )
             .build()
             .unwrap()
@@ -182,7 +182,11 @@ impl Podcast {
     }
 }
 
-pub fn generate_rss_feed(podcasts: &[Podcast], feed_title: &str, feed_description: &str) -> rss::Channel {
+pub fn generate_rss_feed(
+    podcasts: &[Podcast],
+    feed_title: &str,
+    feed_description: &str,
+) -> rss::Channel {
     rss::ChannelBuilder::default()
         .title(feed_title)
         .description(feed_description)
@@ -192,7 +196,7 @@ pub fn generate_rss_feed(podcasts: &[Podcast], feed_title: &str, feed_descriptio
             podcasts
                 .iter()
                 .map(|podcast| podcast.to_rss_item())
-                .collect::<Vec<rss::Item>>()
+                .collect::<Vec<rss::Item>>(),
         )
         .build()
         .unwrap()
