@@ -149,7 +149,7 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
         ),
     );
 
-    Ok(content::Xml(rss))
+    Ok(content::Xml(rss.to_string()))
 }
 
 #[get("/filteredTagsWithCounts?<query>&<tags>")]

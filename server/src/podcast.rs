@@ -152,23 +152,25 @@ impl Podcast {
         }
     }
 
-    fn to_rss_xml(&self) -> String {
+    fn to_rss_item(&self) -> rss::Item {
         let chrono_date: chrono::DateTime<chrono::Utc> = SystemTime::UNIX_EPOCH
             .add(Duration::from_secs(self.create_time as u64))
             .into();
-        format!(
-            "
-            <title>{}</title>
-            <description>{}</description>
-            <pubDate>{}</pubDate>
-            <enclosure url=\"{}\" type=\"audio/mpeg\" length=\"{}\"/>
-        ",
-            self.title,
-            self.description,
-            chrono_date.to_rfc2822(),
-            self.audio_link,
-            self.length_in_seconds
-        )
+
+        rss::ItemBuilder::default()
+            .title(self.title.clone())
+            .description(self.description.clone())
+            .pub_date(chrono_date.to_rfc2822())
+            .enclosure(
+                rss::EnclosureBuilder::default()
+                    .url(self.audio_link.clone())
+                    .mime_type("audio/mpeg")
+                    .length(format!("{}", self.length_in_seconds))
+                    .build()
+                    .unwrap()
+            )
+            .build()
+            .unwrap()
     }
 
     pub fn get_podcast_number(&self) -> &PodcastNumber {
@@ -180,31 +182,18 @@ impl Podcast {
     }
 }
 
-pub fn generate_rss_feed(podcasts: &[Podcast], feed_title: &str, feed_description: &str) -> String {
-    let podcasts_xml: Vec<String> = podcasts
-        .iter()
-        .map(|podcast| format!("<item>{}</item>", podcast.to_rss_xml()))
-        .collect();
-    format!(
-        "
-        <?xml version=\"1.0\" encoding=\"UTF-8\"?>
-        <rss version=\"2.0\"
-            xmlns:googleplay=\"http://www.google.com/schemas/play-podcasts/1.0\"
-            xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\">
-        <channel>
-            <title>{}</title>
-            <googleplay:author>Stefan Molyneux</googleplay:author>
-            <description>{}</description>
-            <language>en-us</language>
-            <link>https://freedomain.com/</link>
-            {}
-        </channel>
-        </rss>
-    ",
-        feed_title,
-        feed_description,
-        podcasts_xml.join("")
-    )
-    .trim()
-    .to_string()
+pub fn generate_rss_feed(podcasts: &[Podcast], feed_title: &str, feed_description: &str) -> rss::Channel {
+    rss::ChannelBuilder::default()
+        .title(feed_title)
+        .description(feed_description)
+        .language("en-us".to_string())
+        .link("https://freedomain.com/")
+        .items(
+            podcasts
+                .iter()
+                .map(|podcast| podcast.to_rss_item())
+                .collect::<Vec<rss::Item>>()
+        )
+        .build()
+        .unwrap()
 }
