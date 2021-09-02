@@ -1,6 +1,6 @@
 import {blue, teal} from '@material-ui/core/colors';
 import {
-  createMuiTheme,
+  createTheme,
   MuiThemeProvider,
   makeStyles,
   createStyles,
@@ -85,7 +85,7 @@ const SubApp = () => {
 const ThemedSubApp = () => {
   const isDarkMode = true; // TODO - Add a way for users to be able to set this.
 
-  const theme = createMuiTheme({
+  const theme = createTheme({
     palette: {
       primary: blue,
       secondary: teal,
