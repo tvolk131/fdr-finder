@@ -32,3 +32,7 @@ it('displays search page tags correctly', testAtMultipleResolutions(async (page)
   await page.goto('http://localhost:8000');
   await page.click('div.MuiAccordionSummary-expandIcon span svg');
 }), 20000);
+
+it('displays podcast page correctly', testAtMultipleResolutions(async (page) => {
+  await page.goto('http://localhost:8000/podcasts/1');
+}), 20000);
