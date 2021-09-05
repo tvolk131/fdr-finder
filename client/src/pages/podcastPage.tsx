@@ -1,4 +1,4 @@
-import {CircularProgress, Typography, IconButton} from '@material-ui/core';
+import {CircularProgress, Typography, IconButton, Chip} from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
@@ -6,8 +6,9 @@ import {useParams} from 'react-router';
 import {getPodcast} from '../api';
 import {ShowInfo} from '../components/showCard';
 import {PlayArrow as PlayArrowIcon} from '@material-ui/icons';
+import {getTagDisplayText} from '../helper/tagFormatting';
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   root: {
     margin: '10px',
   },
@@ -18,9 +19,15 @@ const useStyles = makeStyles({
   },
   title: {
     display: 'inline-flex',
+    width: '100%',
+    justifyContent: 'center'
   },
   podcastNumber: {
+    lineHeight: '48px',
     paddingRight: '8px'
+  },
+  podcastTitle: {
+    lineHeight: '48px'
   },
   description: {
     paddingTop: '8px',
@@ -28,8 +35,18 @@ const useStyles = makeStyles({
   },
   loadingSpinner: {
     padding: '50px'
+  },
+  tagWrapper: {
+    paddingTop: '10px'
+  },
+  tagChip: {
+    margin: theme.spacing(0.5)
+  },
+  playButton: {
+    height: '100%',
+    marginRight: '8px'
   }
-});
+}));
 
 interface PodcastPageProps {
   setPlayingShow(showInfo: ShowInfo): void
@@ -63,6 +80,9 @@ export const PodcastPage = (props: PodcastPageProps) => {
     innerContent = (
       <div className={classes.cardWrapper}>
         <div className={classes.title}>
+          <IconButton className={classes.playButton} onClick={() => props.setPlayingShow(podcast)}>
+            <PlayArrowIcon/>
+          </IconButton>
           <Typography
             className={classes.podcastNumber}
             variant='h4'
@@ -70,16 +90,27 @@ export const PodcastPage = (props: PodcastPageProps) => {
           >
             {podcast.podcastNumber}
           </Typography>
-          <Typography variant='h4'>
+          <Typography
+            className={classes.podcastTitle}
+            variant='h4'
+          >
             {podcast.title}
           </Typography>
         </div>
-        <IconButton onClick={() => props.setPlayingShow(podcast)}>
-          <PlayArrowIcon/>
-        </IconButton>
         <Typography className={classes.description}>
           {podcast.description}
         </Typography>
+        {
+          !!podcast.tags.length &&
+            <div className={classes.tagWrapper}>
+              {podcast.tags.map((tag) => (
+                <Chip
+                  className={classes.tagChip}
+                  label={getTagDisplayText(tag)}
+                />
+              ))}
+            </div>
+        }
       </div>
     );
   }
