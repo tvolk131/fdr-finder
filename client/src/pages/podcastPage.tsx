@@ -10,7 +10,7 @@ import {getTagDisplayText} from '../helper/tagFormatting';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    margin: '10px',
+    margin: '10px'
   },
   cardWrapper: {
     maxWidth: '800px',
