@@ -5,6 +5,7 @@ import * as React from 'react';
 import {useState} from 'react';
 import {useHistory} from 'react-router';
 import {getTagDisplayText} from '../helper/tagFormatting';
+import {secondsToDurationString} from '../helper/secondsToDurationString';
 
 const useStyles = makeStyles((theme) => ({
   title: {
@@ -74,7 +75,7 @@ const ShowCard = (props: ShowCardProps) => {
             </Typography>
             {props.show.title}
           </span>}
-        subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()}`}
+        subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()} - ${secondsToDurationString(props.show.lengthInSeconds)}`}
       />
       <CardActions className={classes.actions}>
         <IconButton onClick={props.onPlay}>
