@@ -45,13 +45,17 @@ const useStyles = makeStyles((theme: Theme) => (
     tagSearchFieldWrapper: {
       display: 'block',
       textAlign: 'center',
-      paddingBottom: theme.spacing(0.5)
+      paddingBottom: theme.spacing(0.75)
     },
     advancedSearchWrapper: {
-      width: '100%'
+      width: '100%',
+      textAlign: 'center'
     },
     accordionSummaryContent: {
       margin: '8px 0'
+    },
+    loadingSpinner: {
+      marginTop: '12px'
     }
   })
 ));
@@ -92,7 +96,10 @@ const SearchBar = (props: SearchBarProps) => {
     const nonVisibleTagCount = filteredTags.length - maxVisibleTags;
 
     if (nonVisibleTagCount > 0) {
-      tagChips.push(<Chip label={`... +${nonVisibleTagCount}`}/>);
+      tagChips.push(<Chip
+        label={`... +${nonVisibleTagCount}`}
+        className={classes.tagChip}
+      />);
     }
 
     return tagChips;
@@ -156,7 +163,7 @@ const SearchBar = (props: SearchBarProps) => {
           <div className={classes.tagSearchFieldWrapper}>
             <TextField value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} label={'Tag Filter'}/>
           </div>
-          {props.isLoadingTagsWithCounts ? <CircularProgress/> : getSelectableTagChips()}
+          {props.isLoadingTagsWithCounts ? <CircularProgress className={classes.loadingSpinner}/> : getSelectableTagChips()}
         </div>
       </AccordionDetails>
     </Accordion>
