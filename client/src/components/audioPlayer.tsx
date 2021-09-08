@@ -12,7 +12,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     '@keyframes my-animation': {
       from: {
-        transform: 'translateX(100%)'
+        transform: 'translateX(0)'
       },
       to: {
         transform: 'translateX(-100%)'
@@ -31,14 +31,25 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       overflow: 'hidden'
     },
+    contentWrapper: {
+      display: 'flex',
+      width: '200px',
+      flexBasis: '200px',
+      flexGrow: 1,
+    },
     content: {
-      flex: '1 0 auto',
-      padding: '15px'
+      padding: '15px',
+      minWidth: 0
+    },
+    titleWrapper: {
+      WebkitMaskImage: 'linear-gradient(to right,transparent,#202124 5%,#202124 95%,transparent)',
+      display: 'flex'
     },
     title: {
-      animation: '$my-animation 5s linear infinite',
-      position: 'absolute',
-      whiteSpace: 'nowrap'
+      animation: '$my-animation 18s linear infinite',
+      whiteSpace: 'nowrap',
+      display: 'inline-block',
+      paddingRight: '40px'
     },
     cover: {
       width: 151
@@ -175,13 +186,20 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
         />
       </div>
       <div className={classes.details}>
-        <div className={classes.content}>
-          <Typography className={classes.title} color={failedToLoad ? 'error' : 'inherit'} component='h5' variant='h5'>
-            {props.showInfo ? props.showInfo.title : '-----'}
-          </Typography>
-          <Typography variant='subtitle1' color={failedToLoad ? 'error' : 'textSecondary'}>
-            {props.showInfo ? props.showInfo.podcastNumber : '-----'}
-          </Typography>
+        <div className={classes.contentWrapper}>
+          <div className={classes.content}>
+            <div className={classes.titleWrapper}>
+              <Typography className={classes.title} color={failedToLoad ? 'error' : 'inherit'} component='h5' variant='h5'>
+                {props.showInfo ? props.showInfo.title : '-----'}
+              </Typography>
+              <Typography className={classes.title} style={{display: 'inline-block'}} color={failedToLoad ? 'error' : 'inherit'} component='h5' variant='h5'>
+                {props.showInfo ? props.showInfo.title : '-----'}
+              </Typography>
+            </div>
+            <Typography variant='subtitle1' color={failedToLoad ? 'error' : 'textSecondary'}>
+              {props.showInfo ? props.showInfo.podcastNumber : '-----'}
+            </Typography>
+          </div>
         </div>
         <div className={classes.controls}>
           <IconButton
