@@ -10,6 +10,14 @@ import {ShowInfo} from './showCard';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    '@keyframes my-animation': {
+      from: {
+        transform: 'translateX(100%)'
+      },
+      to: {
+        transform: 'translateX(-100%)'
+      }
+    },
     root: {
       display: 'flex',
       bottom: '0%',
@@ -21,12 +29,16 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     details: {
       display: 'flex',
-      flexFlow: 'wrap',
-      overflow: 'auto'
+      overflow: 'hidden'
     },
     content: {
       flex: '1 0 auto',
       padding: '15px'
+    },
+    title: {
+      animation: '$my-animation 5s linear infinite',
+      position: 'absolute',
+      whiteSpace: 'nowrap'
     },
     cover: {
       width: 151
@@ -164,7 +176,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
       </div>
       <div className={classes.details}>
         <div className={classes.content}>
-          <Typography color={failedToLoad ? 'error' : 'inherit'} component='h5' variant='h5'>
+          <Typography className={classes.title} color={failedToLoad ? 'error' : 'inherit'} component='h5' variant='h5'>
             {props.showInfo ? props.showInfo.title : '-----'}
           </Typography>
           <Typography variant='subtitle1' color={failedToLoad ? 'error' : 'textSecondary'}>
