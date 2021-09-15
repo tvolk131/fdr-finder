@@ -108,6 +108,20 @@ pub struct Podcast {
     tags: HashSet<PodcastTag>,
 }
 
+// TODO - Abstract this into a procedural macro along with all other Responder impl blocks in other structs.
+impl<'r> rocket::response::Responder<'r, 'static> for Podcast {
+    fn respond_to(
+        self,
+        _request: &'r rocket::request::Request,
+    ) -> Result<rocket::response::Response<'static>, rocket::http::Status> {
+        let json_string = serde_json::json!(self).to_string();
+        rocket::Response::build()
+            .header(rocket::http::ContentType::JSON)
+            .sized_body(json_string.len(), std::io::Cursor::new(json_string))
+            .ok()
+    }
+}
+
 impl Document for Podcast {
     type UIDType = PodcastNumber;
     fn get_uid(&self) -> &Self::UIDType {
@@ -182,12 +196,40 @@ impl Podcast {
     }
 }
 
+pub struct RssFeed {
+    channel: rss::Channel,
+}
+
+// TODO - Abstract this into a procedural macro along with all other Responder impl blocks in other structs.
+impl<'r> rocket::response::Responder<'r, 'static> for RssFeed {
+    fn respond_to(
+        self,
+        _request: &'r rocket::request::Request,
+    ) -> Result<rocket::response::Response<'static>, rocket::http::Status> {
+        let xml_string = self.to_string();
+        rocket::Response::build()
+            .header(rocket::http::ContentType::XML)
+            .sized_body(xml_string.len(), std::io::Cursor::new(xml_string))
+            .ok()
+    }
+}
+
+impl RssFeed {
+    fn new(channel: rss::Channel) -> Self {
+        Self { channel }
+    }
+
+    pub fn to_string(&self) -> String {
+        self.channel.to_string()
+    }
+}
+
 pub fn generate_rss_feed(
     podcasts: &[Podcast],
     feed_title: &str,
     feed_description: &str,
-) -> rss::Channel {
-    rss::ChannelBuilder::default()
+) -> RssFeed {
+    let channel = rss::ChannelBuilder::default()
         .title(feed_title)
         .description(feed_description)
         .language("en-us".to_string())
@@ -199,5 +241,7 @@ pub fn generate_rss_feed(
                 .collect::<Vec<rss::Item>>(),
         )
         .build()
-        .unwrap()
+        .unwrap();
+
+    RssFeed::new(channel)
 }
