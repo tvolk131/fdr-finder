@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {ShowInfo} from './components/showCard';
-import {queryFieldName, limitFieldName, offsetFieldName, tagsFieldName} from './constants';
+import {queryFieldName, limitFieldName, offsetFieldName, tagsFieldName, filterFieldName} from './constants';
 
 const deserializeShowInfo = (data: any): ShowInfo => {
   return {
@@ -53,13 +53,22 @@ export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {
 }
 
 export const getFilteredTagsWithCounts =
-async (data: {query?: string, tags?: string[]}): Promise<{tag: string, count: number}[]> => {
-  const queryParams: {[key: string]: string} = {};
+async (data: {query?: string, limit?: number, offset?: number, tags?: string[], filter?: string}): Promise<{tags: {tag: string, count: number}[], remainingTagCount: number}> => {
+  const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
   }
+  if (data.limit !== undefined) {
+    queryParams[limitFieldName] = data.limit;
+  }
+  if (data.offset !== undefined) {
+    queryParams[offsetFieldName] = data.offset;
+  }
   if (data.tags && data.tags.length) {
     queryParams[tagsFieldName] = data.tags.join(',');
+  }
+  if (data.filter && data.filter.length) {
+    queryParams[filterFieldName] = data.filter;
   }
 
   return (await axios.get(generateUrlWithQueryParams('/api/filteredTagsWithCounts', queryParams))).data;

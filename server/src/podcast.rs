@@ -22,6 +22,10 @@ impl PodcastTag {
     pub fn clone_to_string(&self) -> String {
         self.0.to_string()
     }
+
+    pub fn to_string(&self) -> &str {
+        &self.0
+    }
 }
 
 #[derive(Clone, Debug, Eq)]
@@ -218,8 +222,10 @@ impl RssFeed {
     fn new(channel: rss::Channel) -> Self {
         Self { channel }
     }
+}
 
-    pub fn to_string(&self) -> String {
+impl std::string::ToString for RssFeed {
+    fn to_string(&self) -> String {
         self.channel.to_string()
     }
 }
