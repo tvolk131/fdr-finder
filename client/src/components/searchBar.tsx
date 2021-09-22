@@ -65,15 +65,15 @@ const maxVisibleTags = 50;
 interface SearchBarProps {
   searchText: string
   setSearchText: (query: string) => void
+  tagFilter: string
+  setTagFilter: (filter: string) => void
   searchTags: string[]
   setSearchTags: (tags: string[]) => void
-  tagsWithCounts: {tag: string, count: number}[]
+  tagsWithCounts: {tags: {tag: string, count: number}[], remainingTagCount: number}
   isLoadingTagsWithCounts: boolean
 }
 
 const SearchBar = (props: SearchBarProps) => {
-  const [tagFilter, setTagFilter] = useState('');
-
   const handleMouseDownSearch = (event: MouseEvent) => {
     event.preventDefault();
   };
@@ -81,11 +81,7 @@ const SearchBar = (props: SearchBarProps) => {
   const classes = useStyles();
 
   const getSelectableTagChips = () => {
-    const filteredTags = props.tagsWithCounts.filter(({tag}) => (
-      getTagDisplayText(tag).toLowerCase().includes(tagFilter.toLowerCase())
-    ))
-
-    const tagChips = filteredTags.slice(0, maxVisibleTags).map(({tag, count}) => (
+    const tagChips = props.tagsWithCounts.tags.map(({tag, count}) => (
       <Chip
         onClick={() => props.setSearchTags([...props.searchTags, tag])}
         className={classes.tagChip}
@@ -93,7 +89,7 @@ const SearchBar = (props: SearchBarProps) => {
       />
     ));
 
-    const nonVisibleTagCount = filteredTags.length - maxVisibleTags;
+    const nonVisibleTagCount = props.tagsWithCounts.remainingTagCount;
 
     if (nonVisibleTagCount > 0) {
       tagChips.push(<Chip
@@ -161,7 +157,7 @@ const SearchBar = (props: SearchBarProps) => {
       <AccordionDetails>
         <div className={classes.advancedSearchWrapper}>
           <div className={classes.tagSearchFieldWrapper}>
-            <TextField value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} label={'Tag Filter'}/>
+            <TextField value={props.tagFilter} onChange={(e) => props.setTagFilter(e.target.value)} label={'Tag Filter'}/>
           </div>
           {props.isLoadingTagsWithCounts ?
             <CircularProgress className={classes.loadingSpinner}/> : getSelectableTagChips()}

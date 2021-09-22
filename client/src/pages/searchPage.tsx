@@ -84,30 +84,31 @@ export const SearchPage = (props: SearchPageProps) => {
 
   const [searchTerm, setSearchTerm] = useState(getQueryFromQueryParam(history));
   const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(history));
+  
+  const [tagFilter, setTagFilter] = useState('');
 
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
   const [isLoadingPodcasts, setIsLoadingPodcasts] = useState(false);
   const [totalPodcastSearchResults, setTotalPodcastSearchResults] = useState(0);
   const [podcastSearchTime, setPodcastSearchTime] = useState(0);
 
-  const [tagsWithCounts, setTagsWithCounts] = useState<{tag: string, count: number}[]>([]);
+  const [tagsWithCounts, setTagsWithCounts] = useState<{tags: {tag: string, count: number}[], remainingTagCount: number}>({tags: [], remainingTagCount: 0});
   const [isLoadingTagsWithCounts, setIsLoadingTagsWithCounts] = useState(false);
 
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
-  const subject = useRef(new BehaviorSubject({query: '', tags: [] as string[]}));
+  const searchResultsSubject = useRef(new BehaviorSubject({query: '', tags: [] as string[]}));
+  const tagsSubject = useRef(new BehaviorSubject({query: '', tags: [] as string[], tagFilter: ''}));
 
   useEffect(() => {
-    const observable = subject.current.pipe(
-      map(({query, tags}) => ({query: query.trim(), tags})),
+    const searchResultsObservable = searchResultsSubject.current.pipe(
+      map(({query, tags}) => ({query: query.trim(), tags, tagFilter: tagFilter.trim()})),
       distinctUntilChanged(),
-      switchMap(({query, tags}) => merge(
+      switchMap(({query, tags, tagFilter}) => merge(
         of({
           isLoadingPodcasts: true,
-          isLoadingTagsWithCounts: true,
           podcasts: undefined,
-          tagsWithCounts: undefined,
           totalPodcastSearchResults: undefined,
           podcastSearchTime: undefined
         }),
@@ -118,56 +119,22 @@ export const SearchPage = (props: SearchPageProps) => {
           tags
         }).then((searchResult) => ({
           isLoadingPodcasts: false,
-          isLoadingTagsWithCounts: undefined,
           podcasts: searchResult.hits,
-          tagsWithCounts: undefined,
           totalPodcastSearchResults: searchResult.totalHits,
           podcastSearchTime: searchResult.processingTimeMs
-        })),
-        getFilteredTagsWithCounts({query, tags})
-          .then((tagsWithCounts) => {
-            tagsWithCounts.sort((a, b) => {
-              if (a.count < b.count) {
-                return 1;
-              } else if (a.count > b.count) {
-                return -1;
-              } else if (a.tag > b.tag) {
-                return 1;
-              } else if (a.tag < b.tag) {
-                return -1;
-              } else {
-                return 0;
-              }
-            });
-            return {
-              isLoadingPodcasts: undefined,
-              isLoadingTagsWithCounts: false,
-              podcasts: undefined,
-              tagsWithCounts,
-              totalPodcastSearchResults: undefined,
-              podcastSearchTime: undefined
-            };
-          })
+        }))
       ))
     ).subscribe(({
       isLoadingPodcasts,
-      isLoadingTagsWithCounts,
       podcasts,
-      tagsWithCounts,
       totalPodcastSearchResults,
       podcastSearchTime
     }) => {
       if (isLoadingPodcasts !== undefined) {
         setIsLoadingPodcasts(isLoadingPodcasts);
       }
-      if (isLoadingTagsWithCounts !== undefined) {
-        setIsLoadingTagsWithCounts(isLoadingTagsWithCounts);
-      }
       if (podcasts !== undefined) {
         setPodcasts(podcasts);
-      }
-      if (tagsWithCounts !== undefined) {
-        setTagsWithCounts(tagsWithCounts);
       }
       if (totalPodcastSearchResults !== undefined) {
         setTotalPodcastSearchResults(totalPodcastSearchResults);
@@ -177,9 +144,37 @@ export const SearchPage = (props: SearchPageProps) => {
       }
     });
 
+    const tagsObservable = tagsSubject.current.pipe(
+      map(({query, tags, tagFilter}) => ({query: query.trim(), tags, tagFilter: tagFilter.trim()})),
+      distinctUntilChanged(),
+      switchMap(({query, tags, tagFilter}) => merge(
+        of({
+          isLoadingTagsWithCounts: true,
+          tagsWithCounts: undefined
+        }),
+        getFilteredTagsWithCounts({query, limit: 50, tags, filter: tagFilter.length ? tagFilter : undefined})
+          .then((tagsWithCounts) => ({
+            isLoadingTagsWithCounts: false,
+            tagsWithCounts
+          }))
+      ))
+    ).subscribe(({
+      isLoadingTagsWithCounts,
+      tagsWithCounts
+    }) => {
+      if (isLoadingTagsWithCounts !== undefined) {
+        setIsLoadingTagsWithCounts(isLoadingTagsWithCounts);
+      }
+      if (tagsWithCounts !== undefined) {
+        setTagsWithCounts(tagsWithCounts);
+      }
+    });
+
     return () => {
-      observable.unsubscribe();
-      subject.current.unsubscribe();
+      searchResultsObservable.unsubscribe();
+      searchResultsSubject.current.unsubscribe();
+      tagsObservable.unsubscribe();
+      tagsSubject.current.unsubscribe();
     };
   }, []);
 
@@ -192,8 +187,12 @@ export const SearchPage = (props: SearchPageProps) => {
       history.push(newLocation);
     }
 
-    subject.current.next({query: searchTerm, tags: searchTags});
+    searchResultsSubject.current.next({query: searchTerm, tags: searchTags});
   }, [searchTerm, searchTags]);
+
+  useEffect(() => {
+    tagsSubject.current.next({query: searchTerm, tags: searchTags, tagFilter});
+  }, [searchTerm, searchTags, tagFilter]);
 
   return (
     <div className={classes.root}>
@@ -201,6 +200,8 @@ export const SearchPage = (props: SearchPageProps) => {
         <SearchBar
           searchText={searchTerm}
           setSearchText={setSearchTerm}
+          tagFilter={tagFilter}
+          setTagFilter={setTagFilter}
           searchTags={searchTags}
           setSearchTags={setSearchTags}
           tagsWithCounts={tagsWithCounts}
