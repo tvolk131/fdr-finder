@@ -43,7 +43,9 @@ impl SearchCache {
             };
         }
 
-        let result = meilisearch_backend.search(query_or, tags, limit_or.unwrap_or(99999999), offset).await;
+        let result = meilisearch_backend
+            .search(query_or, tags, limit_or.unwrap_or(99999999), offset)
+            .await;
 
         if limit_or == None && offset == 0 {
             println!("Caching result.");

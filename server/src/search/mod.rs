@@ -7,7 +7,7 @@ pub use meilisearch::SearchResult;
 
 pub struct SearchBackend {
     meilisearch_backend_or: Option<meilisearch::MeilisearchBackend>, // Only `None` if running in mock mode.
-    search_cache: cache::SearchCache
+    search_cache: cache::SearchCache,
 }
 
 impl SearchBackend {
@@ -16,14 +16,14 @@ impl SearchBackend {
             meilisearch_backend_or: Some(
                 meilisearch::MeilisearchBackend::new(meilisearch_host, meilisearch_api_key).await,
             ),
-            search_cache: cache::SearchCache::new(10000)
+            search_cache: cache::SearchCache::new(10000),
         }
     }
 
     pub fn new_mock() -> Self {
         Self {
             meilisearch_backend_or: None,
-            search_cache: cache::SearchCache::new(0)
+            search_cache: cache::SearchCache::new(0),
         }
     }
 
