@@ -9,12 +9,13 @@ mod mock;
 mod podcast;
 mod search;
 
-use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag};
+use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag, RssFeed};
 use environment::{EnvironmentVariables, ServerMode};
 use fdr_cache::FdrCache;
 use rocket::response::{content, status};
 use rocket::{Request, State};
 use search::SearchBackend;
+use search::SearchResult;
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 
@@ -94,14 +95,14 @@ fn not_found_handler(req: &Request) -> NotFoundResponse {
 fn get_podcast_handler(
     podcast_num: String,
     fdr_cache: &State<FdrCache>,
-) -> Result<content::Json<String>, status::NotFound<String>> {
+) -> Result<Podcast, status::NotFound<String>> {
     let podcast_or = match podcast_num.parse::<serde_json::Number>() {
         Ok(num) => fdr_cache.get_podcast(&PodcastNumber::new(num)),
         Err(_) => None,
     };
 
     match podcast_or {
-        Some(podcast) => Ok(content::Json(json!(podcast).to_string())),
+        Some(podcast) => Ok(podcast.clone()),
         None => Err(status::NotFound("Podcast does not exist".to_string())),
     }
 }
@@ -113,17 +114,15 @@ async fn search_podcasts_handler<'a>(
     offset: Option<usize>,
     tags: Option<String>,
     search_backend: &State<SearchBackend>,
-) -> Result<content::Json<String>, status::BadRequest<String>> {
-    let search_result = search_backend
+) -> SearchResult {
+    search_backend
         .search(
             &query,
             &parse_tag_query_string(tags),
             limit,
             offset.unwrap_or(0),
         )
-        .await;
-
-    Ok(content::Json(json!(search_result).to_string()))
+        .await
 }
 
 #[get("/search/podcasts/rss?<query>&<tags>")]
@@ -131,13 +130,13 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
     search_backend: &State<SearchBackend>,
-) -> Result<content::Xml<String>, status::BadRequest<String>> {
+) -> RssFeed {
     let search_result = search_backend
         .search(&query, &parse_tag_query_string(tags), None, 0)
         .await;
 
     // TODO - Fix RSS feed naming now that we support tag filtering.
-    let rss = generate_rss_feed(
+    generate_rss_feed(
         search_result.get_hits(),
         &format!(
             "Freedomain Custom Feed: {}",
@@ -147,9 +146,7 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
             "A generated feed containing all Freedomain podcasts about: {}",
             query.unwrap_or_default()
         ),
-    );
-
-    Ok(content::Xml(rss.to_string()))
+    )
 }
 
 #[get("/filteredTagsWithCounts?<query>&<tags>")]

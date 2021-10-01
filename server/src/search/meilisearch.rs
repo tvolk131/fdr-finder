@@ -100,6 +100,20 @@ pub struct SearchResult {
     processing_time_ms: usize,
 }
 
+// TODO - Abstract this into a procedural macro along with all other Responder impl blocks in other structs.
+impl<'r> rocket::response::Responder<'r, 'static> for SearchResult {
+    fn respond_to(
+        self,
+        _request: &'r rocket::request::Request,
+    ) -> Result<rocket::response::Response<'static>, rocket::http::Status> {
+        let json_string = serde_json::json!(self).to_string();
+        rocket::Response::build()
+            .header(rocket::http::ContentType::JSON)
+            .sized_body(json_string.len(), std::io::Cursor::new(json_string))
+            .ok()
+    }
+}
+
 impl SearchResult {
     pub fn get_hits(&self) -> &[Podcast] {
         &self.hits
