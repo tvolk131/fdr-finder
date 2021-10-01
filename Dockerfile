@@ -1,9 +1,9 @@
-FROM node:16.7.0 AS client-base
+FROM node:16.10.0 AS client-base
 COPY ./ ./app
 WORKDIR /app
 RUN cd client && npm ci && npm run build-prod
 
-FROM rust:1.54.0 as server-base
+FROM rust:1.55.0 as server-base
 COPY --from=client-base ./app ./app
 WORKDIR /app
 RUN cd server && rustup default nightly && cargo build --release && mkdir -p /build-out && cp target/release/fdr-show-indexer-server /build-out/
