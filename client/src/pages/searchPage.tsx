@@ -84,7 +84,7 @@ export const SearchPage = (props: SearchPageProps) => {
 
   const [searchTerm, setSearchTerm] = useState(getQueryFromQueryParam(history));
   const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(history));
-  
+
   const [tagFilter, setTagFilter] = useState('');
 
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
@@ -92,7 +92,8 @@ export const SearchPage = (props: SearchPageProps) => {
   const [totalPodcastSearchResults, setTotalPodcastSearchResults] = useState(0);
   const [podcastSearchTime, setPodcastSearchTime] = useState(0);
 
-  const [tagsWithCounts, setTagsWithCounts] = useState<{tags: {tag: string, count: number}[], remainingTagCount: number}>({tags: [], remainingTagCount: 0});
+  const [tagsWithCounts, setTagsWithCounts] =
+    useState<{tags: {tag: string, count: number}[], remainingTagCount: number}>({tags: [], remainingTagCount: 0});
   const [isLoadingTagsWithCounts, setIsLoadingTagsWithCounts] = useState(false);
 
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);

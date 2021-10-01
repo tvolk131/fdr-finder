@@ -157,7 +157,10 @@ const SearchBar = (props: SearchBarProps) => {
       <AccordionDetails>
         <div className={classes.advancedSearchWrapper}>
           <div className={classes.tagSearchFieldWrapper}>
-            <TextField value={props.tagFilter} onChange={(e) => props.setTagFilter(e.target.value)} label={'Tag Filter'}/>
+            <TextField
+              value={props.tagFilter}
+              onChange={(e) => props.setTagFilter(e.target.value)} label={'Tag Filter'}
+            />
           </div>
           {props.isLoadingTagsWithCounts ?
             <CircularProgress className={classes.loadingSpinner}/> : getSelectableTagChips()}

@@ -53,7 +53,8 @@ export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {
 }
 
 export const getFilteredTagsWithCounts =
-async (data: {query?: string, limit?: number, offset?: number, tags?: string[], filter?: string}): Promise<{tags: {tag: string, count: number}[], remainingTagCount: number}> => {
+async (data: {query?: string, limit?: number, offset?: number, tags?: string[], filter?: string}):
+Promise<{tags: {tag: string, count: number}[], remainingTagCount: number}> => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
