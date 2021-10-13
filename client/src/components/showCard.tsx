@@ -1,4 +1,4 @@
-import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton} from '@mui/material';
+import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton, Theme} from '@mui/material';
 import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@mui/icons-material';
 import {makeStyles} from '@mui/styles';
 import * as React from 'react';
@@ -7,7 +7,7 @@ import {useHistory} from 'react-router';
 import {getTagDisplayText} from '../helper/tagFormatting';
 import {secondsToDurationString} from '../helper/secondsToDurationString';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   title: {
     display: 'flex',
     cursor: 'pointer'
@@ -31,7 +31,10 @@ const useStyles = makeStyles((theme) => ({
   },
   descriptionText: {
     whiteSpace: 'pre-wrap'
-  }
+  },
+  tagChip: {
+    margin: theme.spacing(0.5)
+  },
 }));
 
 export interface ShowInfo {
@@ -91,8 +94,8 @@ const ShowCard = (props: ShowCardProps) => {
               <div>
                 {props.show.tags.map((tag) => (
                   <Chip
+                    className={classes.tagChip}
                     label={getTagDisplayText(tag)}
-                    sx={{padding: 0.5}}
                   />
                 ))}
               </div>

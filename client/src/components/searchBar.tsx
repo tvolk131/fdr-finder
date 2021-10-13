@@ -89,8 +89,8 @@ const SearchBar = (props: SearchBarProps) => {
     const tagChips = filteredTags.slice(0, maxVisibleTags).map(({tag, count}) => (
       <Chip
         onClick={() => props.setSearchTags([...props.searchTags, tag])}
-        className={classes.tagChip}
         label={`${getTagDisplayText(tag)} (${count})`}
+        className={classes.tagChip}
       />
     ));
 

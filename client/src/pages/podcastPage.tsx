@@ -1,4 +1,4 @@
-import {CircularProgress, Typography, IconButton, Chip} from '@mui/material';
+import {CircularProgress, Typography, IconButton, Chip, Theme} from '@mui/material';
 import {makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
@@ -8,7 +8,7 @@ import {ShowInfo} from '../components/showCard';
 import {PlayArrow as PlayArrowIcon} from '@mui/icons-material';
 import {getTagDisplayText} from '../helper/tagFormatting';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     margin: '10px'
   },
@@ -42,6 +42,9 @@ const useStyles = makeStyles((theme) => ({
   playButton: {
     height: '100%',
     marginRight: '8px'
+  },
+  tagChip: {
+    margin: theme.spacing(0.5)
   }
 }));
 
@@ -102,8 +105,8 @@ export const PodcastPage = (props: PodcastPageProps) => {
             <div className={classes.tagWrapper}>
               {podcast.tags.map((tag) => (
                 <Chip
+                  className={classes.tagChip}
                   label={getTagDisplayText(tag)}
-                  sx={{padding: 0.5}}
                 />
               ))}
             </div>

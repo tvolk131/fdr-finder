@@ -12,7 +12,7 @@ import {ShowInfo} from './showCard';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      display: 'flex',
+      display: 'table',
       bottom: '0%',
       width: '100%',
       position: 'sticky',
