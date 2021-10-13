@@ -8,7 +8,7 @@ edition = "2018"
 chrono          = "0.4.19"
 hex             = "0.4.3"
 meilisearch-sdk = { version = "0.9.0", features = ["sync"] }
-reqwest         = { version = "0.11.4", default-features = false, features = ["json", "rustls-tls"] }
+reqwest         = { version = "0.11.5", default-features = false, features = ["json", "rustls-tls"] }
 rocket          = "0.5.0-rc.1"
 rss             = "1.10.0"
 serde           = { version = "1.0.130", features = ["derive"] }
