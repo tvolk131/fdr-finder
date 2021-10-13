@@ -1,11 +1,10 @@
-import {blue, teal} from '@material-ui/core/colors';
+import {blue, teal} from '@mui/material/colors';
 import {
   createTheme,
-  MuiThemeProvider,
-  makeStyles,
-  createStyles,
+  ThemeProvider,
   Theme
-} from '@material-ui/core/styles';
+} from '@mui/material/styles';
+import {createStyles, makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState} from 'react';
 import {Route, Switch} from 'react-router';
@@ -15,7 +14,7 @@ import {NotFoundPage} from './pages/notFoundPage';
 import {PodcastPage} from './pages/podcastPage';
 import {AudioPlayer} from './components/audioPlayer';
 import {ShowInfo} from './components/showCard';
-import {Snackbar} from '@material-ui/core';
+import {Snackbar} from '@mui/material';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -89,22 +88,23 @@ const ThemedSubApp = () => {
     palette: {
       primary: blue,
       secondary: teal,
-      type: isDarkMode ? 'dark' : 'light'
+      mode: isDarkMode ? 'dark' : 'light'
     },
-    props: {
-      MuiAppBar: {
-        color: isDarkMode ? 'default' : 'primary'
-      },
-      MuiTypography: {
-        color: 'textPrimary'
-      }
-    }
+    // TODO - Uncomment and fix this block.
+    // components: {
+    //   MuiAppBar: {
+    //     color: isDarkMode ? 'default' : 'primary'
+    //   },
+    //   MuiTypography: {
+    //     color: 'textPrimary'
+    //   }
+    // }
   });
 
   return (
-    <MuiThemeProvider theme={theme}>
+    <ThemeProvider theme={theme}>
       <SubApp/>
-    </MuiThemeProvider>
+    </ThemeProvider>
   );
 };
 

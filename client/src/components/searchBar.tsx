@@ -8,10 +8,11 @@ import {
   Chip,
   CircularProgress,
   TextField
-} from '@material-ui/core';
-import {Autocomplete} from '@material-ui/lab';
-import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
-import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@material-ui/icons';
+} from '@mui/material';
+import {Autocomplete} from '@mui/lab';
+import {Theme} from '@mui/material/styles';
+import {createStyles, makeStyles} from '@mui/styles';
+import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@mui/icons-material';
 import * as React from 'react';
 import {MouseEvent, useState} from 'react';
 import {getTagDisplayText} from '../helper/tagFormatting';

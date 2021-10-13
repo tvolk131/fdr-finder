@@ -1,6 +1,6 @@
-import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton} from '@material-ui/core';
-import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@material-ui/icons';
-import {makeStyles} from '@material-ui/core/styles';
+import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton} from '@mui/material';
+import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@mui/icons-material';
+import {makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState} from 'react';
 import {useHistory} from 'react-router';
@@ -21,9 +21,7 @@ const useStyles = makeStyles((theme) => ({
   expand: {
     float: 'right',
     marginLeft: 'auto',
-    transition: theme.transitions.create('transform', {
-      duration: theme.transitions.duration.shortest
-    })
+    transition: 'transform 500ms'
   },
   expandClosed: {
     transform: 'rotate(0deg)'
@@ -33,9 +31,6 @@ const useStyles = makeStyles((theme) => ({
   },
   descriptionText: {
     whiteSpace: 'pre-wrap'
-  },
-  tagChip: {
-    margin: theme.spacing(0.5)
   }
 }));
 
@@ -96,8 +91,8 @@ const ShowCard = (props: ShowCardProps) => {
               <div>
                 {props.show.tags.map((tag) => (
                   <Chip
-                    className={classes.tagChip}
                     label={getTagDisplayText(tag)}
+                    sx={{padding: 0.5}}
                   />
                 ))}
               </div>
