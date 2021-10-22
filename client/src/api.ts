@@ -36,8 +36,8 @@ async (data: {query?: string, limit?: number, offset?: number, tags?: string[]})
     queryParams[tagsFieldName] = data.tags.join(',');
   }
 
-  const res = await axios.get(generateUrlWithQueryParams('/api/search/podcasts', queryParams));
-  return {...res.data, hits: res.data.hits.map(deserializeShowInfo)};
+  const resData = (await axios.get(generateUrlWithQueryParams('/api/search/podcasts', queryParams))).data as any;
+  return {...resData, hits: resData.hits.map(deserializeShowInfo)};
 };
 
 export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {
@@ -72,7 +72,7 @@ Promise<{tags: {tag: string, count: number}[], remainingTagCount: number}> => {
     queryParams[filterFieldName] = data.filter;
   }
 
-  return (await axios.get(generateUrlWithQueryParams('/api/filteredTagsWithCounts', queryParams))).data;
+  return (await axios.get(generateUrlWithQueryParams('/api/filteredTagsWithCounts', queryParams))).data as any;
 }
 
 export const generateUrlWithQueryParams =

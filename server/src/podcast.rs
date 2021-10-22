@@ -184,11 +184,9 @@ impl Podcast {
                     .url(self.audio_link.clone())
                     .mime_type("audio/mpeg")
                     .length(format!("{}", self.length_in_seconds))
-                    .build()
-                    .unwrap(),
+                    .build(),
             )
             .build()
-            .unwrap()
     }
 
     pub fn get_podcast_number(&self) -> &PodcastNumber {
@@ -246,8 +244,7 @@ pub fn generate_rss_feed(
                 .map(|podcast| podcast.to_rss_item())
                 .collect::<Vec<rss::Item>>(),
         )
-        .build()
-        .unwrap();
+        .build();
 
     RssFeed::new(channel)
 }
