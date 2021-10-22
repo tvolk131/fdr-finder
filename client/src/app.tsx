@@ -14,12 +14,11 @@ import {NotFoundPage} from './pages/notFoundPage';
 import {PodcastPage} from './pages/podcastPage';
 import {AudioPlayer} from './components/audioPlayer';
 import {ShowInfo} from './components/showCard';
-import {Snackbar} from '@mui/material';
+import {Box, Snackbar} from '@mui/material';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      backgroundColor: theme.palette.background.default,
       display: 'flex',
       flexDirection: 'column',
       minHeight: '100vh'
@@ -43,7 +42,7 @@ const SubApp = () => {
   };
 
   return (
-    <div className={classes.root}>
+    <Box sx={{backgroundColor: 'background.default', color: 'text.primary'}} className={classes.root}>
       {/* This meta tag makes the mobile experience
       much better by preventing text from being tiny. */}
       <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
@@ -77,7 +76,7 @@ const SubApp = () => {
         }}
         message={snackbarMessage}
       />
-    </div>
+    </Box>
   );
 };
 
@@ -90,15 +89,6 @@ const ThemedSubApp = () => {
       secondary: teal,
       mode: isDarkMode ? 'dark' : 'light'
     }
-    // TODO - Uncomment and fix this block.
-    // components: {
-    //   MuiAppBar: {
-    //     color: isDarkMode ? 'default' : 'primary'
-    //   },
-    //   MuiTypography: {
-    //     color: 'textPrimary'
-    //   }
-    // }
   });
 
   return (
