@@ -34,7 +34,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   tagChip: {
     margin: theme.spacing(0.5)
-  },
+  }
 }));
 
 export interface ShowInfo {

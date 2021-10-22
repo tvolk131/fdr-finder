@@ -89,7 +89,7 @@ const ThemedSubApp = () => {
       primary: blue,
       secondary: teal,
       mode: isDarkMode ? 'dark' : 'light'
-    },
+    }
     // TODO - Uncomment and fix this block.
     // components: {
     //   MuiAppBar: {
