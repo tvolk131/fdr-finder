@@ -20,8 +20,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   expand: {
     float: 'right',
-    marginLeft: 'auto',
-    transition: 'transform 500ms'
+    marginLeft: 'auto'
   },
   expandClosed: {
     transform: 'rotate(0deg)'
@@ -75,12 +74,13 @@ const ShowCard = (props: ShowCardProps) => {
           </span>}
         subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()} - ${secondsToDurationString(props.show.lengthInSeconds)}`}
       />
-      <CardActions className={classes.actions}>
+      <CardActions className={classes.actions} sx={{display: 'block'}}>
         <IconButton onClick={props.onPlay}>
           <PlayArrowIcon/>
         </IconButton>
         <IconButton
           className={`${classes.expand} ${expanded ? classes.expandOpen : classes.expandClosed}`}
+          sx={{transition: 'transform 150ms'}}
           onClick={() => setExpanded(!expanded)}
         >
           <ExpandMoreIcon/>
