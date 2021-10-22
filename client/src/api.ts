@@ -62,7 +62,7 @@ async (data: {query?: string, tags?: string[]}): Promise<{tag: string, count: nu
     queryParams[tagsFieldName] = data.tags.join(',');
   }
 
-  return (await axios.get(generateUrlWithQueryParams('/api/filteredTagsWithCounts', queryParams))).data as {tag: string, count: number}[];
+  return (await axios.get(generateUrlWithQueryParams('/api/filteredTagsWithCounts', queryParams))).data as any;
 }
 
 export const generateUrlWithQueryParams =
