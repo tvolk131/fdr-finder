@@ -26,19 +26,14 @@ const useStyles = makeStyles((theme: Theme) => (
     },
     autocomplete: {
       marginLeft: 8,
-      flex: 1
+      flex: 1,
+      padding: '4px 0px 3px'
     },
     inputBaseRoot: {
       width: '100%'
     },
     inputBaseInput: {
       padding: '12px 0'
-    },
-    iconButton: {
-      padding: 10
-    },
-    verticalDivider: {
-      margin: '0 5px'
     },
     tagSearchFieldWrapper: {
       display: 'block',
@@ -49,8 +44,8 @@ const useStyles = makeStyles((theme: Theme) => (
       width: '100%',
       textAlign: 'center'
     },
-    accordionSummaryContent: {
-      margin: '8px 0'
+    accordionExpandIconWrapper: {
+      marginLeft: '10px'
     },
     loadingSpinner: {
       marginTop: '12px'
@@ -60,9 +55,14 @@ const useStyles = makeStyles((theme: Theme) => (
 
 const maxVisibleTags = 50;
 
-const ListItem = styled('div')(({theme}) => ({
+const SelectableChipWrapper = styled('div')(({theme}) => ({
   margin: theme.spacing(0.5),
   display: 'inline-flex'
+}));
+
+const DeletableChipWrapper = styled('div')(({theme}) => ({
+  marginLeft: theme.spacing(0.5),
+  marginTop: '3px'
 }));
 
 interface SearchBarProps {
@@ -103,12 +103,12 @@ const SearchBar = (props: SearchBarProps) => {
       />);
     }
 
-    return tagChips.map((chip, index) => <ListItem key={index}>{chip}</ListItem>);
+    return tagChips.map((chip, index) => <SelectableChipWrapper key={index}>{chip}</SelectableChipWrapper>);
   };
 
   return (
     <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon/>} classes={{content: classes.accordionSummaryContent}}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon/>} classes={{expandIconWrapper: classes.accordionExpandIconWrapper}}>
         <div
           onClick={(event) => event.stopPropagation()}
           onFocus={(event) => event.stopPropagation()}
@@ -139,7 +139,7 @@ const SearchBar = (props: SearchBarProps) => {
           />
           {!!props.searchText.length && (
             <IconButton
-              className={classes.iconButton}
+              sx={{padding: '7px'}}
               onMouseDown={handleMouseDownSearch}
               onClick={() => {
                 props.setSearchText('');
@@ -148,12 +148,14 @@ const SearchBar = (props: SearchBarProps) => {
               <CloseIcon/>
             </IconButton>
           )}
-          {!!props.searchText.length && <Divider className={classes.verticalDivider} orientation={'vertical'}/>}
-          {!!props.searchTags.length && props.searchTags.map((tag) => (
-            <Chip
-              onDelete={() => props.setSearchTags(props.searchTags.filter((iterTag) => tag !== iterTag))}
-              label={getTagDisplayText(tag)}
-            />
+          {!!props.searchText.length && <Divider sx={{marginLeft: '4px'}} orientation={'vertical'}/>}
+          {!!props.searchTags.length && props.searchTags.map((tag, index) => (
+            <DeletableChipWrapper key={index}>
+              <Chip
+                onDelete={() => props.setSearchTags(props.searchTags.filter((iterTag) => tag !== iterTag))}
+                label={getTagDisplayText(tag)}
+              />
+            </DeletableChipWrapper>
           ))}
         </div>
       </AccordionSummary>
