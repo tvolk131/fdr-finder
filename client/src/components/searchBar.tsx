@@ -10,7 +10,7 @@ import {
   TextField
 } from '@mui/material';
 import {Autocomplete} from '@mui/lab';
-import {Theme} from '@mui/material/styles';
+import {Theme, styled} from '@mui/material/styles';
 import {createStyles, makeStyles} from '@mui/styles';
 import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@mui/icons-material';
 import * as React from 'react';
@@ -40,9 +40,6 @@ const useStyles = makeStyles((theme: Theme) => (
     verticalDivider: {
       margin: '0 5px'
     },
-    tagChip: {
-      margin: theme.spacing(0.5)
-    },
     tagSearchFieldWrapper: {
       display: 'block',
       textAlign: 'center',
@@ -62,6 +59,11 @@ const useStyles = makeStyles((theme: Theme) => (
 ));
 
 const maxVisibleTags = 50;
+
+const ListItem = styled('div')(({theme}) => ({
+  margin: theme.spacing(0.5),
+  display: 'inline-flex'
+}));
 
 interface SearchBarProps {
   searchText: string
@@ -90,7 +92,6 @@ const SearchBar = (props: SearchBarProps) => {
       <Chip
         onClick={() => props.setSearchTags([...props.searchTags, tag])}
         label={`${getTagDisplayText(tag)} (${count})`}
-        className={classes.tagChip}
       />
     ));
 
@@ -99,11 +100,10 @@ const SearchBar = (props: SearchBarProps) => {
     if (nonVisibleTagCount > 0) {
       tagChips.push(<Chip
         label={`... +${nonVisibleTagCount}`}
-        className={classes.tagChip}
       />);
     }
 
-    return tagChips;
+    return tagChips.map((chip, index) => <ListItem key={index}>{chip}</ListItem>);
   };
 
   return (
@@ -152,14 +152,13 @@ const SearchBar = (props: SearchBarProps) => {
           {!!props.searchTags.length && props.searchTags.map((tag) => (
             <Chip
               onDelete={() => props.setSearchTags(props.searchTags.filter((iterTag) => tag !== iterTag))}
-              className={classes.tagChip}
               label={getTagDisplayText(tag)}
             />
           ))}
         </div>
       </AccordionSummary>
       <Divider/>
-      <AccordionDetails>
+      <AccordionDetails sx={{padding: '15px 10px 10px 10px'}}>
         <div className={classes.advancedSearchWrapper}>
           <div className={classes.tagSearchFieldWrapper}>
             <TextField value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} label={'Tag Filter'}/>
