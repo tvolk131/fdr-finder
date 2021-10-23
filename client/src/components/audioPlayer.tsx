@@ -35,16 +35,13 @@ const useStyles = makeStyles((theme: Theme) =>
     controls: {
       display: 'flex',
       alignItems: 'center',
+      paddingLeft: theme.spacing(2),
       paddingRight: theme.spacing(2),
       position: 'relative'
     },
-    playPauseIcon: {
-      height: 38,
-      width: 38
-    },
     playPauseButtonProgress: {
       position: 'absolute',
-      left: '59px'
+      left: '64px'
     },
     sliderWrapper: {
       height: 0
@@ -184,13 +181,14 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
             aria-label='play/pause'
             onClick={() => setIsPlaying(!isPlaying)}
             disabled={disableControls}
+            sx={{margin: '5px'}}
           >
             {
-              isPlaying ? <PauseIcon className={classes.playPauseIcon}/>
-                        : <PlayArrowIcon className={classes.playPauseIcon}/>
+              isPlaying ? <PauseIcon sx={{height: '38px', width: '38px'}}/>
+                        : <PlayArrowIcon sx={{height: '38px', width: '38px'}}/>
             }
           </IconButton>
-          {isLoadingAudio && <CircularProgress className={classes.playPauseButtonProgress}/>}
+          {isLoadingAudio && <CircularProgress size={48} className={classes.playPauseButtonProgress}/>}
           <IconButton
             aria-label='next'
             onClick={() => seekRelative(30)}
