@@ -1,14 +1,14 @@
-import {CircularProgress, Typography, IconButton, Chip} from '@material-ui/core';
-import {makeStyles} from '@material-ui/core/styles';
+import {CircularProgress, Typography, IconButton, Chip, Theme} from '@mui/material';
+import {makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 import {useParams} from 'react-router';
 import {getPodcast} from '../api';
 import {ShowInfo} from '../components/showCard';
-import {PlayArrow as PlayArrowIcon} from '@material-ui/icons';
+import {PlayArrow as PlayArrowIcon} from '@mui/icons-material';
 import {getTagDisplayText} from '../helper/tagFormatting';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     margin: '10px'
   },
