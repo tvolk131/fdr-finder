@@ -1,53 +1,113 @@
-import {IconButton, InputBase, AccordionSummary, Accordion, AccordionDetails, Divider} from '@material-ui/core';
-import {makeStyles} from '@material-ui/core/styles';
-import {Search as SearchIcon} from '@material-ui/icons';
+import {
+  IconButton,
+  InputBase,
+  AccordionSummary,
+  Accordion,
+  AccordionDetails,
+  Divider,
+  Chip,
+  CircularProgress,
+  TextField
+} from '@mui/material';
+import {Autocomplete} from '@mui/lab';
+import {Theme, styled} from '@mui/material/styles';
+import {createStyles, makeStyles} from '@mui/styles';
+import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@mui/icons-material';
 import * as React from 'react';
 import {MouseEvent, useState} from 'react';
-import AdvancedSearchMenu from '../components/advancedSearchMenu';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import {getTagDisplayText} from '../helper/tagFormatting';
 
-const useStyles = makeStyles({
-  root: {
-    padding: '2px 4px',
-    display: 'flex',
-    alignItems: 'center'
-  },
-  input: {
-    marginLeft: 8,
-    flex: 1
-  },
-  iconButton: {
-    padding: 10
-  },
-  divider: {
-    width: 1,
-    height: 28,
-    margin: 4
-  }
-});
+const useStyles = makeStyles((theme: Theme) => (
+  createStyles({
+    root: {
+      padding: '2px 4px',
+      display: 'flex',
+      alignItems: 'center'
+    },
+    autocomplete: {
+      marginLeft: 8,
+      flex: 1,
+      padding: '4px 0px 3px'
+    },
+    inputBaseRoot: {
+      width: '100%'
+    },
+    inputBaseInput: {
+      padding: '12px 0'
+    },
+    tagSearchFieldWrapper: {
+      display: 'block',
+      textAlign: 'center',
+      paddingBottom: theme.spacing(0.75)
+    },
+    advancedSearchWrapper: {
+      width: '100%',
+      textAlign: 'center'
+    },
+    accordionExpandIconWrapper: {
+      marginLeft: '10px'
+    },
+    loadingSpinner: {
+      marginTop: '12px'
+    }
+  })
+));
+
+const maxVisibleTags = 50;
+
+const SelectableChipWrapper = styled('div')(({theme}) => ({
+  margin: theme.spacing(0.5),
+  display: 'inline-flex'
+}));
+
+const DeletableChipWrapper = styled('div')(({theme}) => ({
+  marginLeft: theme.spacing(0.5),
+  marginTop: '3px'
+}));
 
 interface SearchBarProps {
-  onSearch: () => void
   searchText: string
   setSearchText: (query: string) => void
+  tagFilter: string
+  setTagFilter: (filter: string) => void
+  searchTags: string[]
+  setSearchTags: (tags: string[]) => void
+  tagsWithCounts: {tags: {tag: string, count: number}[], remainingTagCount: number}
+  isLoadingTagsWithCounts: boolean
 }
 
 const SearchBar = (props: SearchBarProps) => {
-  const handleSearch = () => {
-    if (props.searchText.length) {
-      props.onSearch();
-    }
-  }
-
   const handleMouseDownSearch = (event: MouseEvent) => {
     event.preventDefault();
   };
 
   const classes = useStyles();
 
+  const getSelectableTagChips = () => {
+    const tagChips = props.tagsWithCounts.tags.map(({tag, count}) => (
+      <Chip
+        onClick={() => props.setSearchTags([...props.searchTags, tag])}
+        label={`${getTagDisplayText(tag)} (${count})`}
+      />
+    ));
+
+    const nonVisibleTagCount = props.tagsWithCounts.remainingTagCount;
+
+    if (nonVisibleTagCount > 0) {
+      tagChips.push(<Chip
+        label={`... +${nonVisibleTagCount}`}
+      />);
+    }
+
+    return tagChips.map((chip, index) => <SelectableChipWrapper key={index}>{chip}</SelectableChipWrapper>);
+  };
+
   return (
     <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon/>}
+        classes={{expandIconWrapper: classes.accordionExpandIconWrapper}}
+      >
         <div
           onClick={(event) => event.stopPropagation()}
           onFocus={(event) => event.stopPropagation()}
@@ -56,32 +116,60 @@ const SearchBar = (props: SearchBarProps) => {
             display: 'flex'
           }}
         >
-          <InputBase
-            className={classes.input}
-            placeholder='Search Freedomain Videos'
-            value={props.searchText}
-            onChange={(event) => {
-              props.setSearchText(event.target.value);
-            }}
-            onKeyPress={(event) => {
-              if (event.key === 'Enter') {
-                handleSearch();
+          <Autocomplete
+            freeSolo
+            options={[]} // TODO - Re-enable autocomplete suggestions by setting some state here.
+            className={classes.autocomplete}
+            inputValue={props.searchText}
+            onInputChange={(event, value, reason) => {
+              if (!(value.length === 0 && reason === 'reset')) {
+                props.setSearchText(value);
               }
             }}
-            onSubmit={handleSearch}
+            renderInput={(params: any) => (
+              <div ref={params.InputProps.ref}>
+                <InputBase
+                  classes={{root: classes.inputBaseRoot, input: classes.inputBaseInput}}
+                  placeholder='Search Freedomain Videos'
+                  {...params.inputProps}
+                />
+              </div>
+            )}
           />
-          <IconButton
-            className={classes.iconButton}
-            onMouseDown={handleMouseDownSearch}
-            onClick={handleSearch}
-          >
-            <SearchIcon/>
-          </IconButton>
+          {!!props.searchText.length && (
+            <IconButton
+              sx={{padding: '7px'}}
+              onMouseDown={handleMouseDownSearch}
+              onClick={() => {
+                props.setSearchText('');
+              }}
+            >
+              <CloseIcon/>
+            </IconButton>
+          )}
+          {!!props.searchText.length && <Divider sx={{marginLeft: '4px'}} orientation={'vertical'}/>}
+          {!!props.searchTags.length && props.searchTags.map((tag, index) => (
+            <DeletableChipWrapper key={index}>
+              <Chip
+                onDelete={() => props.setSearchTags(props.searchTags.filter((iterTag) => tag !== iterTag))}
+                label={getTagDisplayText(tag)}
+              />
+            </DeletableChipWrapper>
+          ))}
         </div>
       </AccordionSummary>
       <Divider/>
-      <AccordionDetails>
-        <AdvancedSearchMenu/>
+      <AccordionDetails sx={{padding: '15px 10px 10px 10px'}}>
+        <div className={classes.advancedSearchWrapper}>
+          <div className={classes.tagSearchFieldWrapper}>
+            <TextField
+              value={props.tagFilter}
+              onChange={(e) => props.setTagFilter(e.target.value)} label={'Tag Filter'}
+            />
+          </div>
+          {props.isLoadingTagsWithCounts ?
+            <CircularProgress className={classes.loadingSpinner}/> : getSelectableTagChips()}
+        </div>
       </AccordionDetails>
     </Accordion>
   );

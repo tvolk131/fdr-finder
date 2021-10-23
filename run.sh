@@ -1,4 +1,4 @@
-# TODO - If client build fails, fail and don't start server.
+set -e # If any stage fails, don't continue.
 sh build.sh
 cd ./server
 cargo run

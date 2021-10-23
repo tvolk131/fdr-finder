@@ -1,11 +1,13 @@
-import {Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton} from '@material-ui/core';
-import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@material-ui/icons';
-import {makeStyles} from '@material-ui/core/styles';
+import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton, Theme} from '@mui/material';
+import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@mui/icons-material';
+import {makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState} from 'react';
 import {useHistory} from 'react-router';
+import {getTagDisplayText} from '../helper/tagFormatting';
+import {secondsToDurationString} from '../helper/secondsToDurationString';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   title: {
     display: 'flex',
     cursor: 'pointer'
@@ -18,10 +20,7 @@ const useStyles = makeStyles((theme) => ({
   },
   expand: {
     float: 'right',
-    marginLeft: 'auto',
-    transition: theme.transitions.create('transform', {
-      duration: theme.transitions.duration.shortest
-    })
+    marginLeft: 'auto'
   },
   expandClosed: {
     transform: 'rotate(0deg)'
@@ -31,18 +30,11 @@ const useStyles = makeStyles((theme) => ({
   },
   descriptionText: {
     whiteSpace: 'pre-wrap'
+  },
+  tagChip: {
+    margin: theme.spacing(0.5)
   }
 }));
-
-export enum ShowFormat {
-  Interview,
-  Presentation,
-  CallIn,
-  Roundtable,
-  SoloPodcast,
-  Livestream,
-  Unspecified // TODO - Remove this variant.
-}
 
 export interface ShowInfo {
   title: string
@@ -51,7 +43,7 @@ export interface ShowInfo {
   lengthInSeconds: number
   podcastNumber: number
   createTime: Date
-  showFormat: ShowFormat
+  tags: string[]
 }
 
 interface ShowCardProps {
@@ -80,14 +72,15 @@ const ShowCard = (props: ShowCardProps) => {
             </Typography>
             {props.show.title}
           </span>}
-        subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()}`}
+        subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()} - ${secondsToDurationString(props.show.lengthInSeconds)}`}
       />
-      <CardActions className={classes.actions}>
+      <CardActions className={classes.actions} sx={{display: 'block'}}>
         <IconButton onClick={props.onPlay}>
           <PlayArrowIcon/>
         </IconButton>
         <IconButton
           className={`${classes.expand} ${expanded ? classes.expandOpen : classes.expandClosed}`}
+          sx={{transition: 'transform 150ms'}}
           onClick={() => setExpanded(!expanded)}
         >
           <ExpandMoreIcon/>
@@ -96,6 +89,17 @@ const ShowCard = (props: ShowCardProps) => {
       <Collapse in={expanded} timeout='auto' unmountOnExit>
         <CardContent>
           <Typography paragraph className={classes.descriptionText}>{props.show.description}</Typography>
+          {
+            !!props.show.tags.length &&
+              <div>
+                {props.show.tags.map((tag) => (
+                  <Chip
+                    className={classes.tagChip}
+                    label={getTagDisplayText(tag)}
+                  />
+                ))}
+              </div>
+          }
         </CardContent>
       </Collapse>
     </Card>

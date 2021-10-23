@@ -17,6 +17,11 @@ spec:
         image: <IMAGE>
         ports:
         - containerPort: 80
+        env:
+        - name: MEILISEARCH_HOST
+          value: "<MEILISEARCH_HOST>"
+        - name: MEILISEARCH_API_KEY
+          value: "<MEILISEARCH_API_KEY>"
 ---
 apiVersion: v1
 kind: Service

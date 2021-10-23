@@ -1,17 +1,18 @@
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
-import {Theme, createStyles, makeStyles, useTheme} from '@material-ui/core/styles';
-import PlayArrowIcon from '@material-ui/icons/PlayArrow';
-import PauseIcon from '@material-ui/icons/Pause';
-import Forward30Icon from '@material-ui/icons/Forward30';
-import Replay10Icon from '@material-ui/icons/Replay10';
-import {Slider, IconButton, Typography, Paper} from '@material-ui/core';
+import {Theme, useTheme} from '@mui/material/styles';
+import {createStyles, makeStyles} from '@mui/styles';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import Forward30Icon from '@mui/icons-material/Forward30';
+import Replay10Icon from '@mui/icons-material/Replay10';
+import {Slider, IconButton, Typography, Paper, CircularProgress} from '@mui/material';
 import {ShowInfo} from './showCard';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      display: 'flex',
+      display: 'table',
       bottom: '0%',
       width: '100%',
       position: 'sticky',
@@ -34,11 +35,13 @@ const useStyles = makeStyles((theme: Theme) =>
     controls: {
       display: 'flex',
       alignItems: 'center',
-      paddingRight: theme.spacing(2)
+      paddingLeft: theme.spacing(2),
+      paddingRight: theme.spacing(2),
+      position: 'relative'
     },
-    playPauseIcon: {
-      height: 38,
-      width: 38
+    playPauseButtonProgress: {
+      position: 'absolute',
+      left: '64px'
     },
     sliderWrapper: {
       height: 0
@@ -53,6 +56,7 @@ const useStyles = makeStyles((theme: Theme) =>
 interface AudioPlayerProps {
   showInfo?: ShowInfo
   autoPlay: boolean
+  showSnackbarMessage(message: string): void
 }
 
 export const AudioPlayer = (props: AudioPlayerProps) => {
@@ -60,13 +64,12 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   const theme = useTheme();
 
   const [trackProgress, setTrackProgress] = useState(0);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [failedToLoad, setFailedToLoad] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const audioRef = useRef(new Audio(props.showInfo?.audioLink));
   const intervalRef = useRef<NodeJS.Timeout>();
-
-  audioRef.current.onpause = () => setIsPlaying(false);
-  audioRef.current.onplay = () => setIsPlaying(true);
 
 	const startTimer = () => {
     if (intervalRef.current) {
@@ -74,13 +77,28 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     }
 
 	  intervalRef.current = setInterval(() => {
-	    if (audioRef.current.ended) {
-	      setIsPlaying(false);
-	    } else {
+	    if (!audioRef.current.ended) {
 	      setTrackProgress(audioRef.current.currentTime);
-	    }
+      }
 	  }, 50);
 	}
+
+  useEffect(() => {
+    audioRef.current.onplay = () => setIsPlaying(true);
+    audioRef.current.onpause = () => setIsPlaying(false);
+    audioRef.current.onplaying = () => setIsLoadingAudio(false);
+    audioRef.current.onended = () => setIsPlaying(false);
+  }, []);
+
+  useEffect(() => {
+    audioRef.current.onerror = () => {
+      if (props.showInfo !== undefined) {
+        setIsLoadingAudio(false);
+        setFailedToLoad(true);
+        props.showSnackbarMessage('Failed to load podcast. Try again or check devtools for details.');
+      }
+    };
+  }, [props.showInfo]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -96,6 +114,10 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   useEffect(() => {
     audioRef.current.src = props.showInfo?.audioLink || '';
+    setFailedToLoad(false);
+    if (props.showInfo) {
+      setIsLoadingAudio(true);
+    }
     if (props.autoPlay) {
       setIsPlaying(true);
       audioRef.current.play();
@@ -109,6 +131,8 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     audioRef.current.currentTime += seconds;
     setTrackProgress(audioRef.current.currentTime);
   };
+
+  const disableControls = isLoadingAudio || failedToLoad || props.showInfo === undefined;
 
   return (
     <Paper className={classes.root}>
@@ -138,10 +162,10 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
       </div>
       <div className={classes.details}>
         <div className={classes.content}>
-          <Typography component='h5' variant='h5'>
+          <Typography color={failedToLoad ? 'error' : 'inherit'} component='h5' variant='h5'>
             {props.showInfo ? props.showInfo.title : '-----'}
           </Typography>
-          <Typography variant='subtitle1' color='textSecondary'>
+          <Typography variant='subtitle1' color={failedToLoad ? 'error' : 'textSecondary'}>
             {props.showInfo ? props.showInfo.podcastNumber : '-----'}
           </Typography>
         </div>
@@ -149,24 +173,26 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           <IconButton
             aria-label='previous'
             onClick={() => seekRelative(-10)}
-            disabled={props.showInfo === undefined}
+            disabled={disableControls}
           >
             {theme.direction === 'rtl' ? <Forward30Icon/> : <Replay10Icon/>}
           </IconButton>
           <IconButton
             aria-label='play/pause'
             onClick={() => setIsPlaying(!isPlaying)}
-            disabled={props.showInfo === undefined}
+            disabled={disableControls}
+            sx={{margin: '5px'}}
           >
             {
-              isPlaying ? <PauseIcon className={classes.playPauseIcon}/>
-                        : <PlayArrowIcon className={classes.playPauseIcon}/>
+              isPlaying ? <PauseIcon sx={{height: '38px', width: '38px'}}/>
+                        : <PlayArrowIcon sx={{height: '38px', width: '38px'}}/>
             }
           </IconButton>
+          {isLoadingAudio && <CircularProgress size={48} className={classes.playPauseButtonProgress}/>}
           <IconButton
             aria-label='next'
             onClick={() => seekRelative(30)}
-            disabled={props.showInfo === undefined}
+            disabled={disableControls}
           >
             {theme.direction === 'rtl' ? <Replay10Icon/> : <Forward30Icon/>}
           </IconButton>
