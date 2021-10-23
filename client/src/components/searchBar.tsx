@@ -8,10 +8,11 @@ import {
   Chip,
   CircularProgress,
   TextField
-} from '@material-ui/core';
-import {Autocomplete} from '@material-ui/lab';
-import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
-import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@material-ui/icons';
+} from '@mui/material';
+import {Autocomplete} from '@mui/lab';
+import {Theme, styled} from '@mui/material/styles';
+import {createStyles, makeStyles} from '@mui/styles';
+import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@mui/icons-material';
 import * as React from 'react';
 import {MouseEvent, useState} from 'react';
 import {getTagDisplayText} from '../helper/tagFormatting';
@@ -25,22 +26,14 @@ const useStyles = makeStyles((theme: Theme) => (
     },
     autocomplete: {
       marginLeft: 8,
-      flex: 1
+      flex: 1,
+      padding: '4px 0px 3px'
     },
     inputBaseRoot: {
       width: '100%'
     },
     inputBaseInput: {
       padding: '12px 0'
-    },
-    iconButton: {
-      padding: 10
-    },
-    verticalDivider: {
-      margin: '0 5px'
-    },
-    tagChip: {
-      margin: theme.spacing(0.5)
     },
     tagSearchFieldWrapper: {
       display: 'block',
@@ -51,8 +44,8 @@ const useStyles = makeStyles((theme: Theme) => (
       width: '100%',
       textAlign: 'center'
     },
-    accordionSummaryContent: {
-      margin: '8px 0'
+    accordionExpandIconWrapper: {
+      marginLeft: '10px'
     },
     loadingSpinner: {
       marginTop: '12px'
@@ -62,18 +55,28 @@ const useStyles = makeStyles((theme: Theme) => (
 
 const maxVisibleTags = 50;
 
+const SelectableChipWrapper = styled('div')(({theme}) => ({
+  margin: theme.spacing(0.5),
+  display: 'inline-flex'
+}));
+
+const DeletableChipWrapper = styled('div')(({theme}) => ({
+  marginLeft: theme.spacing(0.5),
+  marginTop: '3px'
+}));
+
 interface SearchBarProps {
   searchText: string
   setSearchText: (query: string) => void
+  tagFilter: string
+  setTagFilter: (filter: string) => void
   searchTags: string[]
   setSearchTags: (tags: string[]) => void
-  tagsWithCounts: {tag: string, count: number}[]
+  tagsWithCounts: {tags: {tag: string, count: number}[], remainingTagCount: number}
   isLoadingTagsWithCounts: boolean
 }
 
 const SearchBar = (props: SearchBarProps) => {
-  const [tagFilter, setTagFilter] = useState('');
-
   const handleMouseDownSearch = (event: MouseEvent) => {
     event.preventDefault();
   };
@@ -81,33 +84,30 @@ const SearchBar = (props: SearchBarProps) => {
   const classes = useStyles();
 
   const getSelectableTagChips = () => {
-    const filteredTags = props.tagsWithCounts.filter(({tag}) => (
-      getTagDisplayText(tag).toLowerCase().includes(tagFilter.toLowerCase())
-    ))
-
-    const tagChips = filteredTags.slice(0, maxVisibleTags).map(({tag, count}) => (
+    const tagChips = props.tagsWithCounts.tags.map(({tag, count}) => (
       <Chip
         onClick={() => props.setSearchTags([...props.searchTags, tag])}
-        className={classes.tagChip}
         label={`${getTagDisplayText(tag)} (${count})`}
       />
     ));
 
-    const nonVisibleTagCount = filteredTags.length - maxVisibleTags;
+    const nonVisibleTagCount = props.tagsWithCounts.remainingTagCount;
 
     if (nonVisibleTagCount > 0) {
       tagChips.push(<Chip
         label={`... +${nonVisibleTagCount}`}
-        className={classes.tagChip}
       />);
     }
 
-    return tagChips;
+    return tagChips.map((chip, index) => <SelectableChipWrapper key={index}>{chip}</SelectableChipWrapper>);
   };
 
   return (
     <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon/>} classes={{content: classes.accordionSummaryContent}}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon/>}
+        classes={{expandIconWrapper: classes.accordionExpandIconWrapper}}
+      >
         <div
           onClick={(event) => event.stopPropagation()}
           onFocus={(event) => event.stopPropagation()}
@@ -138,7 +138,7 @@ const SearchBar = (props: SearchBarProps) => {
           />
           {!!props.searchText.length && (
             <IconButton
-              className={classes.iconButton}
+              sx={{padding: '7px'}}
               onMouseDown={handleMouseDownSearch}
               onClick={() => {
                 props.setSearchText('');
@@ -147,21 +147,25 @@ const SearchBar = (props: SearchBarProps) => {
               <CloseIcon/>
             </IconButton>
           )}
-          {!!props.searchText.length && <Divider className={classes.verticalDivider} orientation={'vertical'}/>}
-          {!!props.searchTags.length && props.searchTags.map((tag) => (
-            <Chip
-              onDelete={() => props.setSearchTags(props.searchTags.filter((iterTag) => tag !== iterTag))}
-              className={classes.tagChip}
-              label={getTagDisplayText(tag)}
-            />
+          {!!props.searchText.length && <Divider sx={{marginLeft: '4px'}} orientation={'vertical'}/>}
+          {!!props.searchTags.length && props.searchTags.map((tag, index) => (
+            <DeletableChipWrapper key={index}>
+              <Chip
+                onDelete={() => props.setSearchTags(props.searchTags.filter((iterTag) => tag !== iterTag))}
+                label={getTagDisplayText(tag)}
+              />
+            </DeletableChipWrapper>
           ))}
         </div>
       </AccordionSummary>
       <Divider/>
-      <AccordionDetails>
+      <AccordionDetails sx={{padding: '15px 10px 10px 10px'}}>
         <div className={classes.advancedSearchWrapper}>
           <div className={classes.tagSearchFieldWrapper}>
-            <TextField value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} label={'Tag Filter'}/>
+            <TextField
+              value={props.tagFilter}
+              onChange={(e) => props.setTagFilter(e.target.value)} label={'Tag Filter'}
+            />
           </div>
           {props.isLoadingTagsWithCounts ?
             <CircularProgress className={classes.loadingSpinner}/> : getSelectableTagChips()}

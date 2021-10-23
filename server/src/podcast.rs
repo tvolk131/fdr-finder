@@ -22,6 +22,10 @@ impl PodcastTag {
     pub fn clone_to_string(&self) -> String {
         self.0.to_string()
     }
+
+    pub fn to_string(&self) -> &str {
+        &self.0
+    }
 }
 
 #[derive(Clone, Debug, Eq)]
@@ -180,11 +184,9 @@ impl Podcast {
                     .url(self.audio_link.clone())
                     .mime_type("audio/mpeg")
                     .length(format!("{}", self.length_in_seconds))
-                    .build()
-                    .unwrap(),
+                    .build(),
             )
             .build()
-            .unwrap()
     }
 
     pub fn get_podcast_number(&self) -> &PodcastNumber {
@@ -242,8 +244,7 @@ pub fn generate_rss_feed(
                 .map(|podcast| podcast.to_rss_item())
                 .collect::<Vec<rss::Item>>(),
         )
-        .build()
-        .unwrap();
+        .build();
 
     RssFeed::new(channel)
 }

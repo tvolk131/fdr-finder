@@ -1,11 +1,13 @@
 use crate::podcast::{Podcast, PodcastTag};
 
+mod cache;
 mod meilisearch;
 
 pub use meilisearch::SearchResult;
 
 pub struct SearchBackend {
     meilisearch_backend_or: Option<meilisearch::MeilisearchBackend>, // Only `None` if running in mock mode.
+    search_cache: cache::SearchCache,
 }
 
 impl SearchBackend {
@@ -14,12 +16,14 @@ impl SearchBackend {
             meilisearch_backend_or: Some(
                 meilisearch::MeilisearchBackend::new(meilisearch_host, meilisearch_api_key).await,
             ),
+            search_cache: cache::SearchCache::new(10000),
         }
     }
 
     pub fn new_mock() -> Self {
         Self {
             meilisearch_backend_or: None,
+            search_cache: cache::SearchCache::new(0),
         }
     }
 
@@ -32,8 +36,8 @@ impl SearchBackend {
     ) -> SearchResult {
         match &self.meilisearch_backend_or {
             Some(meilisearch_backend) => {
-                meilisearch_backend
-                    .search(query_or, tags, limit_or.unwrap_or(99999999), offset)
+                self.search_cache
+                    .search(query_or, tags, limit_or, offset, meilisearch_backend)
                     .await
             }
             None => meilisearch::generate_mock_search_results(),

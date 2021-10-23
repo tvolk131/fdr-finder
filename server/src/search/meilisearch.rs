@@ -91,10 +91,10 @@ impl MeilisearchBackend {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchResult {
-    hits: Vec<Podcast>,
+    pub hits: Vec<Podcast>,
     total_hits: usize,
     total_hits_is_approximate: bool,
     processing_time_ms: usize,

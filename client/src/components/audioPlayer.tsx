@@ -1,11 +1,12 @@
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
-import {Theme, createStyles, makeStyles, useTheme} from '@material-ui/core/styles';
-import PlayArrowIcon from '@material-ui/icons/PlayArrow';
-import PauseIcon from '@material-ui/icons/Pause';
-import Forward30Icon from '@material-ui/icons/Forward30';
-import Replay10Icon from '@material-ui/icons/Replay10';
-import {Slider, IconButton, Typography, Paper, CircularProgress} from '@material-ui/core';
+import {Theme, useTheme} from '@mui/material/styles';
+import {createStyles, makeStyles} from '@mui/styles';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import Forward30Icon from '@mui/icons-material/Forward30';
+import Replay10Icon from '@mui/icons-material/Replay10';
+import {Slider, IconButton, Typography, Paper, CircularProgress} from '@mui/material';
 import {ShowInfo} from './showCard';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -19,7 +20,7 @@ const useStyles = makeStyles((theme: Theme) =>
       }
     },
     root: {
-      display: 'flex',
+      display: 'table',
       bottom: '0%',
       width: '100%',
       position: 'sticky',
@@ -57,16 +58,13 @@ const useStyles = makeStyles((theme: Theme) =>
     controls: {
       display: 'flex',
       alignItems: 'center',
+      paddingLeft: theme.spacing(2),
       paddingRight: theme.spacing(2),
       position: 'relative'
     },
-    playPauseIcon: {
-      height: 38,
-      width: 38
-    },
     playPauseButtonProgress: {
       position: 'absolute',
-      left: '59px'
+      left: '64px'
     },
     sliderWrapper: {
       height: 0
@@ -213,13 +211,14 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
             aria-label='play/pause'
             onClick={() => setIsPlaying(!isPlaying)}
             disabled={disableControls}
+            sx={{margin: '5px'}}
           >
             {
-              isPlaying ? <PauseIcon className={classes.playPauseIcon}/>
-                        : <PlayArrowIcon className={classes.playPauseIcon}/>
+              isPlaying ? <PauseIcon sx={{height: '38px', width: '38px'}}/>
+                        : <PlayArrowIcon sx={{height: '38px', width: '38px'}}/>
             }
           </IconButton>
-          {isLoadingAudio && <CircularProgress className={classes.playPauseButtonProgress}/>}
+          {isLoadingAudio && <CircularProgress size={48} className={classes.playPauseButtonProgress}/>}
           <IconButton
             aria-label='next'
             onClick={() => seekRelative(30)}

@@ -149,10 +149,13 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
     )
 }
 
-#[get("/filteredTagsWithCounts?<query>&<tags>")]
+#[get("/filteredTagsWithCounts?<query>&<limit>&<offset>&<tags>&<filter>")]
 async fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
+    limit: Option<usize>,
+    offset: Option<usize>,
     tags: Option<String>,
+    filter: Option<String>,
     search_backend: &State<SearchBackend>,
 ) -> content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
@@ -183,7 +186,45 @@ async fn get_filtered_tags_with_counts_handler<'a>(
         counts_by_tag.remove(tag);
     }
 
-    let json_tag_array: Value = counts_by_tag
+    let mut counts_list: Vec<(PodcastTag, usize)> = counts_by_tag.into_iter().collect();
+    if let Some(filter) = filter {
+        counts_list = counts_list
+            .into_iter()
+            .filter(|(tag, _count)| {
+                tag.to_string()
+                    .to_lowercase()
+                    .contains(&filter.to_lowercase())
+            })
+            .collect();
+    }
+    counts_list.sort_by(|(tag_one, count_one), (tag_two, count_two)| {
+        let count_ordering = count_two.cmp(count_one);
+        if count_ordering == std::cmp::Ordering::Equal {
+            return tag_one
+                .to_string()
+                .to_lowercase()
+                .cmp(&tag_two.to_string().to_lowercase());
+        } else {
+            count_ordering
+        }
+    });
+    let pretrimmed_tag_count = counts_list.len();
+    if let Some(mut offset) = offset {
+        // Over-draining causes a panic.
+        // Here we're making sure that we
+        // don't drain more items than
+        // exist in the array.
+        if offset > counts_list.len() {
+            offset = counts_list.len();
+        }
+        counts_list.drain(0..offset);
+    }
+    if let Some(limit) = limit {
+        counts_list.truncate(limit);
+    }
+    let trimmed_tag_count = counts_list.len();
+
+    let json_tag_array: Value = counts_list
         .into_iter()
         .map(|(tag, count)| {
             let mut obj = Map::new();
@@ -193,7 +234,15 @@ async fn get_filtered_tags_with_counts_handler<'a>(
         })
         .collect();
 
-    content::Json(json_tag_array.to_string())
+    let mut obj = Map::new();
+    obj.insert("tags".to_string(), json_tag_array);
+    obj.insert(
+        "remainingTagCount".to_string(),
+        json!(pretrimmed_tag_count - trimmed_tag_count),
+    );
+    let json_obj = Value::Object(obj);
+
+    content::Json(json_obj.to_string())
 }
 
 #[rocket::launch]
