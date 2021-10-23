@@ -22,6 +22,10 @@ impl PodcastTag {
     pub fn clone_to_string(&self) -> String {
         self.0.to_string()
     }
+
+    pub fn to_string(&self) -> &str {
+        &self.0
+    }
 }
 
 #[derive(Clone, Debug, Eq)]
