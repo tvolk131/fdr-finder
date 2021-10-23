@@ -1,4 +1,4 @@
-import {makeStyles} from '@material-ui/core/styles';
+import {makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
 import SearchBar from '../components/searchBar';
@@ -12,9 +12,9 @@ import {
   DialogTitle,
   Snackbar,
   Typography
-} from '@material-ui/core';
+} from '@mui/material';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@material-ui/icons';
+import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@mui/icons-material';
 import {useHistory} from 'react-router';
 import {History} from 'history';
 import * as qs from 'qs';
