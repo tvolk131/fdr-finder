@@ -108,7 +108,10 @@ const SearchBar = (props: SearchBarProps) => {
 
   return (
     <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon/>} classes={{expandIconWrapper: classes.accordionExpandIconWrapper}}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon/>}
+        classes={{expandIconWrapper: classes.accordionExpandIconWrapper}}
+      >
         <div
           onClick={(event) => event.stopPropagation()}
           onFocus={(event) => event.stopPropagation()}
