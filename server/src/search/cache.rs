@@ -2,8 +2,10 @@ use super::meilisearch::SearchResult;
 use crate::podcast::PodcastTag;
 use std::sync::{Arc, Mutex};
 
+type SearchLru = lru::LruCache<(Option<String>, Vec<PodcastTag>), SearchResult>;
+
 pub struct SearchCache {
-    lru: Arc<Mutex<lru::LruCache<(Option<String>, Vec<PodcastTag>), SearchResult>>>,
+    lru: Arc<Mutex<SearchLru>>,
 }
 
 impl SearchCache {
@@ -53,6 +55,6 @@ impl SearchCache {
             lru.put((query_or.clone(), tags_vec), result.clone());
         }
 
-        return result;
+        result
     }
 }
