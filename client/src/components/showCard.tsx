@@ -1,13 +1,13 @@
-import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton} from '@material-ui/core';
-import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@material-ui/icons';
-import {makeStyles} from '@material-ui/core/styles';
+import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton, Theme} from '@mui/material';
+import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@mui/icons-material';
+import {makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState} from 'react';
 import {useHistory} from 'react-router';
 import {getTagDisplayText} from '../helper/tagFormatting';
 import {secondsToDurationString} from '../helper/secondsToDurationString';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   title: {
     display: 'flex',
     cursor: 'pointer'
@@ -20,10 +20,7 @@ const useStyles = makeStyles((theme) => ({
   },
   expand: {
     float: 'right',
-    marginLeft: 'auto',
-    transition: theme.transitions.create('transform', {
-      duration: theme.transitions.duration.shortest
-    })
+    marginLeft: 'auto'
   },
   expandClosed: {
     transform: 'rotate(0deg)'
@@ -77,12 +74,13 @@ const ShowCard = (props: ShowCardProps) => {
           </span>}
         subheader={`${props.show.createTime.getMonth() + 1}/${props.show.createTime.getDate()}/${props.show.createTime.getFullYear()} - ${secondsToDurationString(props.show.lengthInSeconds)}`}
       />
-      <CardActions className={classes.actions}>
+      <CardActions className={classes.actions} sx={{display: 'block'}}>
         <IconButton onClick={props.onPlay}>
           <PlayArrowIcon/>
         </IconButton>
         <IconButton
           className={`${classes.expand} ${expanded ? classes.expandOpen : classes.expandClosed}`}
+          sx={{transition: 'transform 150ms'}}
           onClick={() => setExpanded(!expanded)}
         >
           <ExpandMoreIcon/>

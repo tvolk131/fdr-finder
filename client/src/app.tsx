@@ -1,11 +1,10 @@
-import {blue, teal} from '@material-ui/core/colors';
+import {blue, teal} from '@mui/material/colors';
 import {
   createTheme,
-  MuiThemeProvider,
-  makeStyles,
-  createStyles,
+  ThemeProvider,
   Theme
-} from '@material-ui/core/styles';
+} from '@mui/material/styles';
+import {createStyles, makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState} from 'react';
 import {Route, Switch} from 'react-router';
@@ -15,12 +14,11 @@ import {NotFoundPage} from './pages/notFoundPage';
 import {PodcastPage} from './pages/podcastPage';
 import {AudioPlayer} from './components/audioPlayer';
 import {ShowInfo} from './components/showCard';
-import {Snackbar} from '@material-ui/core';
+import {Box, Snackbar} from '@mui/material';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      backgroundColor: theme.palette.background.default,
       display: 'flex',
       flexDirection: 'column',
       minHeight: '100vh'
@@ -44,7 +42,7 @@ const SubApp = () => {
   };
 
   return (
-    <div className={classes.root}>
+    <Box sx={{backgroundColor: 'background.default', color: 'text.primary'}} className={classes.root}>
       {/* This meta tag makes the mobile experience
       much better by preventing text from being tiny. */}
       <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
@@ -78,7 +76,7 @@ const SubApp = () => {
         }}
         message={snackbarMessage}
       />
-    </div>
+    </Box>
   );
 };
 
@@ -89,22 +87,14 @@ const ThemedSubApp = () => {
     palette: {
       primary: blue,
       secondary: teal,
-      type: isDarkMode ? 'dark' : 'light'
-    },
-    props: {
-      MuiAppBar: {
-        color: isDarkMode ? 'default' : 'primary'
-      },
-      MuiTypography: {
-        color: 'textPrimary'
-      }
+      mode: isDarkMode ? 'dark' : 'light'
     }
   });
 
   return (
-    <MuiThemeProvider theme={theme}>
+    <ThemeProvider theme={theme}>
       <SubApp/>
-    </MuiThemeProvider>
+    </ThemeProvider>
   );
 };
 
