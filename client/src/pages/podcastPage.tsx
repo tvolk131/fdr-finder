@@ -39,12 +39,12 @@ const useStyles = makeStyles((theme: Theme) => ({
   tagWrapper: {
     paddingTop: '10px'
   },
+  tagChip: {
+    margin: theme.spacing(0.5)
+  },
   playButton: {
     height: '100%',
     marginRight: '8px'
-  },
-  tagChip: {
-    margin: theme.spacing(0.5)
   }
 }));
 
