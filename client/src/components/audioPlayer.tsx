@@ -36,7 +36,7 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       width: '200px',
       flexBasis: '200px',
-      flexGrow: 1,
+      flexGrow: 1
     },
     content: {
       padding: '15px',
