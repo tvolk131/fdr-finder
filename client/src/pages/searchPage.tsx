@@ -10,7 +10,6 @@ import {
   Dialog,
   DialogActions,
   DialogTitle,
-  Snackbar,
   Typography
 } from '@mui/material';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
@@ -25,7 +24,7 @@ import {createTree} from '../helper';
 import {queryFieldName, tagsFieldName} from '../constants';
 import {BehaviorSubject, map, switchMap, distinctUntilChanged, merge, of} from 'rxjs';
 
-const podcastSearchHitLimit = 100;
+const podcastSearchHitLimit = 20;
 
 const useStyles = makeStyles({
   root: {
