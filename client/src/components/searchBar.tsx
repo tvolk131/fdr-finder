@@ -14,7 +14,7 @@ import {Theme, styled} from '@mui/material/styles';
 import {createStyles, makeStyles} from '@mui/styles';
 import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@mui/icons-material';
 import * as React from 'react';
-import {MouseEvent, useState} from 'react';
+import {MouseEvent} from 'react';
 import {getTagDisplayText} from '../helper/tagFormatting';
 
 const useStyles = makeStyles((theme: Theme) => (
@@ -52,8 +52,6 @@ const useStyles = makeStyles((theme: Theme) => (
     }
   })
 ));
-
-const maxVisibleTags = 50;
 
 const SelectableChipWrapper = styled('div')(({theme}) => ({
   margin: theme.spacing(0.5),
