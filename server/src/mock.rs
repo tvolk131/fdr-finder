@@ -1,7 +1,7 @@
 use crate::podcast::{Podcast, PodcastNumber, PodcastTag};
 use std::collections::HashSet;
 
-pub fn create_mock_podcast(num: i32) -> Podcast {
+pub fn create_mock_podcast(num: usize) -> Podcast {
     let mut tags = HashSet::new();
     tags.insert(PodcastTag::new(format!("Tag #{}", num % 100)));
 

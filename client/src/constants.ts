@@ -3,3 +3,5 @@ export const limitFieldName = 'limit';
 export const offsetFieldName = 'offset';
 export const tagsFieldName = 'tags';
 export const filterFieldName = 'filter';
+export const minLengthSecondsFieldName = 'minLengthSeconds';
+export const maxLengthSecondsFieldName = 'maxLengthSeconds';

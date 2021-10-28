@@ -105,7 +105,7 @@ pub struct Podcast {
     title: String,
     description: String,
     audio_link: String,
-    length_in_seconds: i32,
+    pub length_in_seconds: usize,
     podcast_number: PodcastNumber,
     podcast_number_hash: String, // Used as the primary key by Meilisearch, since it contains only alphanumeric characters.
     create_time: i64,
@@ -150,7 +150,7 @@ impl Podcast {
         title: String,
         description: String,
         audio_link: String,
-        length_in_seconds: i32,
+        length_in_seconds: usize,
         podcast_number: PodcastNumber,
         create_time: i64,
         tags: HashSet<PodcastTag>,

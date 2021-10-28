@@ -141,6 +141,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           className={classes.slider}
           min={0}
           max={audioRef.current.duration}
+          disabled={!props.showInfo}
           value={trackProgress}
           onChange={(event, newValue) => {
             if (typeof(newValue) === 'number') {

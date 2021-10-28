@@ -107,12 +107,14 @@ fn get_podcast_handler(
     }
 }
 
-#[get("/search/podcasts?<query>&<limit>&<offset>&<tags>")]
+#[get("/search/podcasts?<query>&<limit>&<offset>&<tags>&<minLengthSeconds>&<maxLengthSeconds>")]
 async fn search_podcasts_handler<'a>(
     query: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
     tags: Option<String>,
+    minLengthSeconds: Option<usize>,
+    maxLengthSeconds: Option<usize>,
     search_backend: &State<SearchBackend>,
 ) -> SearchResult {
     search_backend
@@ -121,18 +123,22 @@ async fn search_podcasts_handler<'a>(
             &parse_tag_query_string(tags),
             limit,
             offset.unwrap_or(0),
+            minLengthSeconds,
+            maxLengthSeconds
         )
         .await
 }
 
-#[get("/search/podcasts/rss?<query>&<tags>")]
+#[get("/search/podcasts/rss?<query>&<tags>&<minLengthSeconds>&<maxLengthSeconds>")]
 async fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
+    minLengthSeconds: Option<usize>,
+    maxLengthSeconds: Option<usize>,
     search_backend: &State<SearchBackend>,
 ) -> RssFeed {
     let search_result = search_backend
-        .search(&query, &parse_tag_query_string(tags), None, 0)
+        .search(&query, &parse_tag_query_string(tags), None, 0, minLengthSeconds, maxLengthSeconds)
         .await;
 
     // TODO - Fix RSS feed naming now that we support tag filtering.
@@ -149,19 +155,21 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
     )
 }
 
-#[get("/filteredTagsWithCounts?<query>&<limit>&<offset>&<tags>&<filter>")]
+#[get("/filteredTagsWithCounts?<query>&<limit>&<offset>&<tags>&<filter>&<minLengthSeconds>&<maxLengthSeconds>")]
 async fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
     tags: Option<String>,
     filter: Option<String>,
+    minLengthSeconds: Option<usize>,
+    maxLengthSeconds: Option<usize>,
     search_backend: &State<SearchBackend>,
 ) -> content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
 
     let podcasts: Vec<Podcast> = search_backend
-        .search(&query, &parsed_tags, None, 0)
+        .search(&query, &parsed_tags, None, 0, minLengthSeconds, maxLengthSeconds)
         .await
         .take_hits()
         .into_iter()

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {ShowInfo} from './components/showCard';
-import {queryFieldName, limitFieldName, offsetFieldName, tagsFieldName, filterFieldName} from './constants';
+import {queryFieldName, limitFieldName, offsetFieldName, tagsFieldName, filterFieldName, minLengthSecondsFieldName, maxLengthSecondsFieldName} from './constants';
 
 const deserializeShowInfo = (data: any): ShowInfo => {
   return {
@@ -21,7 +21,7 @@ interface SearchResult {
 }
 
 export const searchPodcasts =
-async (data: {query?: string, limit?: number, offset?: number, tags?: string[]}): Promise<SearchResult> => {
+async (data: {query?: string, limit?: number, offset?: number, tags?: string[], minLengthSeconds: number | undefined, maxLengthSeconds: number | undefined}): Promise<SearchResult> => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
@@ -35,25 +35,37 @@ async (data: {query?: string, limit?: number, offset?: number, tags?: string[]})
   if (data.tags && data.tags.length) {
     queryParams[tagsFieldName] = data.tags.join(',');
   }
+  if (data.minLengthSeconds !== undefined) {
+    queryParams[minLengthSecondsFieldName] = data.minLengthSeconds;
+  }
+  if (data.maxLengthSeconds !== undefined) {
+    queryParams[maxLengthSecondsFieldName] = data.maxLengthSeconds;
+  }
 
   const res = await axios.get(generateUrlWithQueryParams('/api/search/podcasts', queryParams)) as any;
   return {...res.data, hits: res.data.hits.map(deserializeShowInfo)};
 };
 
-export const getPodcastRssUrl = (data: {query?: string, tags?: string[]}) => {
-  const queryParams: {[key: string]: string} = {};
+export const getPodcastRssUrl = (data: {query?: string, tags?: string[], minLengthSeconds: number | undefined, maxLengthSeconds: number | undefined}) => {
+  const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
   }
   if (data.tags && data.tags.length) {
     queryParams[tagsFieldName] = data.tags.join(',');
   }
+  if (data.minLengthSeconds !== undefined) {
+    queryParams[minLengthSecondsFieldName] = data.minLengthSeconds;
+  }
+  if (data.maxLengthSeconds !== undefined) {
+    queryParams[maxLengthSecondsFieldName] = data.maxLengthSeconds;
+  }
 
   return encodeURI(generateUrlWithQueryParams('https://fdr-finder.tommyvolk.com/api/search/podcasts/rss', queryParams));
 }
 
 export const getFilteredTagsWithCounts =
-async (data: {query?: string, limit?: number, offset?: number, tags?: string[], filter?: string}):
+async (data: {query?: string, limit?: number, offset?: number, tags?: string[], filter?: string, minLengthSeconds: number | undefined, maxLengthSeconds: number | undefined}):
 Promise<{tags: {tag: string, count: number}[], remainingTagCount: number}> => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {

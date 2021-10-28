@@ -86,6 +86,8 @@ export const SearchPage = (props: SearchPageProps) => {
   const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(history));
 
   const [tagFilter, setTagFilter] = useState('');
+  const [minLengthSeconds, setMinLengthSeconds] = useState<number | undefined>(undefined);
+  const [maxLengthSeconds, setMaxLengthSeconds] = useState<number | undefined>(undefined);
 
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
   const [isLoadingPodcasts, setIsLoadingPodcasts] = useState(false);
@@ -99,14 +101,14 @@ export const SearchPage = (props: SearchPageProps) => {
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
-  const searchResultsSubject = useRef(new BehaviorSubject({query: '', tags: [] as string[]}));
-  const tagsSubject = useRef(new BehaviorSubject({query: '', tags: [] as string[], tagFilter: ''}));
+  const searchResultsSubject = useRef(new BehaviorSubject({query: '', tags: [] as string[], minLengthSeconds: undefined as number | undefined, maxLengthSeconds: undefined as number | undefined}));
+  const tagsSubject = useRef(new BehaviorSubject({query: '', tags: [] as string[], minLengthSeconds: undefined as number | undefined, maxLengthSeconds: undefined as number | undefined, tagFilter: ''}));
 
   useEffect(() => {
     const searchResultsObservable = searchResultsSubject.current.pipe(
-      map(({query, tags}) => ({query: query.trim(), tags, tagFilter: tagFilter.trim()})),
+      map(({query, tags, minLengthSeconds, maxLengthSeconds}) => ({query: query.trim(), tags, minLengthSeconds, maxLengthSeconds})),
       distinctUntilChanged(),
-      switchMap(({query, tags, tagFilter}) => merge(
+      switchMap(({query, tags, minLengthSeconds, maxLengthSeconds}) => merge(
         of({
           isLoadingPodcasts: true,
           podcasts: undefined,
@@ -117,7 +119,9 @@ export const SearchPage = (props: SearchPageProps) => {
           query,
           limit: podcastSearchHitLimit,
           offset: 0,
-          tags
+          tags,
+          minLengthSeconds,
+          maxLengthSeconds
         }).then((searchResult) => ({
           isLoadingPodcasts: false,
           podcasts: searchResult.hits,
@@ -146,14 +150,21 @@ export const SearchPage = (props: SearchPageProps) => {
     });
 
     const tagsObservable = tagsSubject.current.pipe(
-      map(({query, tags, tagFilter}) => ({query: query.trim(), tags, tagFilter: tagFilter.trim()})),
+      map(({query, tags, minLengthSeconds, maxLengthSeconds, tagFilter}) => ({query: query.trim(), tags, minLengthSeconds, maxLengthSeconds, tagFilter: tagFilter.trim()})),
       distinctUntilChanged(),
-      switchMap(({query, tags, tagFilter}) => merge(
+      switchMap(({query, tags, minLengthSeconds, maxLengthSeconds, tagFilter}) => merge(
         of({
           isLoadingTagsWithCounts: true,
           tagsWithCounts: undefined
         }),
-        getFilteredTagsWithCounts({query, limit: 50, tags, filter: tagFilter.length ? tagFilter : undefined})
+        getFilteredTagsWithCounts({
+          query,
+          limit: 50,
+          tags,
+          minLengthSeconds,
+          maxLengthSeconds,
+          filter: tagFilter.length ? tagFilter : undefined
+        })
           .then((tagsWithCounts) => ({
             isLoadingTagsWithCounts: false,
             tagsWithCounts
@@ -188,12 +199,12 @@ export const SearchPage = (props: SearchPageProps) => {
       history.push(newLocation);
     }
 
-    searchResultsSubject.current.next({query: searchTerm, tags: searchTags});
-  }, [searchTerm, searchTags]);
+    searchResultsSubject.current.next({query: searchTerm, tags: searchTags, minLengthSeconds, maxLengthSeconds});
+  }, [searchTerm, searchTags, minLengthSeconds, maxLengthSeconds]);
 
   useEffect(() => {
-    tagsSubject.current.next({query: searchTerm, tags: searchTags, tagFilter});
-  }, [searchTerm, searchTags, tagFilter]);
+    tagsSubject.current.next({query: searchTerm, tags: searchTags, minLengthSeconds, maxLengthSeconds, tagFilter});
+  }, [searchTerm, searchTags, minLengthSeconds, maxLengthSeconds, tagFilter]);
 
   return (
     <div className={classes.root}>
@@ -207,6 +218,10 @@ export const SearchPage = (props: SearchPageProps) => {
           setSearchTags={setSearchTags}
           tagsWithCounts={tagsWithCounts}
           isLoadingTagsWithCounts={isLoadingTagsWithCounts}
+          minLengthSeconds={minLengthSeconds}
+          setMinLengthSeconds={setMinLengthSeconds}
+          maxLengthSeconds={maxLengthSeconds}
+          setMaxLengthSeconds={setMaxLengthSeconds}
         />
       </div>
       {isLoadingPodcasts ?
@@ -214,7 +229,7 @@ export const SearchPage = (props: SearchPageProps) => {
         <div>
           <div className={classes.button}>
             <CopyToClipboard
-              text={getPodcastRssUrl({query: searchTerm, tags: searchTags})}
+              text={getPodcastRssUrl({query: searchTerm, tags: searchTags, minLengthSeconds, maxLengthSeconds})}
               onCopy={() => props.showSnackbarMessage('Link copied!')}
             >
               <Button variant={'contained'} startIcon={<RssFeedIcon/>}>
