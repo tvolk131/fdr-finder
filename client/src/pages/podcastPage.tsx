@@ -5,7 +5,7 @@ import {useEffect, useState} from 'react';
 import {useParams} from 'react-router';
 import {getPodcast} from '../api';
 import {ShowInfo} from '../components/showCard';
-import {PlayArrow as PlayArrowIcon} from '@mui/icons-material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import {getTagDisplayText} from '../helper/tagFormatting';
 
 const useStyles = makeStyles((theme: Theme) => ({

@@ -12,7 +12,8 @@ import {
 import {Autocomplete} from '@mui/lab';
 import {Theme, styled} from '@mui/material/styles';
 import {createStyles, makeStyles} from '@mui/styles';
-import {ExpandMore as ExpandMoreIcon, Close as CloseIcon} from '@mui/icons-material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CloseIcon from '@mui/icons-material/Close';
 import * as React from 'react';
 import {MouseEvent} from 'react';
 import {getTagDisplayText} from '../helper/tagFormatting';

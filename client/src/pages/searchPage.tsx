@@ -13,7 +13,8 @@ import {
   Typography
 } from '@mui/material';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@mui/icons-material';
+import PieChartIcon from '@mui/icons-material/PieChart';
+import RssFeedIcon from '@mui/icons-material/RssFeed';
 import {useHistory} from 'react-router';
 import {History} from 'history';
 import * as qs from 'qs';
