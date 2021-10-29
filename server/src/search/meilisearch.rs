@@ -10,10 +10,10 @@ pub struct MeilisearchBackend {
 impl MeilisearchBackend {
     pub async fn new(host: String, api_key: String) -> Self {
         let client = Client::new(host, api_key);
-        client.delete_index("podcasts").await.unwrap();
+        client.delete_index_if_exists("podcasts").await.unwrap();
         let podcast_index = client.get_or_create("podcasts").await.unwrap();
         podcast_index
-            .set_attributes_for_faceting(["tags"])
+            .set_filterable_attributes(["tags"])
             .await
             .unwrap();
         Self { podcast_index }
@@ -26,25 +26,12 @@ impl MeilisearchBackend {
         limit: usize,
         offset: usize,
     ) -> SearchResult {
-        // These three lines are pretty weird and gross, but `with_facet_filters` specifically
-        // accepts &[&[&str]] so we need to create the facet strings and immediately borrow them.
-        let tag_facet_strings: Vec<String> = tags
-            .iter()
-            .map(|tag| format!("tags:{}", tag.clone_to_string()))
-            .collect();
-        let grouped_tag_facet_strings: Vec<Vec<&str>> = tag_facet_strings
-            .iter()
-            .map(|tag_facet_string| vec![tag_facet_string.as_str()])
-            .collect();
-        let tag_facet_strings_search_arg: Vec<&[&str]> = grouped_tag_facet_strings
-            .iter()
-            .map(|tag_facet_group| tag_facet_group.as_slice())
-            .collect();
-
         let mut search_request = self.podcast_index.search();
 
-        if !tag_facet_strings_search_arg.is_empty() {
-            search_request.with_facet_filters(tag_facet_strings_search_arg.as_slice());
+        let filter = format!("({})", tags.iter().map(|tag| format!("tags:{}", tag.clone_to_string())).collect::<Vec<String>>().join(" OR "));
+
+        if !tags.is_empty() {
+            search_request.with_filter(&filter);
         }
 
         match query_or {
