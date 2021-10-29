@@ -124,7 +124,7 @@ async fn search_podcasts_handler<'a>(
             limit,
             offset.unwrap_or(0),
             minLengthSeconds,
-            maxLengthSeconds
+            maxLengthSeconds,
         )
         .await
 }
@@ -138,7 +138,14 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
     search_backend: &State<SearchBackend>,
 ) -> RssFeed {
     let search_result = search_backend
-        .search(&query, &parse_tag_query_string(tags), None, 0, minLengthSeconds, maxLengthSeconds)
+        .search(
+            &query,
+            &parse_tag_query_string(tags),
+            None,
+            0,
+            minLengthSeconds,
+            maxLengthSeconds,
+        )
         .await;
 
     // TODO - Fix RSS feed naming now that we support tag filtering.
@@ -169,7 +176,14 @@ async fn get_filtered_tags_with_counts_handler<'a>(
     let parsed_tags = parse_tag_query_string(tags);
 
     let podcasts: Vec<Podcast> = search_backend
-        .search(&query, &parsed_tags, None, 0, minLengthSeconds, maxLengthSeconds)
+        .search(
+            &query,
+            &parsed_tags,
+            None,
+            0,
+            minLengthSeconds,
+            maxLengthSeconds,
+        )
         .await
         .take_hits()
         .into_iter()

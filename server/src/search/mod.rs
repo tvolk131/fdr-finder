@@ -38,28 +38,33 @@ impl SearchBackend {
     ) -> SearchResult {
         match &self.meilisearch_backend_or {
             Some(meilisearch_backend) => {
-                let mut response = self.search_cache
+                let mut response = self
+                    .search_cache
                     .search(query_or, tags, limit_or, offset, meilisearch_backend)
                     .await;
-                response.hits = response.hits.into_iter().filter(|hit| {
-                    match minLengthSeconds {
-                        Some(minLengthSeconds) => {
-                            if hit.length_in_seconds < minLengthSeconds {
-                                return false
+                response.hits = response
+                    .hits
+                    .into_iter()
+                    .filter(|hit| {
+                        match minLengthSeconds {
+                            Some(minLengthSeconds) => {
+                                if hit.length_in_seconds < minLengthSeconds {
+                                    return false;
+                                }
                             }
-                        },
-                        None => {}
-                    };
-                    match maxLengthSeconds {
-                        Some(maxLengthSeconds) => {
-                            if hit.length_in_seconds > maxLengthSeconds {
-                                return false
+                            None => {}
+                        };
+                        match maxLengthSeconds {
+                            Some(maxLengthSeconds) => {
+                                if hit.length_in_seconds > maxLengthSeconds {
+                                    return false;
+                                }
                             }
-                        },
-                        None => {}
-                    };
-                    true
-                }).collect();
+                            None => {}
+                        };
+                        true
+                    })
+                    .collect();
                 response
             }
             None => meilisearch::generate_mock_search_results(),
