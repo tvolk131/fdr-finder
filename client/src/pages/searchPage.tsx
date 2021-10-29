@@ -182,7 +182,13 @@ export const SearchPage = (props: SearchPageProps) => {
         tagFilter: tagFilter.trim()
       })),
       distinctUntilChanged(),
-      switchMap(({query, tags, minLengthSeconds, maxLengthSeconds, tagFilter}) => merge(
+      switchMap(({
+        query,
+        tags,
+        minLengthSeconds,
+        maxLengthSeconds,
+        tagFilter
+      }) => merge(
         of({
           isLoadingTagsWithCounts: true,
           tagsWithCounts: undefined

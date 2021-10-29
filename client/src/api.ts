@@ -5,9 +5,9 @@ import {
   limitFieldName,
   offsetFieldName,
   tagsFieldName,
-  filterFieldName,
   minLengthSecondsFieldName,
-  maxLengthSecondsFieldName
+  maxLengthSecondsFieldName,
+  filterFieldName
 } from './constants';
 
 const deserializeShowInfo = (data: any): ShowInfo => {
