@@ -2,7 +2,15 @@ use super::meilisearch::SearchResult;
 use crate::podcast::PodcastTag;
 use std::sync::{Arc, Mutex};
 
-type SearchLru = lru::LruCache<(Option<String>, Vec<PodcastTag>, Option<usize>, Option<usize>), SearchResult>;
+type SearchLru = lru::LruCache<
+    (
+        Option<String>,
+        Vec<PodcastTag>,
+        Option<usize>,
+        Option<usize>,
+    ),
+    SearchResult,
+>;
 
 pub struct SearchCache {
     lru: Arc<Mutex<SearchLru>>,
@@ -29,7 +37,12 @@ impl SearchCache {
         tags_vec.extend_from_slice(tags);
         {
             let mut lru = self.lru.lock().unwrap();
-            let cached_result_or = lru.get(&(query_or.clone(), tags_vec.clone(), min_length_seconds, max_length_seconds));
+            let cached_result_or = lru.get(&(
+                query_or.clone(),
+                tags_vec.clone(),
+                min_length_seconds,
+                max_length_seconds,
+            ));
 
             if let Some(cached_result) = cached_result_or {
                 let mut cached_result_clone = cached_result.clone();
@@ -48,13 +61,28 @@ impl SearchCache {
         }
 
         let result = meilisearch_backend
-            .search(query_or, tags, limit_or.unwrap_or(99999999), offset, min_length_seconds, max_length_seconds)
+            .search(
+                query_or,
+                tags,
+                limit_or.unwrap_or(99999999),
+                offset,
+                min_length_seconds,
+                max_length_seconds,
+            )
             .await;
 
         if limit_or == None && offset == 0 {
             println!("Caching result.");
             let mut lru = self.lru.lock().unwrap();
-            lru.put((query_or.clone(), tags_vec, min_length_seconds, max_length_seconds), result.clone());
+            lru.put(
+                (
+                    query_or.clone(),
+                    tags_vec,
+                    min_length_seconds,
+                    max_length_seconds,
+                ),
+                result.clone(),
+            );
         }
 
         result

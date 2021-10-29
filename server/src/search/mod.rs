@@ -39,7 +39,15 @@ impl SearchBackend {
         match &self.meilisearch_backend_or {
             Some(meilisearch_backend) => {
                 self.search_cache
-                    .search(query_or, tags, limit_or, offset, min_length_seconds, max_length_seconds, meilisearch_backend)
+                    .search(
+                        query_or,
+                        tags,
+                        limit_or,
+                        offset,
+                        min_length_seconds,
+                        max_length_seconds,
+                        meilisearch_backend,
+                    )
                     .await
             }
             None => meilisearch::generate_mock_search_results(),
