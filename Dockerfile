@@ -12,6 +12,6 @@ RUN cd server && rustup default nightly && cargo build --release && mkdir -p /bu
 FROM ubuntu:21.10
 COPY --from=server-base /build-out/fdr-show-indexer-server /
 ENV ROCKET_PORT=80
-env ROCKET_ADDRESS="0.0.0.0"
+ENV ROCKET_ADDRESS="0.0.0.0"
 EXPOSE 80
 CMD /fdr-show-indexer-server

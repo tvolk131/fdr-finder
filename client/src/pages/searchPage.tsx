@@ -10,11 +10,11 @@ import {
   Dialog,
   DialogActions,
   DialogTitle,
-  Snackbar,
   Typography
 } from '@mui/material';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {PieChart as PieChartIcon, RssFeed as RssFeedIcon} from '@mui/icons-material';
+import PieChartIcon from '@mui/icons-material/PieChart';
+import RssFeedIcon from '@mui/icons-material/RssFeed';
 import {useHistory} from 'react-router';
 import {History} from 'history';
 import * as qs from 'qs';
@@ -25,7 +25,7 @@ import {createTree} from '../helper';
 import {queryFieldName, tagsFieldName} from '../constants';
 import {BehaviorSubject, map, switchMap, distinctUntilChanged, merge, of} from 'rxjs';
 
-const podcastSearchHitLimit = 100;
+const podcastSearchHitLimit = 20;
 
 const useStyles = makeStyles({
   root: {
@@ -36,9 +36,6 @@ const useStyles = makeStyles({
     maxWidth: 800,
     margin: 'auto',
     textAlign: 'initial'
-  },
-  showCardWrapper: {
-    padding: '10px 0 0 0'
   },
   button: {
     padding: '10px 0 0 0'
@@ -243,15 +240,7 @@ export const SearchPage = (props: SearchPageProps) => {
             </Button>
           </div>
           {!!podcasts.length && <Typography className={classes.searchInfo}>{`Showing ${podcasts.length} of ${totalPodcastSearchResults} results (${podcastSearchTime}ms)`}</Typography>}
-          <div className={classes.nested}>
-            {
-              podcasts.map((show) => (
-                <div className={classes.showCardWrapper}>
-                  <ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/>
-                </div>
-              ))
-            }
-          </div>
+          <ShowCardList podcasts={podcasts} setPlayingShow={props.setPlayingShow}/>
           <Dialog
             onClose={() => setShowVisualizationDialog(false)}
             open={showVisualizationDialog}
@@ -302,3 +291,16 @@ export const SearchPage = (props: SearchPageProps) => {
     </div>
   );
 };
+
+interface ShowCardListProps {
+  podcasts: ShowInfo[]
+  setPlayingShow(showInfo: ShowInfo): void
+}
+
+const ShowCardList = React.memo((props: ShowCardListProps) => {
+  return <div style={{maxWidth: 800, margin: 'auto', textAlign: 'initial'}}>{props.podcasts.map((show) => (
+    <div style={{padding: '10px 0 0 0'}}>
+      <ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/>
+    </div>
+  ))}</div>;
+});

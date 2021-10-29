@@ -1,5 +1,6 @@
 import {Chip, Card, CardContent, Typography, Collapse, CardHeader, CardActions, IconButton, Theme} from '@mui/material';
-import {ExpandMore as ExpandMoreIcon, PlayArrow as PlayArrowIcon} from '@mui/icons-material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import {makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState} from 'react';
