@@ -23,6 +23,7 @@ impl SearchCache {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn search(
         &self,
         query_or: &Option<String>,

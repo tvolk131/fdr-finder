@@ -47,8 +47,8 @@ const useStyles = makeStyles((theme: Theme) =>
       height: 0
     },
     slider: {
-      top: '-15px',
-      padding: '15px 0'
+      top: '-13px',
+      overflow: 'hidden'
     }
   })
 );

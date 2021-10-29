@@ -162,6 +162,7 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 #[get("/filteredTagsWithCounts?<query>&<limit>&<offset>&<tags>&<filter>&<minLengthSeconds>&<maxLengthSeconds>")]
 async fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
