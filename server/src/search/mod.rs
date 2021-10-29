@@ -33,39 +33,14 @@ impl SearchBackend {
         tags: &[PodcastTag],
         limit_or: Option<usize>,
         offset: usize,
-        minLengthSeconds: Option<usize>,
-        maxLengthSeconds: Option<usize>,
+        min_length_seconds: Option<usize>,
+        max_length_seconds: Option<usize>,
     ) -> SearchResult {
         match &self.meilisearch_backend_or {
             Some(meilisearch_backend) => {
-                let mut response = self
-                    .search_cache
-                    .search(query_or, tags, limit_or, offset, meilisearch_backend)
-                    .await;
-                response.hits = response
-                    .hits
-                    .into_iter()
-                    .filter(|hit| {
-                        match minLengthSeconds {
-                            Some(minLengthSeconds) => {
-                                if hit.length_in_seconds < minLengthSeconds {
-                                    return false;
-                                }
-                            }
-                            None => {}
-                        };
-                        match maxLengthSeconds {
-                            Some(maxLengthSeconds) => {
-                                if hit.length_in_seconds > maxLengthSeconds {
-                                    return false;
-                                }
-                            }
-                            None => {}
-                        };
-                        true
-                    })
-                    .collect();
-                response
+                self.search_cache
+                    .search(query_or, tags, limit_or, offset, min_length_seconds, max_length_seconds, meilisearch_backend)
+                    .await
             }
             None => meilisearch::generate_mock_search_results(),
         }

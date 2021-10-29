@@ -90,9 +90,9 @@ async (data: {
   limit?: number,
   offset?: number,
   tags?: string[],
-  filter?: string,
   minLengthSeconds: number | undefined,
-  maxLengthSeconds: number | undefined
+  maxLengthSeconds: number | undefined,
+  filter?: string
 }): Promise<{tags: {tag: string, count: number}[], remainingTagCount: number}> => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
@@ -106,6 +106,12 @@ async (data: {
   }
   if (data.tags && data.tags.length) {
     queryParams[tagsFieldName] = data.tags.join(',');
+  }
+  if (data.minLengthSeconds !== undefined) {
+    queryParams[minLengthSecondsFieldName] = data.minLengthSeconds;
+  }
+  if (data.maxLengthSeconds !== undefined) {
+    queryParams[maxLengthSecondsFieldName] = data.maxLengthSeconds;
   }
   if (data.filter && data.filter.length) {
     queryParams[filterFieldName] = data.filter;

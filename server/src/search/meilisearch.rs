@@ -13,7 +13,11 @@ impl MeilisearchBackend {
         client.delete_index_if_exists("podcasts").await.unwrap();
         let podcast_index = client.get_or_create("podcasts").await.unwrap();
         podcast_index
-            .set_filterable_attributes(["tags"])
+            .set_filterable_attributes(["tags", "lengthInSeconds"])
+            .await
+            .unwrap();
+        podcast_index
+            .set_sortable_attributes(["podcastNumber"])
             .await
             .unwrap();
         Self { podcast_index }
@@ -25,20 +29,38 @@ impl MeilisearchBackend {
         tags: &[PodcastTag],
         limit: usize,
         offset: usize,
+        min_length_seconds: Option<usize>,
+        max_length_seconds: Option<usize>,
     ) -> SearchResult {
         let mut search_request = self.podcast_index.search();
 
-        let filter = format!(
-            "({})",
-            tags.iter()
-                .map(|tag| format!("tags:{}", tag.clone_to_string()))
-                .collect::<Vec<String>>()
-                .join(" OR ")
-        );
+        let mut filter_elements: Vec<String> = Vec::new();
 
         if !tags.is_empty() {
+            filter_elements.push(format!(
+                "({})",
+                tags.iter()
+                    .map(|tag| format!("tags = {}", tag.clone_to_string()))
+                    .collect::<Vec<String>>()
+                    .join(" OR ")
+            ));
+        }
+
+        if let Some(min_length_seconds) = min_length_seconds {
+            filter_elements.push(format!("lengthInSeconds > {}", min_length_seconds - 1));
+        }
+
+        if let Some(max_length_seconds) = max_length_seconds {
+            filter_elements.push(format!("lengthInSeconds < {}", max_length_seconds + 1));
+        }
+
+        let filter = filter_elements.join(" AND ");
+
+        if !filter.is_empty() {
             search_request.with_filter(&filter);
         }
+
+        search_request.with_sort(&["podcastNumber:desc"]);
 
         match query_or {
             Some(query) => {
