@@ -1,6 +1,14 @@
 import axios from 'axios';
 import {ShowInfo} from './components/showCard';
-import {queryFieldName, limitFieldName, offsetFieldName, tagsFieldName, filterFieldName, minLengthSecondsFieldName, maxLengthSecondsFieldName} from './constants';
+import {
+  queryFieldName,
+  limitFieldName,
+  offsetFieldName,
+  tagsFieldName,
+  filterFieldName,
+  minLengthSecondsFieldName,
+  maxLengthSecondsFieldName
+} from './constants';
 
 const deserializeShowInfo = (data: any): ShowInfo => {
   return {
@@ -21,7 +29,14 @@ interface SearchResult {
 }
 
 export const searchPodcasts =
-async (data: {query?: string, limit?: number, offset?: number, tags?: string[], minLengthSeconds: number | undefined, maxLengthSeconds: number | undefined}): Promise<SearchResult> => {
+async (data: {
+  query?: string,
+  limit?: number,
+  offset?: number,
+  tags?: string[],
+  minLengthSeconds: number | undefined,
+  maxLengthSeconds: number | undefined
+}): Promise<SearchResult> => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
@@ -46,7 +61,12 @@ async (data: {query?: string, limit?: number, offset?: number, tags?: string[], 
   return {...res.data, hits: res.data.hits.map(deserializeShowInfo)};
 };
 
-export const getPodcastRssUrl = (data: {query?: string, tags?: string[], minLengthSeconds: number | undefined, maxLengthSeconds: number | undefined}) => {
+export const getPodcastRssUrl = (data: {
+  query?: string,
+  tags?: string[],
+  minLengthSeconds: number | undefined,
+  maxLengthSeconds: number | undefined
+}) => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;
@@ -65,8 +85,15 @@ export const getPodcastRssUrl = (data: {query?: string, tags?: string[], minLeng
 }
 
 export const getFilteredTagsWithCounts =
-async (data: {query?: string, limit?: number, offset?: number, tags?: string[], filter?: string, minLengthSeconds: number | undefined, maxLengthSeconds: number | undefined}):
-Promise<{tags: {tag: string, count: number}[], remainingTagCount: number}> => {
+async (data: {
+  query?: string,
+  limit?: number,
+  offset?: number,
+  tags?: string[],
+  filter?: string,
+  minLengthSeconds: number | undefined,
+  maxLengthSeconds: number | undefined
+}): Promise<{tags: {tag: string, count: number}[], remainingTagCount: number}> => {
   const queryParams: {[key: string]: string | number} = {};
   if (data.query && data.query.length) {
     queryParams[queryFieldName] = data.query;

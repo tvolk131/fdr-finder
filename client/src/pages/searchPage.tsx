@@ -98,12 +98,33 @@ export const SearchPage = (props: SearchPageProps) => {
   const [showVisualizationDialog, setShowVisualizationDialog] = useState(false);
   const [visualizationFormat, setVisualizationFormat] = useState<'circlePacking' | 'sunburst' | 'icicle'>('circlePacking');
 
-  const searchResultsSubject = useRef(new BehaviorSubject({query: '', tags: [] as string[], minLengthSeconds: undefined as number | undefined, maxLengthSeconds: undefined as number | undefined}));
-  const tagsSubject = useRef(new BehaviorSubject({query: '', tags: [] as string[], minLengthSeconds: undefined as number | undefined, maxLengthSeconds: undefined as number | undefined, tagFilter: ''}));
+  const searchResultsSubject = useRef(new BehaviorSubject({
+    query: '',
+    tags: [] as string[],
+    minLengthSeconds: undefined as number | undefined,
+    maxLengthSeconds: undefined as number | undefined
+  }));
+  const tagsSubject = useRef(new BehaviorSubject({
+    query: '',
+    tags: [] as string[],
+    minLengthSeconds: undefined as number | undefined,
+    maxLengthSeconds: undefined as number | undefined,
+    tagFilter: ''
+  }));
 
   useEffect(() => {
     const searchResultsObservable = searchResultsSubject.current.pipe(
-      map(({query, tags, minLengthSeconds, maxLengthSeconds}) => ({query: query.trim(), tags, minLengthSeconds, maxLengthSeconds})),
+      map(({
+        query,
+        tags,
+        minLengthSeconds,
+        maxLengthSeconds
+      }) => ({
+        query: query.trim(),
+        tags,
+        minLengthSeconds,
+        maxLengthSeconds
+      })),
       distinctUntilChanged(),
       switchMap(({query, tags, minLengthSeconds, maxLengthSeconds}) => merge(
         of({
@@ -147,7 +168,19 @@ export const SearchPage = (props: SearchPageProps) => {
     });
 
     const tagsObservable = tagsSubject.current.pipe(
-      map(({query, tags, minLengthSeconds, maxLengthSeconds, tagFilter}) => ({query: query.trim(), tags, minLengthSeconds, maxLengthSeconds, tagFilter: tagFilter.trim()})),
+      map(({
+        query,
+        tags,
+        minLengthSeconds,
+        maxLengthSeconds,
+        tagFilter
+      }) => ({
+        query: query.trim(),
+        tags,
+        minLengthSeconds,
+        maxLengthSeconds,
+        tagFilter: tagFilter.trim()
+      })),
       distinctUntilChanged(),
       switchMap(({query, tags, minLengthSeconds, maxLengthSeconds, tagFilter}) => merge(
         of({

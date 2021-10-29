@@ -175,7 +175,9 @@ const SearchBar = (props: SearchBarProps) => {
             max={sliderMaxValueSeconds}
             step={sliderStepSize}
             valueLabelDisplay={'auto'}
-            valueLabelFormat={(value) => ((value === 0 || value === sliderMaxValueSeconds) ? '-' : secondsToDurationString(value))}
+            valueLabelFormat={
+              (value) => ((value === 0 || value === sliderMaxValueSeconds) ? '-' : secondsToDurationString(value))
+            }
             value={[props.minLengthSeconds || 0, props.maxLengthSeconds || sliderMaxValueSeconds]}
             disableSwap
             onChange={
@@ -189,7 +191,7 @@ const SearchBar = (props: SearchBarProps) => {
                 if (!Array.isArray(newValue)) {
                   return;
                 }
-            
+
                 if (activeThumb === 0) {
                   const newVal = Math.min(newValue[0], (props.maxLengthSeconds || sliderMaxValueSeconds) - minDistance);
                   if (newVal <= 0) {
