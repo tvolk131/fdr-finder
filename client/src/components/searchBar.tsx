@@ -8,7 +8,8 @@ import {
   Chip,
   CircularProgress,
   TextField,
-  Slider
+  Slider,
+  Typography
 } from '@mui/material';
 import {Autocomplete} from '@mui/lab';
 import {Theme, styled} from '@mui/material/styles';
@@ -169,6 +170,9 @@ const SearchBar = (props: SearchBarProps) => {
       <Divider/>
       <AccordionDetails sx={{padding: '15px 10px 10px 10px'}}>
         <div className={classes.advancedSearchWrapper}>
+          <Typography>
+            Duration Filter
+          </Typography>
           <Slider
             sx={{maxWidth: '210px'}}
             min={0}
