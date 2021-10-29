@@ -28,7 +28,13 @@ impl MeilisearchBackend {
     ) -> SearchResult {
         let mut search_request = self.podcast_index.search();
 
-        let filter = format!("({})", tags.iter().map(|tag| format!("tags:{}", tag.clone_to_string())).collect::<Vec<String>>().join(" OR "));
+        let filter = format!(
+            "({})",
+            tags.iter()
+                .map(|tag| format!("tags:{}", tag.clone_to_string()))
+                .collect::<Vec<String>>()
+                .join(" OR ")
+        );
 
         if !tags.is_empty() {
             search_request.with_filter(&filter);
