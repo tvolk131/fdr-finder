@@ -131,7 +131,6 @@ async fn search_podcasts_handler<'a>(
         .await
 }
 
-
 // TODO - Rename min_length_seconds param to minLengthSeconds and max_length_seconds param to maxLengthSeconds
 // and update Typescript API file to match.
 #[get("/search/podcasts/rss?<query>&<tags>&<min_length_seconds>&<max_length_seconds>")]
