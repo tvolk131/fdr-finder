@@ -107,14 +107,16 @@ fn get_podcast_handler(
     }
 }
 
-#[get("/search/podcasts?<query>&<limit>&<offset>&<tags>&<minLengthSeconds>&<maxLengthSeconds>")]
+// TODO - Rename min_length_seconds param to minLengthSeconds and max_length_seconds param to maxLengthSeconds
+// and update Typescript API file to match.
+#[get("/search/podcasts?<query>&<limit>&<offset>&<tags>&<min_length_seconds>&<max_length_seconds>")]
 async fn search_podcasts_handler<'a>(
     query: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
     tags: Option<String>,
-    minLengthSeconds: Option<usize>,
-    maxLengthSeconds: Option<usize>,
+    min_length_seconds: Option<usize>,
+    max_length_seconds: Option<usize>,
     search_backend: &State<SearchBackend>,
 ) -> SearchResult {
     search_backend
@@ -123,18 +125,21 @@ async fn search_podcasts_handler<'a>(
             &parse_tag_query_string(tags),
             limit,
             offset.unwrap_or(0),
-            minLengthSeconds,
-            maxLengthSeconds,
+            min_length_seconds,
+            max_length_seconds,
         )
         .await
 }
 
-#[get("/search/podcasts/rss?<query>&<tags>&<minLengthSeconds>&<maxLengthSeconds>")]
+
+// TODO - Rename min_length_seconds param to minLengthSeconds and max_length_seconds param to maxLengthSeconds
+// and update Typescript API file to match.
+#[get("/search/podcasts/rss?<query>&<tags>&<min_length_seconds>&<max_length_seconds>")]
 async fn search_podcasts_as_rss_feed_handler<'a>(
     query: Option<String>,
     tags: Option<String>,
-    minLengthSeconds: Option<usize>,
-    maxLengthSeconds: Option<usize>,
+    min_length_seconds: Option<usize>,
+    max_length_seconds: Option<usize>,
     search_backend: &State<SearchBackend>,
 ) -> RssFeed {
     let search_result = search_backend
@@ -143,8 +148,8 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
             &parse_tag_query_string(tags),
             None,
             0,
-            minLengthSeconds,
-            maxLengthSeconds,
+            min_length_seconds,
+            max_length_seconds,
         )
         .await;
 
@@ -162,16 +167,19 @@ async fn search_podcasts_as_rss_feed_handler<'a>(
     )
 }
 
+// TODO - Find a way to reduce the number of arguments so we can remove this.
 #[allow(clippy::too_many_arguments)]
-#[get("/filteredTagsWithCounts?<query>&<limit>&<offset>&<tags>&<filter>&<minLengthSeconds>&<maxLengthSeconds>")]
+// TODO - Rename min_length_seconds param to minLengthSeconds and max_length_seconds param to maxLengthSeconds
+// and update Typescript API file to match.
+#[get("/filteredTagsWithCounts?<query>&<limit>&<offset>&<tags>&<filter>&<min_length_seconds>&<max_length_seconds>")]
 async fn get_filtered_tags_with_counts_handler<'a>(
     query: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
     tags: Option<String>,
     filter: Option<String>,
-    minLengthSeconds: Option<usize>,
-    maxLengthSeconds: Option<usize>,
+    min_length_seconds: Option<usize>,
+    max_length_seconds: Option<usize>,
     search_backend: &State<SearchBackend>,
 ) -> content::Json<String> {
     let parsed_tags = parse_tag_query_string(tags);
@@ -182,8 +190,8 @@ async fn get_filtered_tags_with_counts_handler<'a>(
             &parsed_tags,
             None,
             0,
-            minLengthSeconds,
-            maxLengthSeconds,
+            min_length_seconds,
+            max_length_seconds,
         )
         .await
         .take_hits()

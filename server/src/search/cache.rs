@@ -23,6 +23,7 @@ impl SearchCache {
         }
     }
 
+    // TODO - Find a way to reduce the number of arguments so we can remove this.
     #[allow(clippy::too_many_arguments)]
     pub async fn search(
         &self,
