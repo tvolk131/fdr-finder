@@ -14,7 +14,7 @@ struct JsonPodcast {
     title: String,
     urls: HashMap<String, String>,
     tags: Vec<JsonTag>,
-    length: usize,
+    length: i32,
     num: Option<serde_json::Number>,
 }
 
