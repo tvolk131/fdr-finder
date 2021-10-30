@@ -7,7 +7,9 @@ import {
   Divider,
   Chip,
   CircularProgress,
-  TextField
+  TextField,
+  Slider,
+  Typography
 } from '@mui/material';
 import {Autocomplete} from '@mui/lab';
 import {Theme, styled} from '@mui/material/styles';
@@ -17,6 +19,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import * as React from 'react';
 import {MouseEvent} from 'react';
 import {getTagDisplayText} from '../helper/tagFormatting';
+import {secondsToDurationString} from '../helper/secondsToDurationString';
+
+const sliderMaxValueSeconds = 14400;
+const sliderStepSize = 60;
 
 const useStyles = makeStyles((theme: Theme) => (
   createStyles({
@@ -73,6 +79,10 @@ interface SearchBarProps {
   setSearchTags: (tags: string[]) => void
   tagsWithCounts: {tags: {tag: string, count: number}[], remainingTagCount: number}
   isLoadingTagsWithCounts: boolean
+  minLengthSeconds: number | undefined
+  setMinLengthSeconds: (seconds: number | undefined) => void
+  maxLengthSeconds: number | undefined
+  setMaxLengthSeconds: (seconds: number | undefined) => void
 }
 
 const SearchBar = (props: SearchBarProps) => {
@@ -160,6 +170,51 @@ const SearchBar = (props: SearchBarProps) => {
       <Divider/>
       <AccordionDetails sx={{padding: '15px 10px 10px 10px'}}>
         <div className={classes.advancedSearchWrapper}>
+          <Typography>
+            Duration Filter
+          </Typography>
+          <Slider
+            sx={{maxWidth: '210px'}}
+            min={0}
+            max={sliderMaxValueSeconds}
+            step={sliderStepSize}
+            valueLabelDisplay={'auto'}
+            valueLabelFormat={
+              (value) => ((value === 0 || value === sliderMaxValueSeconds) ? '-' : secondsToDurationString(value))
+            }
+            value={[props.minLengthSeconds || 0, props.maxLengthSeconds || sliderMaxValueSeconds]}
+            disableSwap
+            onChange={
+              (
+                event,
+                newValue: number | number[],
+                activeThumb: number
+              ) => {
+                const minDistance = sliderStepSize * 30;
+
+                if (!Array.isArray(newValue)) {
+                  return;
+                }
+
+                if (activeThumb === 0) {
+                  const newVal = Math.min(newValue[0], (props.maxLengthSeconds || sliderMaxValueSeconds) - minDistance);
+                  if (newVal <= 0) {
+                    props.setMinLengthSeconds(undefined);
+                  } else {
+                    props.setMinLengthSeconds(newVal);
+                  }
+                } else {
+                  const newVal = Math.max(newValue[1], (props.minLengthSeconds || 0) + minDistance);
+                  if (newVal >= sliderMaxValueSeconds) {
+                    props.setMaxLengthSeconds(undefined);
+                  } else {
+                    props.setMaxLengthSeconds(newVal);
+                  }
+                }
+              }
+            }
+          />
+          <Divider sx={{margin: '10px 0'}}/>
           <div className={classes.tagSearchFieldWrapper}>
             <TextField
               value={props.tagFilter}

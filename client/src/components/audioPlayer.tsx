@@ -47,8 +47,8 @@ const useStyles = makeStyles((theme: Theme) =>
       height: 0
     },
     slider: {
-      top: '-15px',
-      padding: '15px 0'
+      top: '-13px',
+      overflow: 'hidden'
     }
   })
 );
@@ -141,6 +141,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           className={classes.slider}
           min={0}
           max={audioRef.current.duration}
+          disabled={!props.showInfo}
           value={trackProgress}
           onChange={(event, newValue) => {
             if (typeof(newValue) === 'number') {
