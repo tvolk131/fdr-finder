@@ -40,7 +40,7 @@ impl MeilisearchBackend {
             filter_elements.push(format!(
                 "({})",
                 tags.iter()
-                    .map(|tag| format!("tags = {}", tag.clone_to_string()))
+                    .map(|tag| format!("tags = \"{}\"", tag.clone_to_string()))
                     .collect::<Vec<String>>()
                     .join(" OR ")
             ));
