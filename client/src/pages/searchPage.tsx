@@ -23,9 +23,11 @@ import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
 import {ZoomableSunburst} from '../components/zoomableSunburst';
 import {createTree} from '../helper';
 import {queryFieldName, tagsFieldName} from '../constants';
-import {BehaviorSubject, map, switchMap, distinctUntilChanged, merge, of} from 'rxjs';
+import {BehaviorSubject, map, switchMap, distinctUntilChanged, merge, of, debounceTime} from 'rxjs';
 
 const podcastSearchHitLimit = 20;
+
+const debounceTimeMs = 25;
 
 const useStyles = makeStyles({
   root: {
@@ -114,6 +116,7 @@ export const SearchPage = (props: SearchPageProps) => {
 
   useEffect(() => {
     const searchResultsObservable = searchResultsSubject.current.pipe(
+      debounceTime(debounceTimeMs),
       map(({
         query,
         tags,
@@ -168,6 +171,7 @@ export const SearchPage = (props: SearchPageProps) => {
     });
 
     const tagsObservable = tagsSubject.current.pipe(
+      debounceTime(debounceTimeMs),
       map(({
         query,
         tags,
