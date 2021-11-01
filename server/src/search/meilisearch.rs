@@ -180,7 +180,7 @@ mod tests {
         );
         assert_eq!(
             MeilisearchBackend::create_meilisearch_filter(
-                &vec![PodcastTag::new("hello world".to_string())],
+                &[PodcastTag::new("hello world".to_string())],
                 None,
                 None
             ),
@@ -188,7 +188,7 @@ mod tests {
         );
         assert_eq!(
             MeilisearchBackend::create_meilisearch_filter(
-                &vec![
+                &[
                     PodcastTag::new("foo".to_string()),
                     PodcastTag::new("bar".to_string())
                 ],
@@ -199,7 +199,7 @@ mod tests {
         );
         assert_eq!(
             MeilisearchBackend::create_meilisearch_filter(
-                &vec![PodcastTag::new("hello world".to_string())],
+                &[PodcastTag::new("hello world".to_string())],
                 Some(1),
                 Some(2)
             ),
@@ -207,7 +207,7 @@ mod tests {
         );
         assert_eq!(
             MeilisearchBackend::create_meilisearch_filter(
-                &vec![
+                &[
                     PodcastTag::new("foo".to_string()),
                     PodcastTag::new("bar".to_string())
                 ],
