@@ -11,13 +11,16 @@ pub struct SearchBackend {
 }
 
 impl SearchBackend {
-    pub async fn new_prod(meilisearch_host: String, meilisearch_api_key: String) -> Self {
-        Self {
+    pub async fn new_prod(
+        meilisearch_host: String,
+        meilisearch_api_key: String,
+    ) -> Result<Self, meilisearch_sdk::errors::Error> {
+        Ok(Self {
             meilisearch_backend_or: Some(
-                meilisearch::MeilisearchBackend::new(meilisearch_host, meilisearch_api_key).await,
+                meilisearch::MeilisearchBackend::new(meilisearch_host, meilisearch_api_key).await?,
             ),
             search_cache: cache::SearchCache::new(10000),
-        }
+        })
     }
 
     pub fn new_mock() -> Self {

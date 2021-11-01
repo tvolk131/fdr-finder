@@ -307,11 +307,14 @@ async fn rocket() -> _ {
 
     let search_backend: SearchBackend = match server_mode {
         ServerMode::Prod => {
-            let search_backend = SearchBackend::new_prod(
+            let search_backend = match SearchBackend::new_prod(
                 env_vars.get_meilisearch_host().to_string(),
                 env_vars.get_meilisearch_api_key().to_string(),
             )
-            .await;
+            .await {
+                Ok(search_backend) => search_backend,
+                Err(error) => panic!("Encountered error connecting to Meilisearch. This likely means that either something is wrong with your environment variables, or your Meilisearch server is not responding. Raw error: {}", error)
+            };
 
             println!("Ingesting search index...");
             search_backend

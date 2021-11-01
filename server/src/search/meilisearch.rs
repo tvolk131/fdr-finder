@@ -8,19 +8,20 @@ pub struct MeilisearchBackend {
 }
 
 impl MeilisearchBackend {
-    pub async fn new(host: String, api_key: String) -> Self {
+    pub async fn new(
+        host: String,
+        api_key: String,
+    ) -> Result<Self, meilisearch_sdk::errors::Error> {
         let client = Client::new(host, api_key);
-        client.delete_index_if_exists("podcasts").await.unwrap();
-        let podcast_index = client.get_or_create("podcasts").await.unwrap();
+        client.delete_index_if_exists("podcasts").await?;
+        let podcast_index = client.get_or_create("podcasts").await?;
         podcast_index
             .set_filterable_attributes(["tags", "lengthInSeconds"])
-            .await
-            .unwrap();
+            .await?;
         podcast_index
             .set_sortable_attributes(["podcastNumber"])
-            .await
-            .unwrap();
-        Self { podcast_index }
+            .await?;
+        Ok(Self { podcast_index })
     }
 
     pub async fn search(
@@ -34,28 +35,7 @@ impl MeilisearchBackend {
     ) -> SearchResult {
         let mut search_request = self.podcast_index.search();
 
-        let mut filter_elements: Vec<String> = Vec::new();
-
-        if !tags.is_empty() {
-            filter_elements.push(format!(
-                "({})",
-                tags.iter()
-                    .map(|tag| format!("tags = \"{}\"", tag.clone_to_string()))
-                    .collect::<Vec<String>>()
-                    .join(" OR ")
-            ));
-        }
-
-        if let Some(min_length_seconds) = min_length_seconds {
-            filter_elements.push(format!("lengthInSeconds > {}", min_length_seconds - 1));
-        }
-
-        if let Some(max_length_seconds) = max_length_seconds {
-            filter_elements.push(format!("lengthInSeconds < {}", max_length_seconds + 1));
-        }
-
-        let filter = filter_elements.join(" AND ");
-
+        let filter = Self::create_meilisearch_filter(tags, min_length_seconds, max_length_seconds);
         if !filter.is_empty() {
             search_request.with_filter(&filter);
         }
@@ -83,6 +63,33 @@ impl MeilisearchBackend {
             total_hits_is_approximate: !results.exhaustive_nb_hits,
             processing_time_ms: results.processing_time_ms,
         }
+    }
+
+    fn create_meilisearch_filter(
+        tags: &[PodcastTag],
+        min_length_seconds: Option<usize>,
+        max_length_seconds: Option<usize>,
+    ) -> String {
+        let mut filter_elements: Vec<String> = Vec::new();
+
+        if !tags.is_empty() {
+            filter_elements.push(
+                tags.iter()
+                    .map(|tag| format!("tags = \"{}\"", tag.clone_to_string()))
+                    .collect::<Vec<String>>()
+                    .join(" AND "),
+            );
+        }
+
+        if let Some(min_length_seconds) = min_length_seconds {
+            filter_elements.push(format!("lengthInSeconds > {}", min_length_seconds - 1));
+        }
+
+        if let Some(max_length_seconds) = max_length_seconds {
+            filter_elements.push(format!("lengthInSeconds < {}", max_length_seconds + 1));
+        }
+
+        filter_elements.join(" AND ")
     }
 
     pub async fn ingest_podcasts_or_panic(&self, podcasts: impl Iterator<Item = &Podcast>) {
@@ -150,5 +157,64 @@ pub fn generate_mock_search_results() -> SearchResult {
         total_hits,
         total_hits_is_approximate: false,
         processing_time_ms: 1234,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_meilisearch_filter() {
+        assert_eq!(
+            MeilisearchBackend::create_meilisearch_filter(&Vec::new(), None, None),
+            ""
+        );
+        assert_eq!(
+            MeilisearchBackend::create_meilisearch_filter(&Vec::new(), Some(1), None),
+            "lengthInSeconds > 0"
+        );
+        assert_eq!(
+            MeilisearchBackend::create_meilisearch_filter(&Vec::new(), Some(1), Some(2)),
+            "lengthInSeconds > 0 AND lengthInSeconds < 3"
+        );
+        assert_eq!(
+            MeilisearchBackend::create_meilisearch_filter(
+                &vec![PodcastTag::new("hello world".to_string())],
+                None,
+                None
+            ),
+            "tags = \"hello world\""
+        );
+        assert_eq!(
+            MeilisearchBackend::create_meilisearch_filter(
+                &vec![
+                    PodcastTag::new("foo".to_string()),
+                    PodcastTag::new("bar".to_string())
+                ],
+                None,
+                None
+            ),
+            "tags = \"foo\" AND tags = \"bar\""
+        );
+        assert_eq!(
+            MeilisearchBackend::create_meilisearch_filter(
+                &vec![PodcastTag::new("hello world".to_string())],
+                Some(1),
+                Some(2)
+            ),
+            "tags = \"hello world\" AND lengthInSeconds > 0 AND lengthInSeconds < 3"
+        );
+        assert_eq!(
+            MeilisearchBackend::create_meilisearch_filter(
+                &vec![
+                    PodcastTag::new("foo".to_string()),
+                    PodcastTag::new("bar".to_string())
+                ],
+                Some(1),
+                Some(2)
+            ),
+            "tags = \"foo\" AND tags = \"bar\" AND lengthInSeconds > 0 AND lengthInSeconds < 3"
+        );
     }
 }
