@@ -67,31 +67,17 @@ const getTagsFromQueryParam = (location: Location): string[] => {
   return tags;
 };
 
-const getMinLengthSecondsFromQueryParam = (location: Location): number | undefined => {
+const getNumberParamFromQueryParam = (location: Location, paramName: string): number | undefined => {
   const params = qs.parse(location.search.replace('?', ''));
-  let minLengthSeconds = params[minLengthSecondsFieldName];
-  if (typeof minLengthSeconds !== 'string') {
+  let param = params[paramName];
+  if (typeof param !== 'string') {
     return undefined;
   }
-  const parsedMinLengthSeconds = parseInt(minLengthSeconds);
-  if (isNaN(parsedMinLengthSeconds)) {
+  const parsedParam = parseInt(param);
+  if (isNaN(parsedParam)) {
     return undefined;
   } else {
-    return parsedMinLengthSeconds;
-  }
-};
-
-const getMaxLengthSecondsFromQueryParam = (location: Location): number | undefined => {
-  const params = qs.parse(location.search.replace('?', ''));
-  let maxLengthSeconds = params[maxLengthSecondsFieldName];
-  if (typeof maxLengthSeconds !== 'string') {
-    return undefined;
-  }
-  const parsedMaxLengthSeconds = parseInt(maxLengthSeconds);
-  if (isNaN(parsedMaxLengthSeconds)) {
-    return undefined;
-  } else {
-    return parsedMaxLengthSeconds;
+    return parsedParam;
   }
 };
 
@@ -109,8 +95,8 @@ export const SearchPage = (props: SearchPageProps) => {
   const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(location));
 
   const [tagFilter, setTagFilter] = useState('');
-  const [minLengthSeconds, setMinLengthSeconds] = useState<number | undefined>(getMinLengthSecondsFromQueryParam(location));
-  const [maxLengthSeconds, setMaxLengthSeconds] = useState<number | undefined>(getMaxLengthSecondsFromQueryParam(location));
+  const [minLengthSeconds, setMinLengthSeconds] = useState<number | undefined>(getNumberParamFromQueryParam(location, minLengthSecondsFieldName));
+  const [maxLengthSeconds, setMaxLengthSeconds] = useState<number | undefined>(getNumberParamFromQueryParam(location, maxLengthSecondsFieldName));
 
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
   const [isLoadingPodcasts, setIsLoadingPodcasts] = useState(false);
