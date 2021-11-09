@@ -9,9 +9,9 @@ import {
   CircularProgress,
   TextField,
   Slider,
-  Typography
+  Typography,
+  Autocomplete
 } from '@mui/material';
-import {Autocomplete} from '@mui/lab';
 import {Theme, styled} from '@mui/material/styles';
 import {createStyles, makeStyles} from '@mui/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';

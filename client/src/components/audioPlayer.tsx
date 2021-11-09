@@ -9,6 +9,10 @@ import Replay10Icon from '@mui/icons-material/Replay10';
 import {Slider, IconButton, Typography, Paper, CircularProgress} from '@mui/material';
 import {ShowInfo} from './showCard';
 
+const castToZeroIfIsNaN = (num: number): number => {
+  return isNaN(num) ? 0 : num;
+};
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
@@ -113,17 +117,20 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   }, [isPlaying]);
 
   useEffect(() => {
-    audioRef.current.src = props.showInfo?.audioLink || '';
-    setFailedToLoad(false);
-    if (props.showInfo) {
-      setIsLoadingAudio(true);
-    }
-    if (props.autoPlay) {
-      setIsPlaying(true);
-      audioRef.current.play();
-    } else {
-      setIsPlaying(false);
-      audioRef.current.pause();
+    const newAudioLink = props.showInfo?.audioLink;
+    if (newAudioLink !== undefined) {
+      audioRef.current.src = newAudioLink;
+      setFailedToLoad(false);
+      if (props.showInfo) {
+        setIsLoadingAudio(true);
+      }
+      if (props.autoPlay) {
+        setIsPlaying(true);
+        audioRef.current.play();
+      } else {
+        setIsPlaying(false);
+        audioRef.current.pause();
+      }
     }
   }, [props.showInfo?.audioLink]);
 
@@ -140,9 +147,9 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
         <Slider
           className={classes.slider}
           min={0}
-          max={audioRef.current.duration}
+          max={castToZeroIfIsNaN(audioRef.current.duration)}
           disabled={!props.showInfo}
-          value={trackProgress}
+          value={castToZeroIfIsNaN(trackProgress)}
           onChange={(event, newValue) => {
             if (typeof(newValue) === 'number') {
               setTrackProgress(newValue);

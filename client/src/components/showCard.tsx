@@ -93,8 +93,9 @@ const ShowCard = (props: ShowCardProps) => {
           {
             !!props.show.tags.length &&
               <div>
-                {props.show.tags.map((tag) => (
+                {props.show.tags.map((tag, index) => (
                   <Chip
+                    key={index}
                     className={classes.tagChip}
                     label={getTagDisplayText(tag)}
                   />

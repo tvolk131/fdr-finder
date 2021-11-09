@@ -353,8 +353,8 @@ interface ShowCardListProps {
 }
 
 const ShowCardList = React.memo((props: ShowCardListProps) => {
-  return <div style={{maxWidth: 800, margin: 'auto', textAlign: 'initial'}}>{props.podcasts.map((show) => (
-    <div style={{padding: '10px 0 0 0'}}>
+  return <div style={{maxWidth: 800, margin: 'auto', textAlign: 'initial'}}>{props.podcasts.map((show, index) => (
+    <div key={index} style={{padding: '10px 0 0 0'}}>
       <ShowCard onPlay={() => props.setPlayingShow(show)} show={show}/>
     </div>
   ))}</div>;
