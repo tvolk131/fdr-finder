@@ -21,7 +21,7 @@ import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
 import {ZoomableSunburst} from '../components/zoomableSunburst';
 import {createTree} from '../helper';
-import {queryFieldName, tagsFieldName} from '../constants';
+import {queryFieldName, tagsFieldName, minLengthSecondsFieldName, maxLengthSecondsFieldName} from '../constants';
 import {BehaviorSubject, map, switchMap, distinctUntilChanged, merge, of, debounceTime} from 'rxjs';
 
 const podcastSearchHitLimit = 20;
@@ -49,17 +49,13 @@ const useStyles = makeStyles({
   }
 });
 
-const getQueryFromQueryParam = (location: Location) => {
+const getQueryFromQueryParam = (location: Location): string => {
   const params = qs.parse(location.search.replace('?', ''));
-  let query = params[queryFieldName];
-  if (typeof query !== 'string') {
-    query = '';
-  }
-
-  return query;
+  const query = params[queryFieldName];
+  return typeof query === 'string' ? query : '';
 };
 
-const getTagsFromQueryParam = (location: Location) => {
+const getTagsFromQueryParam = (location: Location): string[] => {
   const params = qs.parse(location.search.replace('?', ''));
   let tags = params[tagsFieldName];
   if (typeof tags === 'string') {
@@ -69,6 +65,34 @@ const getTagsFromQueryParam = (location: Location) => {
   }
 
   return tags;
+};
+
+const getMinLengthSecondsFromQueryParam = (location: Location): number | undefined => {
+  const params = qs.parse(location.search.replace('?', ''));
+  let minLengthSeconds = params[minLengthSecondsFieldName];
+  if (typeof minLengthSeconds !== 'string') {
+    return undefined;
+  }
+  const parsedMinLengthSeconds = parseInt(minLengthSeconds);
+  if (isNaN(parsedMinLengthSeconds)) {
+    return undefined;
+  } else {
+    return parsedMinLengthSeconds;
+  }
+};
+
+const getMaxLengthSecondsFromQueryParam = (location: Location): number | undefined => {
+  const params = qs.parse(location.search.replace('?', ''));
+  let maxLengthSeconds = params[maxLengthSecondsFieldName];
+  if (typeof maxLengthSeconds !== 'string') {
+    return undefined;
+  }
+  const parsedMaxLengthSeconds = parseInt(maxLengthSeconds);
+  if (isNaN(parsedMaxLengthSeconds)) {
+    return undefined;
+  } else {
+    return parsedMaxLengthSeconds;
+  }
 };
 
 interface SearchPageProps {
@@ -85,8 +109,8 @@ export const SearchPage = (props: SearchPageProps) => {
   const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(location));
 
   const [tagFilter, setTagFilter] = useState('');
-  const [minLengthSeconds, setMinLengthSeconds] = useState<number | undefined>(undefined);
-  const [maxLengthSeconds, setMaxLengthSeconds] = useState<number | undefined>(undefined);
+  const [minLengthSeconds, setMinLengthSeconds] = useState<number | undefined>(getMinLengthSecondsFromQueryParam(location));
+  const [maxLengthSeconds, setMaxLengthSeconds] = useState<number | undefined>(getMaxLengthSecondsFromQueryParam(location));
 
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
   const [isLoadingPodcasts, setIsLoadingPodcasts] = useState(false);
@@ -233,7 +257,9 @@ export const SearchPage = (props: SearchPageProps) => {
   useEffect(() => {
     const newLocation = generateUrlWithQueryParams('/', {
       [queryFieldName]: searchTerm,
-      [tagsFieldName]: searchTags.join(',')
+      [tagsFieldName]: searchTags.join(','),
+      [minLengthSecondsFieldName]: minLengthSeconds,
+      [maxLengthSecondsFieldName]: maxLengthSeconds
     });
     if (newLocation !== `${location.pathname}${location.search}`) {
       navigate(newLocation);
