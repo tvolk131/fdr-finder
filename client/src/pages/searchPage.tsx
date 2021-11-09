@@ -15,8 +15,7 @@ import {
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import RssFeedIcon from '@mui/icons-material/RssFeed';
-import {useHistory} from 'react-router';
-import {History} from 'history';
+import {Location, useLocation, useNavigate} from 'react-router';
 import * as qs from 'qs';
 import {ZoomableIcicle} from '../components/zoomableIcicle';
 import {ZoomableCirclePacking} from '../components/zoomableCirclePacking';
@@ -50,8 +49,8 @@ const useStyles = makeStyles({
   }
 });
 
-const getQueryFromQueryParam = (history: History<unknown>) => {
-  const params = qs.parse(history.location.search.replace('?', ''));
+const getQueryFromQueryParam = (location: Location) => {
+  const params = qs.parse(location.search.replace('?', ''));
   let query = params[queryFieldName];
   if (typeof query !== 'string') {
     query = '';
@@ -60,8 +59,8 @@ const getQueryFromQueryParam = (history: History<unknown>) => {
   return query;
 };
 
-const getTagsFromQueryParam = (history: History<unknown>) => {
-  const params = qs.parse(history.location.search.replace('?', ''));
+const getTagsFromQueryParam = (location: Location) => {
+  const params = qs.parse(location.search.replace('?', ''));
   let tags = params[tagsFieldName];
   if (typeof tags === 'string') {
     tags = tags.split(',');
@@ -79,10 +78,11 @@ interface SearchPageProps {
 
 export const SearchPage = (props: SearchPageProps) => {
   const classes = useStyles();
-  const history = useHistory();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [searchTerm, setSearchTerm] = useState(getQueryFromQueryParam(history));
-  const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(history));
+  const [searchTerm, setSearchTerm] = useState(getQueryFromQueryParam(location));
+  const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(location));
 
   const [tagFilter, setTagFilter] = useState('');
   const [minLengthSeconds, setMinLengthSeconds] = useState<number | undefined>(undefined);
@@ -235,8 +235,8 @@ export const SearchPage = (props: SearchPageProps) => {
       [queryFieldName]: searchTerm,
       [tagsFieldName]: searchTags.join(',')
     });
-    if (newLocation !== `${history.location.pathname}${history.location.search}`) {
-      history.push(newLocation);
+    if (newLocation !== `${location.pathname}${location.search}`) {
+      navigate(newLocation);
     }
 
     searchResultsSubject.current.next({query: searchTerm, tags: searchTags, minLengthSeconds, maxLengthSeconds});

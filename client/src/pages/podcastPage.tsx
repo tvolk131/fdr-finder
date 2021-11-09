@@ -54,12 +54,12 @@ interface PodcastPageProps {
 
 export const PodcastPage = (props: PodcastPageProps) => {
   const classes = useStyles();
-  const params = useParams<{podcastNum: string}>();
+  const {podcastNum} = useParams();
 
   const [podcast, setPodcast] = useState<ShowInfo | null | undefined>(undefined);
 
   useEffect(() => {
-    getPodcast(parseInt(params.podcastNum, 10))
+    getPodcast(parseInt(podcastNum || '', 10))
       .then(setPodcast)
       .catch(() => setPodcast(null));
   }, []);

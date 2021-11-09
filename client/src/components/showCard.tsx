@@ -4,7 +4,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import {makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState} from 'react';
-import {useHistory} from 'react-router';
+import {useNavigate} from 'react-router';
 import {getTagDisplayText} from '../helper/tagFormatting';
 import {secondsToDurationString} from '../helper/secondsToDurationString';
 
@@ -54,14 +54,14 @@ interface ShowCardProps {
 
 const ShowCard = (props: ShowCardProps) => {
   const classes = useStyles();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [expanded, setExpanded] = useState(false);
 
   return (
     <Card>
       <CardHeader
-        onClick={() => {history.push(`/podcasts/${props.show.podcastNumber}`)}}
+        onClick={() => {navigate(`/podcasts/${props.show.podcastNumber}`)}}
         title={
           <span className={classes.title}>
             <Typography

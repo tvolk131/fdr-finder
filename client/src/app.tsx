@@ -7,7 +7,7 @@ import {
 import {createStyles, makeStyles} from '@mui/styles';
 import * as React from 'react';
 import {useState} from 'react';
-import {Route, Switch} from 'react-router';
+import {Route, Routes} from 'react-router';
 import {BrowserRouter} from 'react-router-dom';
 import {SearchPage} from './pages/searchPage';
 import {NotFoundPage} from './pages/notFoundPage';
@@ -48,17 +48,11 @@ const SubApp = () => {
       <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
       <div className={classes.pageContent}>
         <BrowserRouter>
-          <Switch>
-            <Route exact path='/'>
-              <SearchPage setPlayingShow={setPlayingShow} showSnackbarMessage={showSnackbarMessage}/>
-            </Route>
-            <Route exact path='/podcasts/:podcastNum'>
-              <PodcastPage setPlayingShow={setPlayingShow}/>
-            </Route>
-            <Route path='*'>
-              <NotFoundPage/>
-            </Route>
-          </Switch>
+          <Routes>
+            <Route path='/' element={<SearchPage setPlayingShow={setPlayingShow} showSnackbarMessage={showSnackbarMessage}/>}/>
+            <Route path='/podcasts/:podcastNum' element={<PodcastPage setPlayingShow={setPlayingShow}/>}/>
+            <Route path='*' element={<NotFoundPage/>}/>
+          </Routes>
         </BrowserRouter>
       </div>
       <AudioPlayer showInfo={playingShow} autoPlay={true} showSnackbarMessage={showSnackbarMessage}/>
