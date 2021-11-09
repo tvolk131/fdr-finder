@@ -69,11 +69,11 @@ const getTagsFromQueryParam = (location: Location): string[] => {
 
 const getNumberParamFromQueryParam = (location: Location, paramName: string): number | undefined => {
   const params = qs.parse(location.search.replace('?', ''));
-  let param = params[paramName];
+  const param = params[paramName];
   if (typeof param !== 'string') {
     return undefined;
   }
-  const parsedParam = parseInt(param);
+  const parsedParam = parseInt(param, 10);
   if (isNaN(parsedParam)) {
     return undefined;
   } else {
@@ -95,8 +95,10 @@ export const SearchPage = (props: SearchPageProps) => {
   const [searchTags, setSearchTags] = useState<string[]>(getTagsFromQueryParam(location));
 
   const [tagFilter, setTagFilter] = useState('');
-  const [minLengthSeconds, setMinLengthSeconds] = useState<number | undefined>(getNumberParamFromQueryParam(location, minLengthSecondsFieldName));
-  const [maxLengthSeconds, setMaxLengthSeconds] = useState<number | undefined>(getNumberParamFromQueryParam(location, maxLengthSecondsFieldName));
+  const [minLengthSeconds, setMinLengthSeconds] =
+    useState<number | undefined>(getNumberParamFromQueryParam(location, minLengthSecondsFieldName));
+  const [maxLengthSeconds, setMaxLengthSeconds] =
+    useState<number | undefined>(getNumberParamFromQueryParam(location, maxLengthSecondsFieldName));
 
   const [podcasts, setPodcasts] = useState([] as ShowInfo[]);
   const [isLoadingPodcasts, setIsLoadingPodcasts] = useState(false);

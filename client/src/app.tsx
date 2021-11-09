@@ -49,9 +49,18 @@ const SubApp = () => {
       <div className={classes.pageContent}>
         <BrowserRouter>
           <Routes>
-            <Route path='/' element={<SearchPage setPlayingShow={setPlayingShow} showSnackbarMessage={showSnackbarMessage}/>}/>
-            <Route path='/podcasts/:podcastNum' element={<PodcastPage setPlayingShow={setPlayingShow}/>}/>
-            <Route path='*' element={<NotFoundPage/>}/>
+            <Route
+              path='/'
+              element={<SearchPage setPlayingShow={setPlayingShow} showSnackbarMessage={showSnackbarMessage}/>}
+            />
+            <Route
+              path='/podcasts/:podcastNum'
+              element={<PodcastPage setPlayingShow={setPlayingShow}/>}
+            />
+            <Route
+              path='*'
+              element={<NotFoundPage/>}
+            />
           </Routes>
         </BrowserRouter>
       </div>
