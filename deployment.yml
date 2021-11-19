@@ -17,6 +17,18 @@ spec:
         image: <IMAGE>
         ports:
         - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 20
+          periodSeconds: 20
         env:
         - name: MEILISEARCH_HOST
           value: "<MEILISEARCH_HOST>"

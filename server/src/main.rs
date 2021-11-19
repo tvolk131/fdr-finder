@@ -90,6 +90,11 @@ fn not_found_handler(req: &Request) -> NotFoundResponse {
     }
 }
 
+#[get("/healthz")]
+async fn healthz_handler() -> content::Html<String> {
+    content::Html("<html><body><h1>200 OK</h1>Service ready.</body></html>".to_string())
+}
+
 #[get("/podcasts/<podcast_num>")]
 fn get_podcast_handler(
     podcast_num: String,
@@ -330,6 +335,7 @@ async fn rocket() -> _ {
         .manage(fdr_cache)
         .manage(search_backend)
         .register("/", catchers![not_found_handler])
+        .mount("/", routes![healthz_handler])
         .mount(
             "/api",
             routes![
