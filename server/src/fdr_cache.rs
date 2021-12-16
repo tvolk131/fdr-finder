@@ -1,12 +1,14 @@
 use crate::http::get_all_podcasts;
 use crate::podcast::{Podcast, PodcastNumber};
-use std::collections::BTreeMap;
+use dashmap::DashMap;
 use std::error::Error;
+use std::sync::Arc;
 
 use crate::mock::create_mock_podcast;
 
+#[derive(Clone)]
 pub struct FdrCache {
-    podcasts_by_num: BTreeMap<PodcastNumber, Podcast>,
+    podcasts_by_num: Arc<DashMap<PodcastNumber, Podcast>>,
 }
 
 impl FdrCache {
@@ -25,18 +27,34 @@ impl FdrCache {
     }
 
     fn new(podcasts: Vec<Podcast>) -> Self {
-        let mut podcasts_by_num = BTreeMap::new();
+        let mut cache = Self {
+            podcasts_by_num: Arc::from(DashMap::new()),
+        };
+        cache.ingest_podcasts(podcasts.into_iter());
+        cache
+    }
+
+    pub fn ingest_podcasts(&mut self, podcasts: impl Iterator<Item = Podcast>) {
         for podcast in podcasts {
-            podcasts_by_num.insert(podcast.get_podcast_number().clone(), podcast);
+            self.podcasts_by_num
+                .insert(podcast.get_podcast_number().clone(), podcast);
         }
-        Self { podcasts_by_num }
     }
 
+    /// Iterator over all Podcasts in the cache.
+    ///
+    /// **Locking behaviour:** May deadlock if called when holding any sort of reference into the cache.
     pub fn iter(&self) -> impl Iterator<Item = &Podcast> {
-        self.podcasts_by_num.values()
+        self.podcasts_by_num.iter().map(|entry| entry.value())
     }
 
+    /// Get a immutable reference to a Podcast in the cache.
+    ///
+    /// **Locking behaviour:** May deadlock if called when holding a mutable reference into the cache.
     pub fn get_podcast(&self, num: &PodcastNumber) -> Option<&Podcast> {
-        self.podcasts_by_num.get(num)
+        match self.podcasts_by_num.get(num) {
+            Some(entry) => Some(entry.value()),
+            None => None,
+        }
     }
 }
