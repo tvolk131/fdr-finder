@@ -5,6 +5,7 @@ mod meilisearch;
 
 pub use meilisearch::SearchResult;
 
+#[derive(Clone)]
 pub struct SearchBackend {
     meilisearch_backend_or: Option<meilisearch::MeilisearchBackend>, // Only `None` if running in mock mode.
     search_cache: cache::SearchCache,
@@ -28,6 +29,14 @@ impl SearchBackend {
             meilisearch_backend_or: None,
             search_cache: cache::SearchCache::new(0),
         }
+    }
+
+    pub async fn reset(&self) {
+        if let Some(meilisearch_backend) = &self.meilisearch_backend_or {
+            meilisearch_backend.reset_index().await;
+        }
+
+        self.search_cache.reset();
     }
 
     pub async fn search(

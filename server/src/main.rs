@@ -8,6 +8,7 @@ mod mock;
 mod podcast;
 mod search;
 
+use crate::http::get_all_podcasts;
 use crate::podcast::{generate_rss_feed, Podcast, PodcastNumber, PodcastTag, RssFeed};
 use environment::{EnvironmentVariables, ServerMode};
 use fdr_cache::FdrCache;
@@ -329,6 +330,24 @@ async fn rocket() -> _ {
         }
         ServerMode::Mock => SearchBackend::new_mock(),
     };
+
+    let fdr_cache_clone = fdr_cache.clone();
+    let search_backend_clone = search_backend.clone();
+
+    // This task is responsible for periodically loading new podcasts.
+    tokio::spawn(async move {
+        let mut fdr_cache = fdr_cache_clone;
+        let search_backend = search_backend_clone;
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(3600));
+        loop {
+            interval.tick().await;
+            let all_podcasts = get_all_podcasts().await.unwrap();
+            search_backend
+                .ingest_podcasts_or_panic(all_podcasts.iter())
+                .await;
+            fdr_cache.ingest_podcasts(all_podcasts.into_iter());
+        }
+    });
 
     println!("Starting server...");
     rocket::build()

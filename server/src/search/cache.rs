@@ -12,15 +12,21 @@ type SearchLru = lru::LruCache<
     SearchResult,
 >;
 
+#[derive(Clone)]
 pub struct SearchCache {
     lru: Arc<Mutex<SearchLru>>,
 }
 
+// TODO - Optimize the locking behavior of this struct, or possibly make it non-blocking.
 impl SearchCache {
     pub fn new(cap: usize) -> Self {
         Self {
             lru: Arc::from(Mutex::from(lru::LruCache::new(cap))),
         }
+    }
+
+    pub fn reset(&self) {
+        self.lru.lock().unwrap().clear();
     }
 
     // TODO - Find a way to reduce the number of arguments so we can remove this.
@@ -57,7 +63,6 @@ impl SearchCache {
                 if let Some(limit) = limit_or {
                     cached_result_clone.hits.truncate(limit);
                 };
-                println!("Returning cached hit!");
                 return cached_result_clone;
             };
         }
@@ -74,7 +79,6 @@ impl SearchCache {
             .await;
 
         if limit_or == None && offset == 0 {
-            println!("Caching result.");
             let mut lru = self.lru.lock().unwrap();
             lru.put(
                 (

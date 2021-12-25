@@ -2,9 +2,12 @@ use crate::mock::create_mock_podcast;
 use crate::podcast::{Podcast, PodcastTag};
 use meilisearch_sdk::{client::Client, indexes::Index, progress::UpdateStatus};
 use serde::Serialize;
+use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct MeilisearchBackend {
-    podcast_index: Index,
+    client: Arc<Client>,
+    podcast_index: Arc<Index>,
 }
 
 impl MeilisearchBackend {
@@ -13,15 +16,40 @@ impl MeilisearchBackend {
         api_key: String,
     ) -> Result<Self, meilisearch_sdk::errors::Error> {
         let client = Client::new(host, api_key);
-        client.delete_index_if_exists("podcasts").await?;
         let podcast_index = client.get_or_create("podcasts").await?;
-        podcast_index
+        Ok(Self {
+            client: Arc::from(client),
+            podcast_index: Arc::from(podcast_index),
+        })
+    }
+
+    /// Clears and rebuilds the underlying Meilisearch index.
+    pub async fn reset_index(&self) -> Option<meilisearch_sdk::errors::Error> {
+        match self.client.delete_index_if_exists("podcasts").await {
+            Ok(_) => {}
+            Err(err) => return Some(err),
+        };
+        match self.client.get_or_create("podcasts").await {
+            Ok(_index) => {} // No need to reassign index since, under the hood, the struct just contains a few string properties such as the host and index name.
+            Err(err) => return Some(err),
+        };
+        match self
+            .podcast_index
             .set_filterable_attributes(["tags", "lengthInSeconds"])
-            .await?;
-        podcast_index
+            .await
+        {
+            Ok(_) => {} // TODO - The value here is of type meilisearch_sdk::progress::Progress. This type does not guarantee that the operation completed, but rather is a way to check its progress. Therefore, we should actually be using the value here to further ensure that the operation successfully completes.
+            Err(err) => return Some(err),
+        };
+        match self
+            .podcast_index
             .set_sortable_attributes(["podcastNumber"])
-            .await?;
-        Ok(Self { podcast_index })
+            .await
+        {
+            Ok(_) => {} // TODO - The value here is of type meilisearch_sdk::progress::Progress. This type does not guarantee that the operation completed, but rather is a way to check its progress. Therefore, we should actually be using the value here to further ensure that the operation successfully completes.
+            Err(err) => return Some(err),
+        };
+        None
     }
 
     pub async fn search(
