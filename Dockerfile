@@ -1,4 +1,4 @@
-FROM node:16.10.0 AS client-base
+FROM node:17.3.0 AS client-base
 COPY ./ ./app
 WORKDIR /app
 RUN cd client && npm ci && npm run build-prod
