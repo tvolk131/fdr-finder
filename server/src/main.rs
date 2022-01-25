@@ -96,6 +96,12 @@ async fn healthz_handler() -> content::Html<String> {
     content::Html("<html><body><h1>200 OK</h1>Service ready.</body></html>".to_string())
 }
 
+// TODO - Guard this handler with an API key or something
+#[get("/reset")]
+async fn reset_handler(search_backend: &State<SearchBackend>) {
+    search_backend.reset().await
+}
+
 #[get("/podcasts/<podcast_num>")]
 fn get_podcast_handler(
     podcast_num: String,
@@ -360,6 +366,7 @@ async fn rocket() -> _ {
         .mount(
             "/api",
             routes![
+                reset_handler,
                 get_podcast_handler,
                 search_podcasts_handler,
                 search_podcasts_as_rss_feed_handler,
