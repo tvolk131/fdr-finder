@@ -78,7 +78,7 @@ impl SearchCache {
             )
             .await;
 
-        if limit_or == None && offset == 0 {
+        if limit_or.is_none() && offset == 0 {
             let mut lru = self.lru.lock().unwrap();
             lru.put(
                 (

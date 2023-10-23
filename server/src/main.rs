@@ -229,14 +229,11 @@ async fn get_filtered_tags_with_counts_handler<'a>(
 
     let mut counts_list: Vec<(PodcastTag, usize)> = counts_by_tag.into_iter().collect();
     if let Some(filter) = filter {
-        counts_list = counts_list
-            .into_iter()
-            .filter(|(tag, _count)| {
-                tag.to_string()
-                    .to_lowercase()
-                    .contains(&filter.to_lowercase())
-            })
-            .collect();
+        counts_list.retain(|(tag, _)| {
+            tag.to_string()
+                .to_lowercase()
+                .contains(&filter.to_lowercase())
+        });
     }
     counts_list.sort_by(|(tag_one, count_one), (tag_two, count_two)| {
         let count_ordering = count_two.cmp(count_one);
