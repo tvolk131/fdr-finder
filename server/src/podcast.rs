@@ -1,4 +1,3 @@
-use meilisearch_sdk::document::Document;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -123,13 +122,6 @@ impl<'r> rocket::response::Responder<'r, 'static> for Podcast {
             .header(rocket::http::ContentType::JSON)
             .sized_body(json_string.len(), std::io::Cursor::new(json_string))
             .ok()
-    }
-}
-
-impl Document for Podcast {
-    type UIDType = PodcastNumber;
-    fn get_uid(&self) -> &Self::UIDType {
-        &self.podcast_number
     }
 }
 

@@ -1,8 +1,10 @@
 use crate::mock::create_mock_podcast;
 use crate::podcast::{Podcast, PodcastTag};
-use meilisearch_sdk::{client::Client, indexes::Index, progress::UpdateStatus};
+use meilisearch_sdk::tasks::Task;
+use meilisearch_sdk::{client::Client, indexes::Index};
 use serde::Serialize;
 use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Clone)]
 pub struct MeilisearchBackend {
@@ -16,7 +18,7 @@ impl MeilisearchBackend {
         api_key: String,
     ) -> Result<Self, meilisearch_sdk::errors::Error> {
         let client = Client::new(host, api_key);
-        let podcast_index = client.get_or_create("podcasts").await?;
+        let podcast_index = Self::get_wiped_podcast_index(&client).await?;
         Ok(Self {
             client: Arc::from(client),
             podcast_index: Arc::from(podcast_index),
@@ -24,32 +26,37 @@ impl MeilisearchBackend {
     }
 
     /// Clears and rebuilds the underlying Meilisearch index.
-    pub async fn reset_index(&self) -> Option<meilisearch_sdk::errors::Error> {
-        match self.client.delete_index_if_exists("podcasts").await {
-            Ok(_) => {}
-            Err(err) => return Some(err),
-        };
-        match self.client.get_or_create("podcasts").await {
-            Ok(_index) => {} // No need to reassign index since, under the hood, the struct just contains a few string properties such as the host and index name.
-            Err(err) => return Some(err),
-        };
-        match self
-            .podcast_index
+    pub async fn reset_index(&self) -> Result<(), meilisearch_sdk::errors::Error> {
+        Self::get_wiped_podcast_index(&self.client).await?;
+        Ok(())
+    }
+
+    /// Clears, rebuilds, and returns the underlying Meilisearch index.
+    async fn get_wiped_podcast_index(
+        client: &Client,
+    ) -> Result<Index, meilisearch_sdk::errors::Error> {
+        client
+            .delete_index("podcasts")
+            .await?
+            .wait_for_completion(client, None, None)
+            .await?;
+
+        let podcast_index = client
+            .create_index("podcasts", None)
+            .await?
+            .wait_for_completion(client, None, None)
+            .await?
+            .try_make_index(client)
+            .unwrap();
+
+        podcast_index
             .set_filterable_attributes(["tags", "lengthInSeconds"])
-            .await
-        {
-            Ok(_) => {} // TODO - The value here is of type meilisearch_sdk::progress::Progress. This type does not guarantee that the operation completed, but rather is a way to check its progress. Therefore, we should actually be using the value here to further ensure that the operation successfully completes.
-            Err(err) => return Some(err),
-        };
-        match self
-            .podcast_index
+            .await?;
+        podcast_index
             .set_sortable_attributes(["podcastNumber"])
-            .await
-        {
-            Ok(_) => {} // TODO - The value here is of type meilisearch_sdk::progress::Progress. This type does not guarantee that the operation completed, but rather is a way to check its progress. Therefore, we should actually be using the value here to further ensure that the operation successfully completes.
-            Err(err) => return Some(err),
-        };
-        None
+            .await?;
+
+        Ok(podcast_index)
     }
 
     pub async fn search(
@@ -87,8 +94,8 @@ impl MeilisearchBackend {
                 .into_iter()
                 .map(|result| result.result)
                 .collect(),
-            total_hits: results.nb_hits,
-            total_hits_is_approximate: !results.exhaustive_nb_hits,
+            total_hits: results.estimated_total_hits,
+            total_hits_is_approximate: true,
             processing_time_ms: results.processing_time_ms,
         }
     }
@@ -125,19 +132,15 @@ impl MeilisearchBackend {
         // Since the first items that are indexed have highest priority, reversing
         // the order ensures that the latest podcasts are returned first.
         cloned_podcasts.reverse();
-        let progress = self
+        let task = self
             .podcast_index
             .add_documents(&cloned_podcasts, Some("podcastNumberHash"))
             .await
-            .unwrap();
-        let status = progress
-            .wait_for_pending_update(None, None)
-            .await
             .unwrap()
+            .wait_for_completion(&self.client, None, Some(Duration::from_secs(60)))
+            .await
             .unwrap();
-        if let UpdateStatus::Failed { .. } = status {
-            panic!("Meilisearch ingestion failed: {:?}", status)
-        };
+        assert!(matches!(task, Task::Succeeded { .. }));
     }
 }
 
@@ -146,6 +149,7 @@ impl MeilisearchBackend {
 pub struct SearchResult {
     pub hits: Vec<Podcast>,
     total_hits: usize,
+    // TODO - Remove this field. It is always true.
     total_hits_is_approximate: bool,
     processing_time_ms: usize,
 }

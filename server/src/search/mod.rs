@@ -33,7 +33,7 @@ impl SearchBackend {
 
     pub async fn reset(&self) {
         if let Some(meilisearch_backend) = &self.meilisearch_backend_or {
-            meilisearch_backend.reset_index().await;
+            meilisearch_backend.reset_index().await.unwrap();
         }
 
         self.search_cache.reset();
